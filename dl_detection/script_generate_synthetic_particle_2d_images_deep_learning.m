@@ -6,10 +6,10 @@
 % generate synthetic images for deep learning
 clear, close all
 
-image_directory = '../results/synthetic_particle_2d_images/';
-image_directory = '../results/synthetic_particle_2d_images_dl_09202019/';
+image_directory = '/scratch/users/vision/data/abc_data/synthetic_2d/';
+% image_directory = '../results/synthetic_particle_2d_images_dl_09202019/';
 mkdir(image_directory);
-
+addpath('utils');
 s = RandStream('mt19937ar','Seed',0);
 RandStream.setGlobalStream(s);
 
@@ -63,14 +63,14 @@ for prob_ind = 1 : numel(particle_prob_mat)
             I_kernel = I_kernel * kernel_factor;
             I_conv = imfilter(double(I_object), I_kernel, 'conv', 'same', 0);
             
-            img_path = sprintf('%sobject_image_randseed_%d_particle_prob_%g.tiff', ...
+            img_path = sprintf('%sgt_randseed_%d_particleprob_%g.tiff', ...
                 image_directory, seed_i, particle_prob);
             writetiff(uint8(I_object), img_path)
             for k = 1 : numel(snr_mat)
                 snr = snr_mat(k);
                 I_syn = I_conv * (gauss_noise_sigma * snr) + I_noise;
 
-                img_path = sprintf('%ssynthetic_image_kernel_method_%s_param_%g_randseed_%d_particle_prob_%g_snr_%g.tiff', ...
+                img_path = sprintf('%ssynthetic_kernel_%s_param_%g_randseed_%d_particleprob_%g_snr_%g.tiff', ...
                             image_directory, cur_psf_name, cur_psf_param, seed_i, particle_prob, snr)
                 writetiff(uint8(I_syn), img_path);
             end
