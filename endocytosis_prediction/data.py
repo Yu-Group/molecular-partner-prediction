@@ -8,7 +8,11 @@ from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.linear_model import LinearRegression, LogisticRegression
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import cross_validate, train_test_split
+from scipy import ndimage
 
+
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+# auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/' # 
 
 def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data'):
     '''Loads in X and Y for one cell
@@ -36,6 +40,17 @@ def extract_single_pixel_features(X, Y):
     X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
     y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
     return X_feat, y_max
+
+def extract_single_pixel_max_features(X, Y):
+    '''Take max over X (after some preprocessing) and use it to predict Y
+    '''
+    X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
+    X_max_log = X_log.max(axis=0)
+    X_max_log = X_max_log.flatten()
+    X_feat = np.transpose(np.array([X_max_log]))
+    Y_max = np.expand_dims(Y.max(axis=0).flatten(), 1)
+    #plt.hist(Y_max)
+    return X_max_log, Y_max
 
 def extract_patch_features(X, Y, patch_size=9):
     '''Extract time-series for patches as features
