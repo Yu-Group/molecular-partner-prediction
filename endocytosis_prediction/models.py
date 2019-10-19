@@ -11,6 +11,7 @@ class MaxLinear(nn.Module):
         super(MaxLinear, self).__init__()
 
         self.fc1 = nn.Linear(input_dim, num_units, bias=use_bias)
+        self.offset = nn.Parameter(torch.Tensor([3]))
 
     def forward(self, X, **kwargs):
 #         print('in shape', X.shape, X.dtype)
@@ -28,6 +29,7 @@ class MaxConv(nn.Module):
         super(MaxConv, self).__init__()
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=num_units, kernel_size=kernel_size, bias=use_bias)
 #         torch.nn.Conv1d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
+        self.offset = torch.
 
     def forward(self, X, **kwargs):
 #         print('in shape', X.shape, X.dtype)

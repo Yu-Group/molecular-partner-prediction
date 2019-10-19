@@ -14,7 +14,7 @@ from scipy import ndimage
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 # auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/' # 
 
-def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data'):
+def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data', normalize=True):
     '''Loads in X and Y for one cell
     
     Returns
@@ -31,14 +31,19 @@ def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data'):
     fname2 = os.listdir(oj(data_dir, 'EGFP'))[0]
     X = imread(oj(data_dir, 'TagRFP', fname1)).astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
     Y = imread(oj(data_dir, 'EGFP', fname2)).astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    if normalize:
+        X = (X - np.mean(X)) / np.std(X)
+        Y = (Y - np.mean(Y)) / np.std(Y)
+    
     return X, Y
 
-def extract_single_pixel_features(X, Y):
+def extract_single_pixel_features(X, Y, normalize=True):
     '''Extract time-series for single pixels as features
     '''
     X_feat = X.transpose() # W x H x num_images
     X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
     y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
+    y_max = (y_max - np.mean(y_max)) / np.std(y_max)
     return X_feat, y_max
 
 def extract_single_pixel_max_features(X, Y):
