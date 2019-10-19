@@ -29,8 +29,8 @@ def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data'):
     data_dir = oj(auxilin_dir, 'A7D2', cell_name) # 'A7D2', 'EGFB-GAK-F6'
     fname1 = os.listdir(oj(data_dir, 'TagRFP'))[0]
     fname2 = os.listdir(oj(data_dir, 'EGFP'))[0]
-    X = imread(oj(data_dir, 'TagRFP', fname1)) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(data_dir, 'EGFP', fname2)) # Y = EGFP (auxilin) (num_image x H x W)
+    X = imread(oj(data_dir, 'TagRFP', fname1)).astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, 'EGFP', fname2)).astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
     return X, Y
 
 def extract_single_pixel_features(X, Y):
@@ -42,7 +42,7 @@ def extract_single_pixel_features(X, Y):
     return X_feat, y_max
 
 def extract_single_pixel_max_features(X, Y):
-    '''Take max over X (after some preprocessing) and use it to predict Y
+    '''Take max over X (after some preprocessing) and use it to predict max over Y
     '''
     X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
     X_max_log = X_log.max(axis=0)

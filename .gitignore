@@ -1,3 +1,6 @@
 **checkpoint*
 **.ipynb_checkpoints*
 **cache*
+**.pkl
+**.json
+**.pt
