@@ -14,7 +14,7 @@ from scipy import ndimage
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 # auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/' # 
 
-def get_data(auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data'):
+def get_data(auxilin_dir = '/accounts/grad/xsli/auxilin_data'):
     '''Loads in X and Y for one cell
     
     Returns
@@ -74,3 +74,36 @@ def extract_patch_features(X, Y, patch_size=9):
     Y_centers = Y_patches[:, patch_center, patch_center]
     
     return X_patches, Y_centers
+
+def extract_next_frame_prediction_data(X, Y, window_length=10, test_size=0.33, LoG_var=10):
+    
+    '''
+     extract training and test samples for next frame prediction
+     
+     Input:
+          X, Y: np.ndarray
+              clathrin and auxilin movies
+          window_length: int
+              num of previous images used for prediction
+          test_size: float (between 0 and 1)
+              % of images used as test data
+          LoG_var: float
+              var of log filter
+              
+     Output:
+          X_train, Y_train, X_test, Y_test: np.array
+              train and test data, by default, the movies are partitioned into n = (len(X) - window_length) / window_length
+              non-overlapping segments; the last n*test_size segments are used for testing
+    '''
+    
+    X_log = ndimage.gaussian_laplace(X, sigma=10)
+    n = int((len(X) - window_length) / window_length)
+    n_train = int(n * (1 - test_size))
+    X_train, Y_train, X_test, Y_test = [], [], [], []
+    for im in range(n_train):
+        Y_train += list(Y[im*window_length + window_length].flatten())
+        X_train += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    for im in range(n_train, n):
+        Y_test += list(Y[im*window_length + window_length].flatten())
+        X_test += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)
