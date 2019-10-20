@@ -12,9 +12,9 @@ from scipy import ndimage
 
 
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-# auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/' # 
+# auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/'
 
-def get_data(auxilin_dir = '/accounts/grad/xsli/auxilin_data'):
+def get_data(auxilin_dir='/scratch/users/vision/data/abc_data/auxilin_data/', normalize=True):
     '''Loads in X and Y for one cell
     
     Returns
@@ -24,25 +24,29 @@ def get_data(auxilin_dir = '/accounts/grad/xsli/auxilin_data'):
     Y : np.ndarray
         has shape (W, H, num_images)
     '''
-    
     cell_name = 'Cell1_1s'
     data_dir = oj(auxilin_dir, 'A7D2', cell_name) # 'A7D2', 'EGFB-GAK-F6'
     fname1 = os.listdir(oj(data_dir, 'TagRFP'))[0]
     fname2 = os.listdir(oj(data_dir, 'EGFP'))[0]
-    X = imread(oj(data_dir, 'TagRFP', fname1)) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(data_dir, 'EGFP', fname2)) # Y = EGFP (auxilin) (num_image x H x W)
+    X = imread(oj(data_dir, 'TagRFP', fname1)).astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, 'EGFP', fname2)).astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    if normalize:
+        X = (X - np.mean(X)) / np.std(X)
+        Y = (Y - np.mean(Y)) / np.std(Y)
+    
     return X, Y
 
-def extract_single_pixel_features(X, Y):
+def extract_single_pixel_features(X, Y, normalize=True):
     '''Extract time-series for single pixels as features
     '''
     X_feat = X.transpose() # W x H x num_images
     X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
     y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
+    y_max = (y_max - np.mean(y_max)) / np.std(y_max)
     return X_feat, y_max
 
 def extract_single_pixel_max_features(X, Y):
-    '''Take max over X (after some preprocessing) and use it to predict Y
+    '''Take max over X (after some preprocessing) and use it to predict max over Y
     '''
     X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
     X_max_log = X_log.max(axis=0)

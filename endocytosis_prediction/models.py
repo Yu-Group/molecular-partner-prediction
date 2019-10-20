@@ -72,7 +72,7 @@ class MaxConvLinear(nn.Module):
         X = torch.max(X, dim=1)[0] # 0 because this returns max, indices
         
         # max over time step
-        X = torch.max(X, dim=1)[0] + self.offset # 0 because this returns max, indices
+        X = torch.max(X, dim=1)[0] #+ self.offset # 0 because this returns max, indices
 #         print('out2 shape', X.shape, X.dtype)
         
         X = X.unsqueeze(1)
