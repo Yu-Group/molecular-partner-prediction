@@ -41,6 +41,7 @@ def extract_single_pixel_features(X, Y, normalize=True):
     '''
     X_feat = X.transpose() # W x H x num_images
     X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
+    X_feat = X_feat.reshape(-1, 1)
     y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
     y_max = (y_max - np.mean(y_max)) / np.std(y_max)
     return X_feat, y_max
@@ -51,7 +52,6 @@ def extract_single_pixel_max_features(X, Y):
     X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
     X_max_log = X_log.max(axis=0)
     X_max_log = X_max_log.flatten()
-    X_feat = np.transpose(np.array([X_max_log]))
     Y_max = np.expand_dims(Y.max(axis=0).flatten(), 1)
     #plt.hist(Y_max)
     return X_max_log, Y_max
