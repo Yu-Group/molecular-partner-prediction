@@ -28,8 +28,8 @@ def get_data(auxilin_dir='/scratch/users/vision/data/abc_data/auxilin_data/', no
     data_dir = oj(auxilin_dir, 'A7D2', cell_name) # 'A7D2', 'EGFB-GAK-F6'
     fname1 = os.listdir(oj(data_dir, 'TagRFP'))[0]
     fname2 = os.listdir(oj(data_dir, 'EGFP'))[0]
-    X = imread(oj(data_dir, 'TagRFP', fname1)).astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(data_dir, 'EGFP', fname2)).astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    X = imread(oj(data_dir, 'TagRFP', fname1)) #.astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, 'EGFP', fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
     if normalize:
         X = (X - np.mean(X)) / np.std(X)
         Y = (Y - np.mean(Y)) / np.std(Y)
@@ -67,7 +67,7 @@ def extract_patch_features(X, Y, patch_size=9):
         has shape (num_images)
     '''
     X_feat = X.transpose() # W x H x num_images
-    X_patches = extract_patches_2d(X_feat, patch_size=(patch_size, patch_size), max_patches=None) # num_patches x patch_size x patch_size x num_images
+    X_patches = extract_patches_2d(X_feat, patch_size=(patch_size, patch_size), max_patches=None).astype(np.float32) # num_patches x patch_size x patch_size x num_images
 #     X_patches_flat = X_patches.reshape(X_patches.shape[0], -1)
     
     
@@ -75,7 +75,7 @@ def extract_patch_features(X, Y, patch_size=9):
     Y_max = np.max(Y, axis=0) # H x W
     Y_patches = extract_patches_2d(Y_max.transpose(), patch_size=(patch_size, patch_size), max_patches=None) # num_patches x patch_size x patch_size x num_images
     patch_center = patch_size // 2
-    Y_centers = Y_patches[:, patch_center, patch_center]
+    Y_centers = Y_patches[:, patch_center, patch_center].astype(np.float32)
     
     return X_patches, Y_centers
 
