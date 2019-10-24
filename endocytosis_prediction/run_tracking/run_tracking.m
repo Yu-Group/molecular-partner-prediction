@@ -1,7 +1,8 @@
 % matlab code from: https://github.com/DanuserLab/cmeAnalysis
 
-addpath(genpath(cmeAnalysis));
-
+addpath(genpath('cmeAnalysis'));
+data = loadConditionData('auxilin_data/A7D2', {'TagRFP', 'EGFP'}, {'rfp', 'gfp'}, 'Parameters', [1.49 200 16]);
+cmeDataViewer(data(1))
 
 %{
 cmeAnalysis
