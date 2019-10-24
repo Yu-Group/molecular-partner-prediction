@@ -37,10 +37,20 @@ def get_tracks(fname = '/scratch/users/vision/data/abc_data/auxilin_data_tracked
         'Y': Y,
         'totalDisplacement': totalDisplacement
     })
-    
+    df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
     return df
 
 def preprocess(df):
+    df = df[df.len > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
     df['Y_max'] = np.array([max(y) for y in df.Y.values])    
+    df['Y_mean'] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
+    df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
+    return df
+
+def add_outcome(df, thresh=3.25):
+    '''Add binary outcome of whether spike happened
+    '''
+    df['outcome_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
+    df['outcome'] = (df['outcome_score'].values > 0).astype(np.int) # Y_max was big
     return df
