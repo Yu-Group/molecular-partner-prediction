@@ -6,6 +6,7 @@ import torch
 
 class MaxLinear(nn.Module):
     '''Takes flattened input and predicts it using many linear units
+        X: batch_size x num_timepoints
     '''
     def __init__(self, input_dim=24300, num_units=20, nonlin=F.relu, use_bias=False):
         super(MaxLinear, self).__init__()
@@ -25,16 +26,25 @@ class MaxLinear(nn.Module):
 class MaxConv(nn.Module):
     '''Takes flattened input and predicts it using many conv unit
         X: batch_size x 1 x num_timepoints
+            OR
+        X: list of size (num_timepoints,)
     '''
-    def __init__(self, input_dim=24300, num_units=20, kernel_size=30, nonlin=F.relu, use_bias=False):
+    def __init__(self, num_units=20, kernel_size=30, nonlin=F.relu, use_bias=False):
         super(MaxConv, self).__init__()
         self.conv1 = nn.Conv1d(in_channels=1, out_channels=num_units, kernel_size=kernel_size, bias=use_bias)
 #         torch.nn.Conv1d(in_channels, out_channels, kernel_size, stride=1, padding=0, dilation=1, groups=1, bias=True, padding_mode='zeros')
         self.offset = nn.Parameter(torch.Tensor([0]))
 
     def forward(self, X, **kwargs):
+        if type(X) == list:
+            print('list')
+            X = torch.tensor(np.array(X).astype(np.float32))
+            X = X.unsqueeze(0)
+            X = X.unsqueeze(0)
+            print(X.shape)
 #         print('in shape', X.shape, X.dtype)
-        X = X.unsqueeze(1)
+        else:
+            X = X.unsqueeze(1)
         X = self.conv1(X) #.max(dim=-1)
 #         print('out shape', X.shape, X.dtype)
         # max over channels
@@ -45,6 +55,8 @@ class MaxConv(nn.Module):
 #         print('out2 shape', X.shape, X.dtype)
         
         X = X.unsqueeze(1)
+        
+#         print('preds', X)
         return X
     
 class MaxConvLinear(nn.Module):
