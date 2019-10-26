@@ -54,3 +54,16 @@ def add_outcome(df, thresh=3.25):
     df['outcome_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
     df['outcome'] = (df['outcome_score'].values > 0).astype(np.int) # Y_max was big
     return df
+
+def extract_X_mat(df, p=300):
+    n = df.shape[0]
+    X_mat = np.zeros((n, p)).astype(np.float32)
+    X = df['X'].values
+    for i in range(n):
+        x = X[i]
+        num_timepoints = min(300, len(x))
+        X_mat[i, :num_timepoints] = x[:num_timepoints]
+    X_mat = np.nan_to_num(X_mat)
+    X_mat -= np.min(X_mat)
+    X_mat /= np.std(X_mat)
+    return X_mat
