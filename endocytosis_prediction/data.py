@@ -14,7 +14,7 @@ from scipy import ndimage
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 # auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/'
 
-def get_data(auxilin_dir='/scratch/users/vision/data/abc_data/auxilin_data/', normalize=True):
+def get_data(auxilin_dir='/Users/xiaoli/data/auxilin_data', normalize=True):
     '''Loads in X and Y for one cell
     
     Returns
