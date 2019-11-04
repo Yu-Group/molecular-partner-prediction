@@ -18,27 +18,45 @@ plt.style.use('dark_background')
 import mat4py
 import pandas as pd
 
-def get_tracks(fname = '/scratch/users/vision/data/abc_data/auxilin_data_tracked/A7D2/Cell1_1s/TagRFP/Tracking/ProcessedTracks.mat'):
-    mat = mat4py.loadmat(fname)
-    tracks = mat['tracks']
-    n = len(tracks['t'])
-    totalDisplacement = []
-    for i in range(n):
-        try:
-            totalDisplacement.append(tracks['MotionAnalysis'][i]['totalDisplacement'])
-        except:
-            totalDisplacement.append(0)
-    X = np.array([mat['tracks']['A'][i][0] for i in range(n)])
-    Y = np.array([mat['tracks']['A'][i][1] for i in range(n)])
-#     df = pd.DataFrame(tracks)
-#     print(df.keys()) # these lines help us look at the other stored vars
-    df = pd.DataFrame.from_dict({
-        'X': X, 
-        'Y': Y,
-        'totalDisplacement': totalDisplacement
-    })
-    df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
-    return df
+def get_tracks(cell_nums=[1, 2, 3, 4, 5]):
+    dfs = []
+    # 8 cell folders [1, 2, 3, ..., 8]
+    for cell_num in cell_nums:
+        fname = f'/scratch/users/vision/data/abc_data/auxilin_data_tracked/A7D2/Cell{cell_num}_1s/TagRFP/Tracking/ProcessedTracks.mat'
+        mat = mat4py.loadmat(fname)
+        tracks = mat['tracks']
+        n = len(tracks['t'])
+        totalDisplacement = []
+        msd = [] # mean squared displacement
+        for i in range(n):
+            try:
+                totalDisplacement.append(tracks['MotionAnalysis'][i]['totalDisplacement'])
+            except:
+                totalDisplacement.append(0)
+            try:
+                msd.append(np.nanmax(tracks['MotionAnalysis'][i]['MSD']))
+            except:
+                msd.append(0)
+        X = np.array([tracks['A'][i][0] for i in range(n)])
+        Y = np.array([tracks['A'][i][1] for i in range(n)])
+        X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
+        Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
+    #     df = pd.DataFrame(tracks)
+    #     print(df.keys()) # these lines help us look at the other stored vars
+        df = pd.DataFrame.from_dict({
+            'X': X, 
+            'Y': Y,
+            'X_pval': X_pvals,
+            'Y_pvals': Y_pvals,
+            'catIdx': tracks['catIdx'],
+            'total_displacement': totalDisplacement,
+            'mean_square_displacement': msd,
+            'lifetime': tracks['lifetime_s'],
+
+        })
+        df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
+        dfs.append(deepcopy(df))
+    return pd.concat(dfs)
 
 def preprocess(df):
     df = df[df.len > 2]
@@ -55,15 +73,20 @@ def add_outcome(df, thresh=3.25):
     '''
     df['outcome_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
     df['outcome'] = (df['outcome_score'].values > 0).astype(np.int) # Y_max was big
-    
-    
-    # multiple events (at the same location)
-    df['multiple'] = None
-    
-    # partial events (signal is already high at the start)
-    df['partial'] = None
-    
     return df
+
+def remove_invalid_tracks(df, keep=[1, 2]):
+    '''Remove certain types of tracks based on cat_idx
+    cat_idx (idx 1 and 2)
+    1-4 (non-complex trajectory - no merges and splits)
+        1 - valid
+        2 - signal occasionally drops out
+        3 - cut  - starts / ends
+        4 - multiple - at the same place (continues throughout)
+    5-8 (there is merging or splitting)
+    '''
+    return df[df.catIdx.isin(keep)]
+
 
 def extract_X_mat(df, p=300):
     '''Extract matrix for X filled with zeros after sequences end
