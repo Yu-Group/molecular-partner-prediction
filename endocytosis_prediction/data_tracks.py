@@ -39,6 +39,8 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5]):
                 msd.append(0)
         X = np.array([tracks['A'][i][0] for i in range(n)])
         Y = np.array([tracks['A'][i][1] for i in range(n)])
+        x_pos_seq = np.array([tracks['x'][i][0] for i in range(n)]) # position for clathrin (auxilin is very similar)
+        y_pos_seq = np.array([tracks['y'][i][0] for i in range(n)])
         X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
         Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
     #     df = pd.DataFrame(tracks)
@@ -52,7 +54,8 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5]):
             'total_displacement': totalDisplacement,
             'mean_square_displacement': msd,
             'lifetime': tracks['lifetime_s'],
-
+            'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
+            'y_pos': [sum(y) / len(y) for y in y_pos_seq],
         })
         df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
         dfs.append(deepcopy(df))
