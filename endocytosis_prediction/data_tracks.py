@@ -18,7 +18,7 @@ plt.style.use('dark_background')
 import mat4py
 import pandas as pd
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5]):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6]):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
@@ -56,6 +56,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5]):
             'lifetime': tracks['lifetime_s'],
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
+            'cell_num': [cell_num] * n,
         })
         df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
         dfs.append(deepcopy(df))
