@@ -63,13 +63,36 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6]):
     return pd.concat(dfs)
 
 def preprocess(df):
+    '''Add a bunch of extra features to the df
+    '''
     df = df[df.len > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
+    df['X_min'] = np.array([max(x) for x in df.X.values])
     df['X_mean'] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
     df['X_std'] = np.nan_to_num(np.array([np.std(x) for x in df.X.values]))
     df['Y_max'] = np.array([max(y) for y in df.Y.values])    
     df['Y_mean'] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
+    
+    def calc_rise(x):
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        rise = val_max - np.min(x[:idx_max + 1]) # max change before peak
+        return rise
+
+    def calc_fall(x):
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        fall = val_max - np.min(x[idx_max:]) # drop after peak
+        return fall
+    
+    def max_diff(x): return np.max(np.diff(x))
+    def min_diff(x): return np.min(np.diff(x))
+    
+    df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
+    df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
+    df['max_diff'] = df.apply(lambda row: max_diff(row['X']), axis=1)    
+    df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
 
 def add_outcome(df, thresh=3.25):
