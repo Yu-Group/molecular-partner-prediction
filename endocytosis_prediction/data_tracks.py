@@ -7,6 +7,7 @@ from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
 from sklearn.neural_network import MLPRegressor
 from sklearn.model_selection import cross_validate, train_test_split
+from sklearn.decomposition import sparse_encode
 import numpy as np
 from sklearn.datasets import make_classification
 from torch import nn
@@ -17,8 +18,9 @@ from sklearn import metrics
 plt.style.use('dark_background')
 import mat4py
 import pandas as pd
+import pickle as pkl
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6]):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
@@ -45,7 +47,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6]):
         Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
     #     df = pd.DataFrame(tracks)
     #     print(df.keys()) # these lines help us look at the other stored vars
-        df = pd.DataFrame.from_dict({
+        data = {
             'X': X, 
             'Y': Y,
             'X_pval': X_pvals,
@@ -57,7 +59,11 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6]):
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
             'cell_num': [cell_num] * n,
-        })
+        }
+        if all_data:
+            data['x_pos_seq'] = x_pos_seq
+            data['y_pos_seq'] = y_pos_seq
+        df = pd.DataFrame.from_dict(data)
         df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
         dfs.append(deepcopy(df))
     return pd.concat(dfs)
@@ -129,3 +135,13 @@ def extract_X_mat(df, p=300):
     X_mat -= np.min(X_mat)
     X_mat /= np.std(X_mat)
     return X_mat
+
+def add_sparse_coding_features(df, comps_file='comps_12_alpha=1.pkl'):
+    '''Add features from saved dictionary to df
+    '''
+    X_mat = extract_X_mat(df)
+    comps = pkl.load(open(comps_file, 'rb'))
+    encoding = sparse_encode(X_mat, comps)
+    for i in range(encoding.shape[1]):
+        df[f'sc_{i}'] = encoding[:, i]
+    return df
