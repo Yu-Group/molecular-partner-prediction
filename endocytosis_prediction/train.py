@@ -57,18 +57,13 @@ def balance(X, y, balancing='ros'):
     
     
 
-def train(df, feat_names, model_type='rf', balancing='ros', out_name='results/classify/test.pkl'):
+def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
+          balancing='ros', out_name='results/classify/test.pkl'):
     np.random.seed(42)
     # make logistic data
     X = df[feat_names]
     X = (X - X.mean()) / X.std()
-    y = df['outcome'].values
-
-    # visualize correlations between the data
-    # mat = deepcopy(X)
-    # mat['outcome'] = y_outcome
-    # sns.heatmap(mat.corr(method='pearson'))
-
+    y = df[outcome_def].values
 
     # split testing data based on cell num
     idxs_test = df.cell_num.isin([6])

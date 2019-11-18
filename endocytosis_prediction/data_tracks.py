@@ -20,6 +20,14 @@ import mat4py
 import pandas as pd
 import pickle as pkl
 
+def get_data():
+    df = get_tracks() # note: different Xs can be different shapes
+    df = remove_invalid_tracks(df)
+    df = preprocess(df)
+    df = add_outcomes(df)
+    df = add_sparse_coding_features(df)
+    return df
+
 def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
@@ -80,6 +88,7 @@ def preprocess(df):
     df['Y_mean'] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
     
+    # hand-engineeredd features
     def calc_rise(x):
         idx_max = np.argmax(x)
         val_max = x[idx_max]
@@ -101,11 +110,26 @@ def preprocess(df):
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
 
-def add_outcome(df, thresh=3.25):
+def add_outcomes(df, thresh=3.25, p_thresh=0.05):
     '''Add binary outcome of whether spike happened and info on whether events were questionable
     '''
-    df['outcome_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
-    df['outcome'] = (df['outcome_score'].values > 0).astype(np.int) # Y_max was big
+    df['y_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
+    df['y_thresh'] = (df['y_score'].values > 0).astype(np.int) # Y_max was big
+    
+    # outcomes based on significant p-values
+    num_sigs = [np.array(df['Y_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
+    df['y_single_sig'] = np.array([num_sigs[i].sum() > 0 for i in range(df.shape[0])]).astype(np.int)
+    df['y_double_sig'] = np.array([num_sigs[i].sum() > 1 for i in range(df.shape[0])]).astype(np.int)
+    y_consec_sig = []
+    for i in range(df.shape[0]):
+        idxs_sig = np.where(num_sigs[i]==1)[0] # indices of significance
+        
+        # find whether there were consecutive sig. indices
+        if len(idxs_sig) > 1 and np.min(np.diff(idxs_sig)) == 1:
+            y_consec_sig.append(1)
+        else:
+            y_consec_sig.append(0)
+    df['y_consec_sig'] = y_consec_sig
     return df
 
 def remove_invalid_tracks(df, keep=[1, 2]):
