@@ -28,7 +28,7 @@ def get_data():
     df = add_sparse_coding_features(df)
     return df
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5], all_data=False):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
