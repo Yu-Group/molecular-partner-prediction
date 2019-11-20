@@ -28,7 +28,7 @@ def get_data():
     df = preprocess(df)
     df = add_outcomes(df)
     df = remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95)
-    df = add_sparse_coding_features(df)
+    df = add_dict_features(df)
     return df
 
 def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
@@ -214,12 +214,23 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
     
     return df
 
-def add_sparse_coding_features(df, comps_file='sparse_codes/comps_12_alpha=1.pkl'):
+def add_dict_features(df, sc_comps_file='dictionaries/sc_12_alpha=1.pkl', 
+                      nmf_comps_file='dictionaries/nmf_12.pkl'):
     '''Add features from saved dictionary to df
     '''
     X_mat = extract_X_mat(df)
-    comps = pkl.load(open(comps_file, 'rb'))
-    encoding = sparse_encode(X_mat, comps)
+    X_mat -= np.min(X_mat)
+    
+    # sc
+    d_sc = pkl.load(open(sc_comps_file, 'rb'))
+    # encoding = sparse_encode(X_mat, comps)
+    encoding = d_sc.transform(X_mat)
     for i in range(encoding.shape[1]):
         df[f'sc_{i}'] = encoding[:, i]
+        
+    # nmf
+    d_nmf = pkl.load(open(nmf_comps_file, 'rb'))
+    encoding_nmf = d_nmf.transform(X_mat)
+    for i in range(encoding_nmf.shape[1]):
+        df[f'nmf_{i}'] = encoding_nmf[:, i]
     return df
