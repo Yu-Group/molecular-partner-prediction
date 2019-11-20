@@ -48,6 +48,9 @@ def balance(X, y, balancing='ros'):
     '''
     Balance classes in y using strategy specified by balancing
     '''
+    if balancing == 'none':
+        return X, y
+    
     if balancing == 'ros':
         sampler = RandomOverSampler(random_state=42)
     elif balancing == 'smote':

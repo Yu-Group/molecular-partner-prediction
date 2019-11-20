@@ -148,15 +148,17 @@ def remove_invalid_tracks(df, keep=[1, 2]):
     return df[df.catIdx.isin(keep)]
 
 
-def extract_X_mat(df, p=300):
-    '''Extract matrix for X filled with zeros after sequences end
+def extract_X_mat(df):
+    '''Extract matrix for X filled with zeros after sequences
+    Width of matrix is length of longest lifetime
     '''
+    p = df.lifetime.max()
     n = df.shape[0]
     X_mat = np.zeros((n, p)).astype(np.float32)
     X = df['X'].values
     for i in range(n):
         x = X[i]
-        num_timepoints = min(300, len(x))
+        num_timepoints = min(p, len(x))
         X_mat[i, :num_timepoints] = x[:num_timepoints]
     X_mat = np.nan_to_num(X_mat)
     X_mat -= np.min(X_mat)
@@ -212,7 +214,7 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
     
     return df
 
-def add_sparse_coding_features(df, comps_file='comps_12_alpha=1.pkl'):
+def add_sparse_coding_features(df, comps_file='sparse_codes/comps_12_alpha=1.pkl'):
     '''Add features from saved dictionary to df
     '''
     X_mat = extract_X_mat(df)
