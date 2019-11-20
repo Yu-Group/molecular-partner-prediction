@@ -19,12 +19,15 @@ plt.style.use('dark_background')
 import mat4py
 import pandas as pd
 import pickle as pkl
+from style import *
+
 
 def get_data():
     df = get_tracks() # note: different Xs can be different shapes
     df = remove_invalid_tracks(df)
     df = preprocess(df)
     df = add_outcomes(df)
+    df = remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95)
     df = add_sparse_coding_features(df)
     return df
 
@@ -159,6 +162,55 @@ def extract_X_mat(df, p=300):
     X_mat -= np.min(X_mat)
     X_mat /= np.std(X_mat)
     return X_mat
+
+
+def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95):
+    '''Calculate accuracy you can get by just predicting max class 
+    as a func of lifetime and return points within proper lifetime
+    '''
+    vals = df[['lifetime', outcome_key]]
+    R, C = 1, 3
+    lifetimes = np.unique(vals['lifetime'])
+
+    props1 = np.array([1 - np.mean(vals[outcome_key][vals['lifetime'] <= l]) for l in lifetimes])
+    idx_thresh = np.nonzero(props1 <= acc_thresh)[0][0]
+    thresh_lower = lifetimes[idx_thresh]
+    n = df.shape[0]    
+    
+    props2 = np.array([np.mean(vals[outcome_key][vals['lifetime'] >= l]) for l in lifetimes])
+    idx_thresh_2 = np.nonzero(props2 >= acc_thresh)[0][0]
+    thresh_higher = lifetimes[idx_thresh_2]    
+
+    if plot:
+        plt.figure(figsize=(12, 4), dpi=200)
+        plt.subplot(R, C, 1)
+        outcome = df[outcome_key]
+        plt.hist(df['lifetime'][outcome==1], label='aux+', alpha=1, color=cb)
+        plt.hist(df['lifetime'][outcome==0], label='aux-', alpha=0.7, color=cr)
+        plt.xlabel('lifetime')
+        plt.ylabel('count')
+        plt.legend()
+    
+        plt.subplot(R, C, 2)
+        plt.plot(lifetimes, props1, color=cr)
+    #     plt.axvline(thresh_lower)
+        plt.axvspan(0, thresh_lower, alpha=0.2, color=cr)
+        plt.ylabel('fraction of negative events')
+        plt.xlabel(f'lifetime <= value\nshaded includes {np.sum(vals["lifetime"]<=thresh_lower)/n*100:0.0f}% of pts')
+
+
+        plt.subplot(R, C, 3)
+        plt.plot(lifetimes, props2, cb)
+        plt.axvspan(thresh_higher, max(lifetimes), alpha=0.2, color=cb)
+        plt.ylabel('fraction of positive events')
+        plt.xlabel(f'lifetime >= value\nshaded includes {np.sum(vals["lifetime"]>=thresh_higher)/n*100:0.0f}% of pts')
+        plt.tight_layout()
+        plt.show()
+
+    # only df with lifetimes in proper range
+    df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
+    
+    return df
 
 def add_sparse_coding_features(df, comps_file='comps_12_alpha=1.pkl'):
     '''Add features from saved dictionary to df
