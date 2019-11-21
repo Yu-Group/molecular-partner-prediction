@@ -7,7 +7,7 @@ from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.model_selection import cross_validate, train_test_split
-from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn import metrics
@@ -36,6 +36,9 @@ import irf
 from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
 
+scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
+               'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
+               'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
 
 def get_feature_importance(model, model_type, X_val, Y_val):
     if model_type in ['dt']:
@@ -91,12 +94,13 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         m = GradientBoostingClassifier()
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
-    
+    elif model_type == 'voting_mlp+svm+rf':
+        models_list = [('mlp', MLPClassifier()), 
+                       ('svm', SVC(gamma='scale')),
+                       ('rf', RandomForestClassifier(n_estimators=100))]
+        m = VotingClassifier(estimators=models_list, voting='hard')
 
-    # scores = ['balanced_accuracy'] # ['accuracy', 'precision', 'recall', 'f1', 'balanced_accuracy', 'roc_auc']
-    scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
-               'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
-               'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
+    
     scores_cv = {s: [] for s in scorers.keys()}
     scores_test = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
@@ -120,7 +124,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         # get preds
         preds = m.predict(X_val_cv)
         preds_test = m.predict(X_test)
-        if model_type == 'svm':
+        if 'svm' in model_type:
             preds_proba = preds
             preds_test_proba = preds_test
         else:
