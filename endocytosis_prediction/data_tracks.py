@@ -3,6 +3,7 @@ import seaborn as sns
 import numpy as np
 import os
 from os.path import join as oj
+from skimage.external.tifffile import imread
 from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
 from sklearn.neural_network import MLPRegressor
@@ -20,6 +21,11 @@ import mat4py
 import pandas as pd
 import pickle as pkl
 from style import *
+import data
+import math
+
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+# auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/'
 
 
 def get_data():
@@ -31,11 +37,35 @@ def get_data():
     df = add_dict_features(df)
     return df
 
+def get_images(cell_name, auxilin_dir=auxilin_dir):
+    '''Loads in X and Y for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    '''
+    #cell_name = 'Cell1_1s'
+    data_dir = oj(auxilin_dir, 'A7D2', cell_name) # 'A7D2', 'EGFB-GAK-F6'
+    for name in os.listdir(oj(data_dir, 'TagRFP')):
+        if 'tif' in name:
+            fname1 = name
+    for name in os.listdir(oj(data_dir, 'EGFP')):
+        if 'tif' in name:
+            fname2 = name
+    X = imread(oj(data_dir, 'TagRFP', fname1)) #.astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, 'EGFP', fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)  
+    return X, Y
+
 def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
-        fname = f'/scratch/users/vision/data/abc_data/auxilin_data_tracked/A7D2/Cell{cell_num}_1s/TagRFP/Tracking/ProcessedTracks.mat'
+        fname = f'/accounts/grad/xsli/auxilin_data/A7D2/Cell{cell_num}_1s/TagRFP/Tracking/ProcessedTracks.mat'
+        cla, aux = get_images(f'Cell{cell_num}_1s', auxilin_dir=auxilin_dir)
+        fname_image = data_dir = oj(auxilin_dir, 'A7D2', f'Cell{cell_num}_1s')
         mat = mat4py.loadmat(fname)
         tracks = mat['tracks']
         n = len(tracks['t'])
@@ -52,8 +82,21 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
                 msd.append(0)
         X = np.array([tracks['A'][i][0] for i in range(n)])
         Y = np.array([tracks['A'][i][1] for i in range(n)])
+        t = np.array([tracks['t'][i] for i in range(n)])
         x_pos_seq = np.array([tracks['x'][i][0] for i in range(n)]) # position for clathrin (auxilin is very similar)
         y_pos_seq = np.array([tracks['y'][i][0] for i in range(n)])
+        pixel_up = np.array([[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
+                              if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                             for i in range(n)])
+        pixel_down = np.array([[cla[int(t[i][j]), max(int(y_pos_seq[i][j] - 1), 0), int(x_pos_seq[i][j])]
+                              if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                             for i in range(n)])
+        pixel_left = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), max(int(x_pos_seq[i][j]-1), 0)]
+                              if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                             for i in range(n)])
+        pixel_right = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j]+1), cla.shape[2]-1)]
+                              if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                             for i in range(n)])                            
         X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
         Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
     #     df = pd.DataFrame(tracks)
@@ -63,12 +106,20 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             'Y': Y,
             'X_pval': X_pvals,
             'Y_pvals': Y_pvals,
+            'pixel_left': pixel_left,
+            'pixel_right': pixel_right,
+            'pixel_up': pixel_up,
+            'pixel_down': pixel_down,
             'catIdx': tracks['catIdx'],
             'total_displacement': totalDisplacement,
             'mean_square_displacement': msd,
             'lifetime': tracks['lifetime_s'],
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
+            'left_max': [max(pixel_left[i]) for i in range(n)],
+            'right_max': [max(pixel_right[i]) for i in range(n)],
+            'up_max': [max(pixel_up[i]) for i in range(n)],
+            'down_max': [max(pixel_down[i]) for i in range(n)],
             'cell_num': [cell_num] * n,
         }
         if all_data:
@@ -234,3 +285,4 @@ def add_dict_features(df, sc_comps_file='dictionaries/sc_12_alpha=1.pkl',
     for i in range(encoding_nmf.shape[1]):
         df[f'nmf_{i}'] = encoding_nmf[:, i]
     return df
+                   
