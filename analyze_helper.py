@@ -50,11 +50,11 @@ def load_results(out_dir):
     r = r.set_index('model_type')
     return r
 
-def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False):
+def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
     scores_cv = results['cv']
     scores_test = results['test']
     imps = results['imps']
-    m = imps['model'][0]
+    m = imps['model'][model_cv_fold]
     
     
     preds = m.predict(X_test[results['feat_names']])
