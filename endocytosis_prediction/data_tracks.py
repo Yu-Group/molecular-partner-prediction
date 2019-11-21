@@ -24,8 +24,8 @@ from style import *
 import data
 import math
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-# auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data/'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
 def get_data():
@@ -63,7 +63,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
-        fname = f'/accounts/grad/xsli/auxilin_data/A7D2/Cell{cell_num}_1s/TagRFP/Tracking/ProcessedTracks.mat'
+        fname = f'{auxilin_dir}/A7D2/Cell{cell_num}_1s/TagRFP/Tracking/ProcessedTracks.mat'
         cla, aux = get_images(f'Cell{cell_num}_1s', auxilin_dir=auxilin_dir)
         fname_image = data_dir = oj(auxilin_dir, 'A7D2', f'Cell{cell_num}_1s')
         mat = mat4py.loadmat(fname)

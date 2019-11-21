@@ -32,7 +32,7 @@ from imblearn.over_sampling import RandomOverSampler
 from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
-
+from style import *
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -94,3 +94,63 @@ def highlight_max(data, color='#0e5c99'):
         is_max = data == data.max().max()
         return pd.DataFrame(np.where(is_max, attr, ''),
                             index=data.index, columns=data.columns)
+    
+    
+# visualize biggest errs
+def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
+#     print(preds_proba.shape, X_traces_test.shape)
+    residuals = np.abs(Y_test - preds_proba)
+    
+    R, C = 4, 5
+    args = np.argsort(residuals)[::-1][:R * C]
+#     print(Y_test[args])
+#     print(preds[args])
+#     print(residuals[args][:10])
+    plt.figure(figsize=(C * 3, R * 2.5))
+    
+    i = 0
+    for r in range(R):
+        for c in range(C):
+            plt.subplot(R, C, i + 1)
+            if i == 0:
+                plt.title('blue=false positive')
+            plt.plot(X_traces_test.iloc[args[i]], color=cb if Y_test[i] else cr)
+            i += 1
+    
+    plt.tight_layout()
+    
+# visualize biggest errs
+def viz_errs_spatially(df, idxs_test, preds, Y_test):
+    x_pos = df['x_pos'][idxs_test]
+    y_pos = df['y_pos'][idxs_test]
+    
+    plt.figure(dpi=200)
+
+    plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
+             color=cb, alpha=0.5, label='true pos')
+    plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'x',
+             color=cb, alpha=0.5, label='true neg')
+    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')    
+    plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')    
+    plt.legend()
+#     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
+    plt.xlabel('x position')
+    plt.ylabel('y position')
+    plt.tight_layout()
+    
+    
+def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
+    plt.figure(dpi=200)
+    correct_idxs = preds == Y_test
+    lifetime = X_test['lifetime'] * norms['lifetime']['std'] + norms['lifetime']['mu']
+
+    plt.plot(lifetime[(preds==Y_test) & (preds==1)], preds_proba[(preds==Y_test) & (preds==1)], 'o',
+             color=cb, alpha=0.5, label='true pos')
+    plt.plot(lifetime[(preds==Y_test) & (preds==0)], preds_proba[(preds==Y_test) & (preds==0)], 'x',
+             color=cb, alpha=0.5, label='true neg')
+    plt.plot(lifetime[preds > Y_test], preds_proba[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')    
+    plt.plot(lifetime[preds < Y_test], preds_proba[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')    
+    plt.xlabel('lifetime')
+    plt.ylabel('predicted probability')
+    plt.legend()
+    plt.show()
