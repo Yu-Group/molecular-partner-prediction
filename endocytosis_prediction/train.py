@@ -128,8 +128,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                 scores_cv[s].append(scorer(Y_val_cv, preds_proba))
                 scores_test[s].append(scorer(Y_test, preds_test_proba))
             else:
-                scores_cv[s].append(scorer(preds, Y_val_cv))
-                scores_test[s].append(scorer(preds_test, Y_test))
+                scores_cv[s].append(scorer(Y_val_cv, preds))
+                scores_test[s].append(scorer(Y_test, preds_test))
         imps['model'].append(deepcopy(m))
         imps['imps'].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
 
