@@ -32,6 +32,7 @@ from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
 from tqdm import tqdm
+import irf
 
 
 def get_feature_importance(model, model_type, X_val, Y_val):
@@ -84,6 +85,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         m = MLPClassifier()
     elif model_type == 'gb':
         m = GradientBoostingClassifier()
+    elif model_type == 'irf':
+        m = irf.ensemble.wrf()
     
 
     # scores = ['balanced_accuracy'] # ['accuracy', 'precision', 'recall', 'f1', 'balanced_accuracy', 'roc_auc']
