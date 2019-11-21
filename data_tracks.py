@@ -238,8 +238,8 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
         plt.figure(figsize=(12, 4), dpi=200)
         plt.subplot(R, C, 1)
         outcome = df[outcome_key]
-        plt.hist(df['lifetime'][outcome==1], label='aux+', alpha=1, color=cb)
-        plt.hist(df['lifetime'][outcome==0], label='aux-', alpha=0.7, color=cr)
+        plt.hist(df['lifetime'][outcome==1], label='aux+', alpha=1, color=cb, bins=25)
+        plt.hist(df['lifetime'][outcome==0], label='aux-', alpha=0.7, color=cr, bins=25)
         plt.xlabel('lifetime')
         plt.ylabel('count')
         plt.legend()

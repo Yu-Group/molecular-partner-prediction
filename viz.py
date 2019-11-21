@@ -101,20 +101,18 @@ def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
 #     print(preds_proba.shape, X_traces_test.shape)
     residuals = np.abs(Y_test - preds_proba)
     
-    R, C = 4, 5
+    R, C = 4, 4
     args = np.argsort(residuals)[::-1][:R * C]
 #     print(Y_test[args])
 #     print(preds[args])
 #     print(residuals[args][:10])
-    plt.figure(figsize=(C * 3, R * 2.5))
+    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
     
     i = 0
     for r in range(R):
         for c in range(C):
             plt.subplot(R, C, i + 1)
-            if i == 0:
-                plt.title('blue=false positive')
-            plt.plot(X_traces_test.iloc[args[i]], color=cb if Y_test[i] else cr)
+            plt.plot(X_traces_test.iloc[args[i]], color=cr)
             i += 1
     
     plt.tight_layout()

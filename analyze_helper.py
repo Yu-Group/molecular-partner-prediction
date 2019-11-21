@@ -58,7 +58,10 @@ def analyze_individual_results(results, X_test, Y_test, print_results=False, plo
     
     
     preds = m.predict(X_test[results['feat_names']])
-    preds_proba = m.predict_proba(X_test[results['feat_names']])[:, 1]
+    try:
+        preds_proba = m.predict_proba(X_test[results['feat_names']])[:, 1]
+    except:
+        preds_proba = preds
     
     if print_results:
         print(Fore.CYAN + f'{"metric":<25}\tvalidation') #\ttest')
