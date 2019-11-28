@@ -104,7 +104,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
         data = {
             'X': X, 
             'Y': Y,
-            'X_pval': X_pvals,
+            'X_pvals': X_pvals,
             'Y_pvals': Y_pvals,
             'pixel_left': pixel_left,
             'pixel_right': pixel_right,
@@ -164,11 +164,12 @@ def preprocess(df):
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
 
-def add_outcomes(df, thresh=3.25, p_thresh=0.05):
+def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.3754691658837):
     '''Add binary outcome of whether spike happened and info on whether events were questionable
     '''
     df['y_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
     df['y_thresh'] = (df['y_score'].values > 0).astype(np.int) # Y_max was big
+    df['y'] = df['Y_max'] > aux_peak
     
     # outcomes based on significant p-values
     num_sigs = [np.array(df['Y_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
