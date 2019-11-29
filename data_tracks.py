@@ -23,9 +23,10 @@ import pickle as pkl
 from style import *
 import data
 import math
+from scipy.interpolate import UnivariateSpline
 
-# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
 def get_data():
@@ -35,6 +36,7 @@ def get_data():
     df = add_outcomes(df)
     df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
     df = add_dict_features(df)
+    df = add_smoothed_tracks(df)
     return df
 
 def get_images(cell_name, auxilin_dir=auxilin_dir):
@@ -285,5 +287,23 @@ def add_dict_features(df, sc_comps_file='dictionaries/sc_12_alpha=1.pkl',
     encoding_nmf = d_nmf.transform(X_mat)
     for i in range(encoding_nmf.shape[1]):
         df[f'nmf_{i}'] = encoding_nmf[:, i]
+    return df
+                   
+def add_smoothed_tracks(df, 
+                        method='spline', 
+                        s_spl=0.004):
+    X_smooth_spl = []
+    def num_local_maxima(x):
+        return(len([i for i in range(1, len(x)-1) if x[i] > x[i-1] and x[i] > x[i+1]]))
+    for x in df['X']:
+        spl = UnivariateSpline(x=range(len(x)), 
+                               y=x, 
+                               w=[1.0/len(x)]*len(x),
+                               s=np.var(x)*s_spl)
+        X_smooth_spl.append(spl(range(len(x))))
+    df['X_smooth_spl'] = np.array(X_smooth_spl)
+    df['X_max_spline'] = np.array([np.max(x) for x in X_smooth_spl])
+    df['num_local_maxima'] = np.array([num_local_maxima(x) for x in X_smooth_spl])
+    df['num_local_minima'] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
     return df
                    

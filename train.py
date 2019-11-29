@@ -33,14 +33,18 @@ from colorama import Fore
 import pickle as pkl
 from tqdm import tqdm
 import irf
+from irf import irf_utils
+from treeinterpreter.treeinterpreter.feature_importance import feature_importance
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
                'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
                'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
 
 def get_feature_importance(model, model_type, X_val, Y_val):
-    if model_type in ['rf', 'dt']:
+    if model_type in ['dt']:
         imps = model.feature_importances_
+    if model_type == 'rf':
+        imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
     elif model_type == 'logistic':
         imps = model.coef_
     else:
