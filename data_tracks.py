@@ -33,7 +33,7 @@ def get_data():
     df = remove_invalid_tracks(df)
     df = preprocess(df)
     df = add_outcomes(df)
-    df = remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95)
+    df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
     df = add_dict_features(df)
     return df
 
