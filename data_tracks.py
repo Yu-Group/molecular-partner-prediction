@@ -35,7 +35,7 @@ def get_data():
     df = preprocess(df)
     df = add_outcomes(df)
     df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
-    df = add_dict_features(df)
+    #df = add_dict_features(df)
     df = add_smoothed_tracks(df)
     return df
 
@@ -87,6 +87,9 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
         t = np.array([tracks['t'][i] for i in range(n)])
         x_pos_seq = np.array([tracks['x'][i][0] for i in range(n)]) # position for clathrin (auxilin is very similar)
         y_pos_seq = np.array([tracks['y'][i][0] for i in range(n)])
+        pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
+                              if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                             for i in range(n)])
         pixel_up = np.array([[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
                              for i in range(n)])
@@ -108,6 +111,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             'Y': Y,
             'X_pvals': X_pvals,
             'Y_pvals': Y_pvals,
+            'pixel': pixel,
             'pixel_left': pixel_left,
             'pixel_right': pixel_right,
             'pixel_up': pixel_up,
@@ -118,6 +122,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             'lifetime': tracks['lifetime_s'],
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
+            'pixel_max': [max(pixel[i]) for i in range(n)],
             'left_max': [max(pixel_left[i]) for i in range(n)],
             'right_max': [max(pixel_right[i]) for i in range(n)],
             'up_max': [max(pixel_up[i]) for i in range(n)],
@@ -293,16 +298,26 @@ def add_smoothed_tracks(df,
                         method='spline', 
                         s_spl=0.004):
     X_smooth_spl = []
+    X_smooth_spl_dx = []
+    X_smooth_spl_d2x = []
     def num_local_maxima(x):
         return(len([i for i in range(1, len(x)-1) if x[i] > x[i-1] and x[i] > x[i+1]]))
     for x in df['X']:
         spl = UnivariateSpline(x=range(len(x)), 
                                y=x, 
                                w=[1.0/len(x)]*len(x),
-                               s=np.var(x)*s_spl)
+                               s=np.var(x)*s_spl)                   
+        spl_dx = spl.derivative()
+        spl_d2x = spl_dx.derivative()
         X_smooth_spl.append(spl(range(len(x))))
+        X_smooth_spl_dx.append(spl_dx(range(len(x))))
+        X_smooth_spl_d2x.append(spl_d2x(range(len(x))))
     df['X_smooth_spl'] = np.array(X_smooth_spl)
+    df['X_smooth_spl_dx'] = np.array(X_smooth_spl_dx)
+    df['X_smooth_spl_d2x'] = np.array(X_smooth_spl_d2x)
     df['X_max_spline'] = np.array([np.max(x) for x in X_smooth_spl])
+    df['dx_max_spline'] = np.array([np.max(x) for x in X_smooth_spl_dx])
+    df['d2x_max_spline'] = np.array([np.max(x) for x in X_smooth_spl_d2x])               
     df['num_local_maxima'] = np.array([num_local_maxima(x) for x in X_smooth_spl])
     df['num_local_minima'] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
     return df
