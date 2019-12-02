@@ -28,14 +28,28 @@ from scipy.interpolate import UnivariateSpline
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
-def get_data():
-    df = get_tracks() # note: different Xs can be different shapes
-    df = remove_invalid_tracks(df)
-    df = preprocess(df)
-    df = add_outcomes(df)
-    df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
-    df = add_dict_features(df)
-    df = add_smoothed_tracks(df)
+def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl'):
+    '''
+    Params
+    ------
+    use_processed: bool, optional
+        determines whether to load df from cached pkl
+    save_processed: bool, optional
+        if not using processed, determines whether to save the df
+    '''
+    if use_processed and os.path.exists(processed_file):
+        return pd.read_pickle(processed_file)
+    else:
+        print('computing preprocessing...')
+        df = get_tracks() # note: different Xs can be different shapes
+        df = remove_invalid_tracks(df)
+        df = preprocess(df)
+        df = add_outcomes(df)
+        df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
+        df = add_dict_features(df)
+        df = add_smoothed_tracks(df)
+        if save_processed:
+            df.to_pickle(processed_file)
     return df
 
 def get_images(cell_name, auxilin_dir=auxilin_dir):
