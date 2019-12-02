@@ -1,7 +1,7 @@
-
 import seaborn as sns
 import numpy as np
 import os
+import sys
 from os.path import join as oj
 from sklearn.feature_extraction.image import extract_patches_2d
 from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
@@ -32,6 +32,7 @@ from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
 from tqdm import tqdm
+sys.path.append('lib')
 import irf
 from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance

@@ -21,12 +21,11 @@ import mat4py
 import pandas as pd
 import pickle as pkl
 from style import *
-import data
 import math
 from scipy.interpolate import UnivariateSpline
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
 def get_data():
@@ -35,7 +34,7 @@ def get_data():
     df = preprocess(df)
     df = add_outcomes(df)
     df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
-    #df = add_dict_features(df)
+    df = add_dict_features(df)
     df = add_smoothed_tracks(df)
     return df
 
@@ -122,7 +121,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             'lifetime': tracks['lifetime_s'],
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
-            'pixel_max': [max(pixel[i]) for i in range(n)],
+            'center_max': [max(pixel[i]) for i in range(n)],
             'left_max': [max(pixel_left[i]) for i in range(n)],
             'right_max': [max(pixel_right[i]) for i in range(n)],
             'up_max': [max(pixel_up[i]) for i in range(n)],
@@ -273,25 +272,29 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
     
     return df
 
-def add_dict_features(df, sc_comps_file='dictionaries/sc_12_alpha=1.pkl', 
-                      nmf_comps_file='dictionaries/nmf_12.pkl'):
+def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1_y.pkl', 
+                      nmf_comps_file='processed/dictionaries/nmf_12_y.pkl'):
     '''Add features from saved dictionary to df
     '''
-    X_mat = extract_X_mat(df)
-    X_mat -= np.min(X_mat)
     
-    # sc
-    d_sc = pkl.load(open(sc_comps_file, 'rb'))
-    # encoding = sparse_encode(X_mat, comps)
-    encoding = d_sc.transform(X_mat)
-    for i in range(encoding.shape[1]):
-        df[f'sc_{i}'] = encoding[:, i]
-        
-    # nmf
-    d_nmf = pkl.load(open(nmf_comps_file, 'rb'))
-    encoding_nmf = d_nmf.transform(X_mat)
-    for i in range(encoding_nmf.shape[1]):
-        df[f'nmf_{i}'] = encoding_nmf[:, i]
+    try:
+        X_mat = extract_X_mat(df)
+        X_mat -= np.min(X_mat)
+
+        # sc
+        d_sc = pkl.load(open(sc_comps_file, 'rb'))
+        # encoding = sparse_encode(X_mat, comps)
+        encoding = d_sc.transform(X_mat)
+        for i in range(encoding.shape[1]):
+            df[f'sc_{i}'] = encoding[:, i]
+
+        # nmf
+        d_nmf = pkl.load(open(nmf_comps_file, 'rb'))
+        encoding_nmf = d_nmf.transform(X_mat)
+        for i in range(encoding_nmf.shape[1]):
+            df[f'nmf_{i}'] = encoding_nmf[:, i]
+    except:
+        print('dict features not added!')
     return df
                    
 def add_smoothed_tracks(df, 
@@ -315,10 +318,10 @@ def add_smoothed_tracks(df,
     df['X_smooth_spl'] = np.array(X_smooth_spl)
     df['X_smooth_spl_dx'] = np.array(X_smooth_spl_dx)
     df['X_smooth_spl_d2x'] = np.array(X_smooth_spl_d2x)
-    df['X_max_spline'] = np.array([np.max(x) for x in X_smooth_spl])
-    df['dx_max_spline'] = np.array([np.max(x) for x in X_smooth_spl_dx])
-    df['d2x_max_spline'] = np.array([np.max(x) for x in X_smooth_spl_d2x])               
-    df['num_local_maxima'] = np.array([num_local_maxima(x) for x in X_smooth_spl])
-    df['num_local_minima'] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
+    df['X_max_spl'] = np.array([np.max(x) for x in X_smooth_spl])
+    df['dx_max_spl'] = np.array([np.max(x) for x in X_smooth_spl_dx])
+    df['d2x_max_spl'] = np.array([np.max(x) for x in X_smooth_spl_d2x])               
+    df['num_local_max_spl'] = np.array([num_local_maxima(x) for x in X_smooth_spl])
+    df['num_local_min_spl'] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
     return df
                    
