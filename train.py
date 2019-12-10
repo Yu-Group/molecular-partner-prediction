@@ -45,8 +45,9 @@ scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': met
 def get_feature_importance(model, model_type, X_val, Y_val):
     if model_type in ['dt']:
         imps = model.feature_importances_
-    if model_type == 'rf':
-        imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
+    if model_type in ['rf', 'irf']:
+#         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
+        imps = model.feature_importances_
     elif model_type == 'logistic':
         imps = model.coef_
     else:
