@@ -4,7 +4,7 @@ import os
 import sys
 from os.path import join as oj
 from sklearn.feature_extraction.image import extract_patches_2d
-from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
+from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV, Lasso
 from sklearn.neural_network import MLPRegressor, MLPClassifier
 from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
@@ -20,7 +20,8 @@ import torch.nn.functional as F
 import torch
 from copy import deepcopy
 from sklearn import metrics
-
+from sklearn.feature_selection import SelectFromModel
+from sklearn.pipeline import Pipeline
 import mat4py
 import pandas as pd
 import data_tracks
@@ -54,8 +55,7 @@ def get_feature_importance(model, model_type, X_val, Y_val):
     return imps.squeeze()
 
 def balance(X, y, balancing='ros'):
-    '''
-    Balance classes in y using strategy specified by balancing
+    '''Balance classes in y using strategy specified by balancing
     '''
     if balancing == 'none':
         return X, y
@@ -70,16 +70,22 @@ def balance(X, y, balancing='ros'):
     
 
 def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
-          balancing='ros', out_name='results/classify/test.pkl'):
-    np.random.seed(42)
-    # make logistic data
+          balancing='ros', out_name='results/classify/test.pkl',
+          feature_selection=None, feature_selection_num=3, seed=42):
+    '''Run training and fit models
+    This will balance the data
+    This will normalize the features before fitting
+    
+    Params
+    ------
+    normalize: bool
+        if True, will normalize features before fitting
+    '''
+    np.random.seed(seed)
     X = df[feat_names]
-    X = (X - X.mean()) / X.std()
+    X = (X - X.mean()) / X.std() # normalize the data
     y = df[outcome_def].values
 
-    # split testing data based on cell num
-    idxs_test = df.cell_num.isin([6])
-    X_test, Y_test = X[idxs_test], y[idxs_test]
 
     if model_type == 'rf':
         m = RandomForestClassifier(n_estimators=100)
@@ -106,16 +112,30 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     scores_test = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
 
-    kf = KFold(n_splits=5)
-    cell_nums_train = [1, 2, 3, 4, 5]
+    cell_nums_feature_selection = [1]
+    cell_nums_train = [2, 3, 4, 5]
+    kf = KFold(n_splits=len(cell_nums_train))
+    
+    # feature selection on cell num 1    
+    feature_selector = None
+    if feature_selection is not None:        
+        # select only feature_selection_num features
+        feature_selector = SelectFromModel(Lasso(), threshold=-np.inf, max_features=feature_selection_num)
+        idxs = df.cell_num.isin(cell_nums_feature_selection)
+        feature_selector.fit(X[idxs], y[idxs])
+        X = feature_selector.transform(X)
+
+    # split testing data based on cell num
+    idxs_test = df.cell_num.isin([6])
+    X_test, Y_test = X[idxs_test], y[idxs_test]
+    
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
         # get sample indices
         idxs_cv = df.cell_num.isin(cv_idx + 1)
         idxs_val_cv = df.cell_num.isin(cv_val_idx + 1)
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
         X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
-
-
+        
         # resample training data
         X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing)
 
@@ -142,6 +162,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
             else:
                 scores_cv[s].append(scorer(Y_val_cv, preds))
                 scores_test[s].append(scorer(Y_test, preds_test))
+                
         imps['model'].append(deepcopy(m))
         imps['imps'].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
 
@@ -150,7 +171,10 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     results = {'metrics': list(scorers.keys()), 'cv': scores_cv, 
                'test': scores_test, 'imps': imps,
                'feat_names': feat_names,
+               'feature_selector': feature_selector,
+               'feature_selection_num': feature_selection_num,
                'model_type': model_type,
                'balancing': balancing,
+               'feat_names_selected': np.array(feat_names)[np.array(feature_selector.get_support())]
               }
     pkl.dump(results, open(out_name, 'wb'))

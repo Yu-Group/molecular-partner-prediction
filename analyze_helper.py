@@ -40,7 +40,7 @@ def load_results(out_dir):
         imp_mu = imp_mat.mean(axis=0)
         imp_sd = imp_mat.std(axis=0)
         
-        feat_names = d['feat_names']
+        feat_names = d['feat_names_selected']
         out.update({feat_names[i] + '_f': imp_mu[i] for i in range(len(feat_names))})
         out.update({feat_names[i]+'_std_f': imp_sd[i] for i in range(len(feat_names))})
         r.append(pd.Series(out))

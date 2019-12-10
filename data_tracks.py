@@ -23,12 +23,14 @@ import pickle as pkl
 from style import *
 import math
 from scipy.interpolate import UnivariateSpline
+from sklearn.decomposition import DictionaryLearning, NMF
 
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
-def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl'):
+def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
+             use_processed_dicts=True):
     '''
     Params
     ------
@@ -36,6 +38,8 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         determines whether to load df from cached pkl
     save_processed: bool, optional
         if not using processed, determines whether to save the df
+    use_processed_dicts: bool, optional
+        if False, recalculate the dictionary features
     '''
     if use_processed and os.path.exists(processed_file):
         return pd.read_pickle(processed_file)
@@ -45,8 +49,8 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         df = remove_invalid_tracks(df)
         df = preprocess(df)
         df = add_outcomes(df)
-        df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.95)
-        df = add_dict_features(df)
+        df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.90)
+        df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         if save_processed:
             df.to_pickle(processed_file)
@@ -146,14 +150,13 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             data['x_pos_seq'] = x_pos_seq
             data['y_pos_seq'] = y_pos_seq
         df = pd.DataFrame.from_dict(data)
-        df['len'] = np.array([len(x) - np.sum(np.isnan(x)) for x in df.X.values])
         dfs.append(deepcopy(df))
     return pd.concat(dfs)
 
 def preprocess(df):
     '''Add a bunch of extra features to the df
     '''
-    df = df[df.len > 2]
+    df = df[df.lifetime > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
     df['X_min'] = np.array([max(x) for x in df.X.values])
     df['X_mean'] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
@@ -286,18 +289,35 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
     
     return df
 
-def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1_y.pkl', 
-                      nmf_comps_file='processed/dictionaries/nmf_12_y.pkl'):
+def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', 
+                      nmf_comps_file='processed/dictionaries/nmf_12.pkl', 
+                      use_processed=True):
     '''Add features from saved dictionary to df
     '''
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir='processed/dictionaries'):
+        print('sparse coding...')
+        d = DictionaryLearning(n_components=n_comps, alpha=alpha)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f'sc_{n_comps}_alpha={alpha}.pkl'), 'wb'))
+
+    def nmf(X_mat, n_comps=12, out_dir='processed/dictionaries'):
+        print('running nmf...')
+        d = NMF(n_components=n_comps)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f'nmf_{n_comps}.pkl'), 'wb'))
+    
+    X_mat = extract_X_mat(df)
+    X_mat -= np.min(X_mat)
+    
+    # if feats don't exist, compute them
+    if not use_processed or not os.path.exists(sc_comps_file):
+        os.makedirs('processed/dictionaries', exist_ok=True)
+        sparse_code(X_mat)
+        nmf(X_mat)
     
     try:
-        X_mat = extract_X_mat(df)
-        X_mat -= np.min(X_mat)
-
         # sc
         d_sc = pkl.load(open(sc_comps_file, 'rb'))
-        # encoding = sparse_encode(X_mat, comps)
         encoding = d_sc.transform(X_mat)
         for i in range(encoding.shape[1]):
             df[f'sc_{i}'] = encoding[:, i]

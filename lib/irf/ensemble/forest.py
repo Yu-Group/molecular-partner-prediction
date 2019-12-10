@@ -61,7 +61,7 @@ from ..tree._tree import DTYPE, DOUBLE
 from sklearn.utils import check_random_state, check_array, compute_sample_weight
 from sklearn.exceptions import DataConversionWarning, NotFittedError
 from sklearn.ensemble.base import BaseEnsemble, _partition_estimators
-from sklearn.utils.fixes import parallel_helper
+# from sklearn.utils.fixes import parallel_helper
 from sklearn.utils.multiclass import check_classification_targets
 from sklearn.utils.validation import check_is_fitted
 
