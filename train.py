@@ -119,12 +119,16 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     # feature selection on cell num 1    
     feature_selector = None
     if feature_selection is not None:        
+        if feature_selection == 'select_lasso':
+            feature_selector_model = Lasso()
+        elif feature_selection == 'select_rf':
+            feature_selector_model = RandomForestClassifier()
         # select only feature_selection_num features
-        feature_selector = SelectFromModel(Lasso(), threshold=-np.inf, max_features=feature_selection_num)
+        feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf, max_features=feature_selection_num)
         idxs = df.cell_num.isin(cell_nums_feature_selection)
         feature_selector.fit(X[idxs], y[idxs])
         X = feature_selector.transform(X)
-
+    
     # split testing data based on cell num
     idxs_test = df.cell_num.isin([6])
     X_test, Y_test = X[idxs_test], y[idxs_test]

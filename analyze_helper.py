@@ -20,7 +20,6 @@ import mat4py
 import pandas as pd
 import data_tracks
 import models
-from imblearn.over_sampling import RandomOverSampler
 from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl

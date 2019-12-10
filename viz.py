@@ -11,7 +11,6 @@ from sklearn.ensemble import RandomForestClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn import metrics
 from sklearn.utils.multiclass import unique_labels
-
 from sklearn.metrics import confusion_matrix
 import numpy as np
 from collections import Counter
@@ -28,7 +27,6 @@ import data_tracks
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 import models
-from imblearn.over_sampling import RandomOverSampler
 from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
@@ -153,14 +151,17 @@ def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
     plt.legend()
     plt.show()
     
-def plot_curves(df):
+def plot_curves(df, extra_key=None):
     plt.figure(figsize=(16, 10), dpi=200)
     R, C = 5, 8
     for i in range(R * C):
         plt.subplot(R, C, i + 1)
         row = df.iloc[i]
         plt.plot(row.X, color='red', label='clathrin')
-        plt.plot(row.Y, color='green', label='auxilin')
+        if extra_key is not None:
+            plt.plot(row[extra_key], color='gray', label=extra_key)
+        else:
+            plt.plot(row.Y, color='green', label='auxilin')
     #     plt.axi('off')
     plt.legend()
     plt.tight_layout()
