@@ -30,7 +30,7 @@ auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 
 def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
-             use_processed_dicts=True):
+             use_processed_dicts=True, outcome_def='y_consec_sig'):
     '''
     Params
     ------
@@ -49,7 +49,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         df = remove_invalid_tracks(df)
         df = preprocess(df)
         df = add_outcomes(df)
-        df = remove_tracks_by_lifetime(df, outcome_key='y', plot=False, acc_thresh=0.90)
+        df = remove_tracks_by_lifetime(df, outcome_key=outcome_def, plot=False, acc_thresh=0.90)
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         if save_processed:

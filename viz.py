@@ -152,3 +152,16 @@ def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
     plt.ylabel('predicted probability')
     plt.legend()
     plt.show()
+    
+def plot_curves(df):
+    plt.figure(figsize=(16, 10), dpi=200)
+    R, C = 5, 8
+    for i in range(R * C):
+        plt.subplot(R, C, i + 1)
+        row = df.iloc[i]
+        plt.plot(row.X, color='red', label='clathrin')
+        plt.plot(row.Y, color='green', label='auxilin')
+    #     plt.axi('off')
+    plt.legend()
+    plt.tight_layout()
+    plt.show()
