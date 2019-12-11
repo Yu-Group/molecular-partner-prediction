@@ -56,9 +56,9 @@ def analyze_individual_results(results, X_test, Y_test, print_results=False, plo
     m = imps['model'][model_cv_fold]
     
     
-    preds = m.predict(X_test[results['feat_names']])
+    preds = m.predict(X_test[results['feat_names_selected']])
     try:
-        preds_proba = m.predict_proba(X_test[results['feat_names']])[:, 1]
+        preds_proba = m.predict_proba(X_test[results['feat_names_selected']])[:, 1]
     except:
         preds_proba = preds
     
@@ -73,7 +73,7 @@ def analyze_individual_results(results, X_test, Y_test, print_results=False, plo
         imp_mat = np.array(imps['imps'])
         imp_mu = imp_mat.mean(axis=0)
         imp_sd = imp_mat.std(axis=0)
-        for i, feat_name in enumerate(results['feat_names']):
+        for i, feat_name in enumerate(results['feat_names_selected']):
             print(Fore.WHITE + f'{feat_name:<25}\t{imp_mu[i]:.3f} ~ {imp_sd[i]:.3f}')
 
     if plot_results:
@@ -105,3 +105,15 @@ def analyze_individual_results(results, X_test, Y_test, print_results=False, plo
         plt.show()
     
     return preds, preds_proba
+
+def load_results_many_models(out_dir, model_names, X_test, Y_test):
+    d = {}
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(oj(out_dir, f'{model_name}.pkl'), 'rb'))
+        preds, preds_proba = analyze_individual_results(results_individual, X_test, Y_test, 
+                                                    print_results=False, plot_results=False)
+        d[model_name] = preds
+        d[model_name + '_proba'] = preds_proba
+        d[model_name + '_errs'] = preds!=Y_test
+    df_preds = pd.DataFrame.from_dict(d)
+    return df_preds

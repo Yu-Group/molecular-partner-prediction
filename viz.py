@@ -96,6 +96,13 @@ def highlight_max(data, color='#0e5c99'):
     
 # visualize biggest errs
 def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
+    '''
+    Params
+    ------
+    X_traces_test: pd.Series
+        each value is an X trace
+    
+    '''
 #     print(preds_proba.shape, X_traces_test.shape)
     residuals = np.abs(Y_test - preds_proba)
     
@@ -151,7 +158,7 @@ def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
     plt.legend()
     plt.show()
     
-def plot_curves(df, extra_key=None):
+def plot_curves(df, extra_key=None, hline=True):
     plt.figure(figsize=(16, 10), dpi=200)
     R, C = 5, 8
     for i in range(R * C):
@@ -162,6 +169,10 @@ def plot_curves(df, extra_key=None):
             plt.plot(row[extra_key], color='gray', label=extra_key)
         else:
             plt.plot(row.Y, color='green', label='auxilin')
+            if hline:
+                plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+        plt.xlim([-1, max(df.lifetime) + 1])
+#         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi('off')
     plt.legend()
     plt.tight_layout()
