@@ -64,17 +64,18 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     d_full_cv: pd.DataFrame
         n rows, one for each data point in the training set (over all folds)
         2 columns for each model, one for predictions, and one for predicted probabilities
-    y_full_cv: np.array
-        labels for each data point        
+    idxs_cv: np.array
+        indexes corresponding locations of the test set
+        for example, df.y_thresh.iloc[idxs_cv] would yield all the labels corresponding to the cv preds
     '''
     # split testing data based on cell num
     d = {}
     cell_nums_train = data_tracks.cell_nums_train
     kf = KFold(n_splits=len(cell_nums_train))
-    Y_vals = []
-
+    idxs_cv = []
+    
     # get predictions over all folds and save into a dict
-    if not type(model_names) == 'list':
+    if not type(model_names) == 'list' and not 'ndarray' in str(type(model_names)):
         model_names = [model_names]
     for i, model_name in enumerate(model_names):
         results_individual = pkl.load(open(f'{out_dir}/{model_name}.pkl', 'rb'))
@@ -93,7 +94,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
             d[f'{model_name}_{fold_num}_proba'] = preds_proba
 
             if i == 0:
-                Y_vals.append(Y_val_cv)
+                idxs_cv.append(np.arange(X.shape[0])[idxs_val_cv])
 
             fold_num += 1
             
@@ -102,7 +103,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     for model_name in model_names:
         d2[model_name] = np.hstack([d[k] for k in d.keys() if model_name in k and not 'proba' in k])
         d2[model_name + '_proba'] = np.hstack([d[k] for k in d.keys() if model_name in k and 'proba' in k])
-    return pd.DataFrame.from_dict(d2), np.hstack(Y_vals)
+    return pd.DataFrame.from_dict(d2), np.hstack(idxs_cv)
 
 def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
     scores_cv = results['cv']

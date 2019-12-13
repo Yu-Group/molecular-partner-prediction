@@ -130,8 +130,8 @@ def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
     
 # visualize biggest errs
 def viz_errs_spatially(df, idxs_test, preds, Y_test):
-    x_pos = df['x_pos'][idxs_test]
-    y_pos = df['y_pos'][idxs_test]
+    x_pos = df['x_pos'].iloc[idxs_test]
+    y_pos = df['y_pos'].iloc[idxs_test]
     
     plt.figure(dpi=200)
 
@@ -197,7 +197,7 @@ def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
 
     R, C = 2, 2
     titles = ['isolation forest', 'local outlier factor', 'elliptic envelop', 'one-class svm']
-    plt.figure(dpi=200)
+    plt.figure(figsize=(6, 5), dpi=200)
     for i in range(4):
         plt.subplot(R, C, i + 1)
         plt.title(titles[i])
