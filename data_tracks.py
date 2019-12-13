@@ -375,6 +375,7 @@ def get_feature_names(df):
         and not k.startswith('Y')
         and not k.startswith('pixel')
         and not k in ['catIdx', 'cell_num', # metadata
-                      'X', 'X_pvals', 'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
+                      'X', 'X_pvals', 'x_pos',
+                      'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names

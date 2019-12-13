@@ -25,15 +25,18 @@ from colorama import Fore
 import pickle as pkl
 import viz
 from style import *
+from data_tracks import cell_nums_train
 
 def load_results(out_dir):
     r = []
     for fname in os.listdir(out_dir):
         d = pkl.load(open(oj(out_dir, fname), 'rb'))
         metrics = {k: d['cv'][k] for k in d['cv'].keys() if not 'curve' in k}
-        out = {k: np.mean(metrics[k]) for k in metrics}
+        num_pts_by_fold_cv = d['num_pts_by_fold_cv']
+        out = {k: np.average(metrics[k], weights=num_pts_by_fold_cv) for k in metrics}
         out.update({k + '_std': np.std(metrics[k]) for k in metrics})
         out['model_type'] = fname.replace('.pkl', '') #d['model_type']
+        
         
         imp_mat = np.array(d['imps']['imps'])
         imp_mu = imp_mat.mean(axis=0)
@@ -48,6 +51,58 @@ def load_results(out_dir):
     r = r.round(3)
     r = r.set_index('model_type')
     return r
+
+def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y):
+    '''Returns predictions/labels over folds in the dataset
+    Params
+    ------
+    cell_nums: pd.Series
+        equivalent to df.cell_num
+    
+    Returns
+    -------
+    d_full_cv: pd.DataFrame
+        n rows, one for each data point in the training set (over all folds)
+        2 columns for each model, one for predictions, and one for predicted probabilities
+    y_full_cv: np.array
+        labels for each data point        
+    '''
+    # split testing data based on cell num
+    d = {}
+    cell_nums_train = data_tracks.cell_nums_train
+    kf = KFold(n_splits=len(cell_nums_train))
+    Y_vals = []
+
+    # get predictions over all folds and save into a dict
+    if not type(model_names) == 'list':
+        model_names = [model_names]
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(f'{out_dir}/{model_name}.pkl', 'rb'))
+
+        fold_num = 0
+        for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+            # get sample indices
+            idxs_val_cv = cell_nums.isin(cell_nums_train[np.array(cv_val_idx)])        
+            X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+
+            # get predictions
+            preds, preds_proba = analyze_individual_results(results_individual, X_val_cv, Y_val_cv, 
+                                                        print_results=False, plot_results=False, model_cv_fold=fold_num)
+
+            d[f'{model_name}_{fold_num}'] = preds
+            d[f'{model_name}_{fold_num}_proba'] = preds_proba
+
+            if i == 0:
+                Y_vals.append(Y_val_cv)
+
+            fold_num += 1
+            
+    # concatenate over folds
+    d2 = {}
+    for model_name in model_names:
+        d2[model_name] = np.hstack([d[k] for k in d.keys() if model_name in k and not 'proba' in k])
+        d2[model_name + '_proba'] = np.hstack([d[k] for k in d.keys() if model_name in k and 'proba' in k])
+    return pd.DataFrame.from_dict(d2), np.hstack(Y_vals)
 
 def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
     scores_cv = results['cv']

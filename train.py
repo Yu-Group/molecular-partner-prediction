@@ -132,6 +132,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     # split testing data based on cell num
     idxs_test = df.cell_num.isin(cell_nums_test)
     X_test, Y_test = X[idxs_test], y[idxs_test]
+    num_pts_by_fold_cv = []
     
     # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
@@ -140,6 +141,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
         X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+        num_pts_by_fold_cv.append(X_val_cv.shape[0])
         
         # resample training data
         X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing)
@@ -174,6 +176,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     # save results
     # os.makedirs(out_dir, exist_ok=True)
     results = {'metrics': list(scorers.keys()), 
+               'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
                'cv': scores_cv, 
                'test': scores_test, 'imps': imps,
                'feat_names': feat_names,

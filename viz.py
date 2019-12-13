@@ -34,8 +34,9 @@ from style import *
 from sklearn.ensemble import IsolationForest
 from sklearn import decomposition
 from matplotlib_venn import venn3, venn2
-
-
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.covariance import EllipticEnvelope
+from sklearn.svm import OneClassSVM
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -194,9 +195,23 @@ def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
     pca = decomposition.PCA(n_components=num_feats_reduced)
     X_reduced = pca.fit_transform(X_feat)
 
-    clf = IsolationForest(n_estimators=10, warm_start=True)
-    clf.fit(X_reduced)  # fit 10 trees  
-    is_outlier = clf.predict(X_reduced)==-1
-    is_err = preds != Y_test
-    idxs = np.arange(is_outlier.size)
-    venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=['outliers', 'errors'])
+    R, C = 2, 2
+    titles = ['isolation forest', 'local outlier factor', 'elliptic envelop', 'one-class svm']
+    plt.figure(dpi=200)
+    for i in range(4):
+        plt.subplot(R, C, i + 1)
+        plt.title(titles[i])
+        if i == 0:
+            clf = IsolationForest(n_estimators=10, warm_start=True)
+        elif i == 1:
+            clf = LocalOutlierFactor(novelty=True)
+        elif i == 2:
+            clf = EllipticEnvelope()
+        elif i == 3:
+            clf = OneClassSVM()
+        clf.fit(X_reduced)  # fit 10 trees  
+        is_outlier = clf.predict(X_reduced)==-1
+        is_err = preds != Y_test
+        idxs = np.arange(is_outlier.size)
+        venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=['outliers', 'errors'])
+    
