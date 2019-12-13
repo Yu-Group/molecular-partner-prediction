@@ -28,6 +28,10 @@ from sklearn.decomposition import DictionaryLearning, NMF
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
+# data splitting
+cell_nums_feature_selection = np.array([1])
+cell_nums_train = np.array([2, 3, 4, 5])
+cell_nums_test = np.array([6])
 
 def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
              use_processed_dicts=True, outcome_def='y_consec_sig'):
@@ -359,3 +363,18 @@ def add_smoothed_tracks(df,
     df['num_local_min_spl'] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
     return df
                    
+    
+def get_feature_names(df):
+    '''Returns features (all of which are scalar)
+    Removes metadata + time-series columns + outcomes
+    '''
+    ks = list(df.keys())
+    feat_names = [
+        k for k in ks
+        if not k.startswith('y')
+        and not k.startswith('Y')
+        and not k.startswith('pixel')
+        and not k in ['catIdx', 'cell_num', # metadata
+                      'X', 'X_pvals', 'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
+    ]
+    return feat_names

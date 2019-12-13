@@ -31,6 +31,11 @@ from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
 from style import *
+from sklearn.ensemble import IsolationForest
+from sklearn import decomposition
+from matplotlib_venn import venn3, venn2
+
+
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -159,6 +164,8 @@ def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
     plt.show()
     
 def plot_curves(df, extra_key=None, hline=True):
+    '''Plot first  time-series curves from df
+    '''
     plt.figure(figsize=(16, 10), dpi=200)
     R, C = 5, 8
     for i in range(R * C):
@@ -177,3 +184,19 @@ def plot_curves(df, extra_key=None, hline=True):
     plt.legend()
     plt.tight_layout()
     plt.show()
+    
+def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
+    '''Compare outliers to errors in venn-diagram
+    '''
+    feat_names = data_tracks.get_feature_names(X_test)
+    X_feat = X_test[feat_names]
+
+    pca = decomposition.PCA(n_components=num_feats_reduced)
+    X_reduced = pca.fit_transform(X_feat)
+
+    clf = IsolationForest(n_estimators=10, warm_start=True)
+    clf.fit(X_reduced)  # fit 10 trees  
+    is_outlier = clf.predict(X_reduced)==-1
+    is_err = preds != Y_test
+    idxs = np.arange(is_outlier.size)
+    venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=['outliers', 'errors'])

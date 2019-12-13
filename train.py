@@ -37,6 +37,7 @@ sys.path.append('lib')
 import irf
 from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
+from data_tracks import cell_nums_feature_selection, cell_nums_train, cell_nums_test
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
                'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
@@ -113,8 +114,6 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     scores_test = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
 
-    cell_nums_feature_selection = [1]
-    cell_nums_train = [2, 3, 4, 5]
     kf = KFold(n_splits=len(cell_nums_train))
     
     # feature selection on cell num 1    
@@ -131,13 +130,14 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         X = feature_selector.transform(X)
     
     # split testing data based on cell num
-    idxs_test = df.cell_num.isin([6])
+    idxs_test = df.cell_num.isin(cell_nums_test)
     X_test, Y_test = X[idxs_test], y[idxs_test]
     
+    # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
         # get sample indices
-        idxs_cv = df.cell_num.isin(cv_idx + 1)
-        idxs_val_cv = df.cell_num.isin(cv_val_idx + 1)
+        idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
+        idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
         X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
         
@@ -173,7 +173,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
     # save results
     # os.makedirs(out_dir, exist_ok=True)
-    results = {'metrics': list(scorers.keys()), 'cv': scores_cv, 
+    results = {'metrics': list(scorers.keys()), 
+               'cv': scores_cv, 
                'test': scores_test, 'imps': imps,
                'feat_names': feat_names,
                'feature_selector': feature_selector,
