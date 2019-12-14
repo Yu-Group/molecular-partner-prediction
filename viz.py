@@ -37,6 +37,7 @@ from matplotlib_venn import venn3, venn2
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.covariance import EllipticEnvelope
 from sklearn.svm import OneClassSVM
+import matplotlib.gridspec as grd
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -101,7 +102,7 @@ def highlight_max(data, color='#0e5c99'):
     
     
 # visualize biggest errs
-def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
+def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_proba):
     '''
     Params
     ------
@@ -114,9 +115,7 @@ def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
     
     R, C = 4, 4
     args = np.argsort(residuals)[::-1][:R * C]
-#     print(Y_test[args])
-#     print(preds[args])
-#     print(residuals[args][:10])
+    lifetime_max = np.max(df.lifetime.values[:R*C])
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
     
     i = 0
@@ -124,31 +123,47 @@ def viz_biggest_errs(X_traces_test, Y_test, preds, preds_proba):
         for c in range(C):
             plt.subplot(R, C, i + 1)
             plt.plot(X_traces_test.iloc[args[i]], color=cr)
+            plt.plot(Y_traces_test.iloc[args[i]], color='green')
             i += 1
-    
+            plt.xlim([-1, lifetime_max])
+            plt.axhline(642.3754691658837, color='gray', alpha=0.5)
     plt.tight_layout()
     
-# visualize biggest errs
-def viz_errs_spatially(df, idxs_test, preds, Y_test):
-    x_pos = df['x_pos'].iloc[idxs_test]
-    y_pos = df['y_pos'].iloc[idxs_test]
+
+def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None):
+    '''visualize distribution of errs wrt to 2 dimensions
+    '''
+    
+    if 'pc' in key1 and 'pc' in key2:
+        pca = decomposition.PCA(n_components=2, whiten=True)
+        X_reduced = pca.fit_transform(X.iloc[idxs_test])
+        x_pos = X_reduced[:, 0]
+        y_pos = X_reduced[:, 1]
+    else:
+        x_pos = df[key1].iloc[idxs_test]
+        y_pos = df[key2].iloc[idxs_test]
     
     plt.figure(dpi=200)
-
+    ms = 4
+    me = 1
     plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
-             color=cb, alpha=0.5, label='true pos')
+             color=cb, alpha=0.4, label='true pos', ms=ms, markeredgewidth=0)
     plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'x',
-             color=cb, alpha=0.5, label='true neg')
-    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')    
-    plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')    
+             color=cb, alpha=0.4, label='true neg', ms=ms, markeredgewidth=1)
+    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'o', color=cr, 
+             alpha=0.4, label='false pos', ms=ms, markeredgewidth=0)    
+    plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, 
+             alpha=0.4, label='false neg', ms=ms, markeredgewidth=1)    
     plt.legend()
 #     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
-    plt.xlabel('x position')
-    plt.ylabel('y position')
+    plt.xlabel(key1)
+    plt.ylabel(key2)
     plt.tight_layout()
     
     
 def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
+    '''visualize errs based on lifetime
+    '''
     plt.figure(dpi=200)
     correct_idxs = preds == Y_test
     lifetime = X_test['lifetime'] * norms['lifetime']['std'] + norms['lifetime']['mu']
@@ -169,6 +184,7 @@ def plot_curves(df, extra_key=None, hline=True):
     '''
     plt.figure(figsize=(16, 10), dpi=200)
     R, C = 5, 8
+    lifetime_max = np.max(df.lifetime.values[:R*C])
     for i in range(R * C):
         plt.subplot(R, C, i + 1)
         row = df.iloc[i]
@@ -179,7 +195,7 @@ def plot_curves(df, extra_key=None, hline=True):
             plt.plot(row.Y, color='green', label='auxilin')
             if hline:
                 plt.axhline(642.3754691658837, color='gray', alpha=0.5)
-        plt.xlim([-1, max(df.lifetime) + 1])
+        plt.xlim([-1, lifetime_max + 1])
 #         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi('off')
     plt.legend()
@@ -192,8 +208,11 @@ def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
     feat_names = data_tracks.get_feature_names(X_test)
     X_feat = X_test[feat_names]
 
-    pca = decomposition.PCA(n_components=num_feats_reduced)
-    X_reduced = pca.fit_transform(X_feat)
+    if num_feats_reduced is not None:
+        pca = decomposition.PCA(n_components=num_feats_reduced)
+        X_reduced = pca.fit_transform(X_feat)
+    else:
+        X_reduced = X_feat
 
     R, C = 2, 2
     titles = ['isolation forest', 'local outlier factor', 'elliptic envelop', 'one-class svm']
@@ -215,3 +234,47 @@ def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
         idxs = np.arange(is_outlier.size)
         venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=['outliers', 'errors'])
     
+def plot_pcs(pca, X):
+    '''Pretty plot of pcs with explained var bars
+    Params
+    ------
+    pca: sklearn PCA class after being fitted
+    '''
+    plt.figure(figsize=(6, 9), dpi=200)
+    
+    # extract out relevant pars
+    comps = pca.components_.transpose()
+    var_norm = pca.explained_variance_ / np.sum(pca.explained_variance_) * 100
+    
+    
+    # create a 2 X 2 grid 
+    gs = grd.GridSpec(2, 2, height_ratios=[2,10], 
+                      width_ratios=[12, 1], wspace=0.1, hspace=0)
+
+    
+    # plot explained variance
+    ax2 = plt.subplot(gs[0])
+    ax2.bar(np.arange(0, comps.shape[1]), var_norm, 
+            color='gray', width=0.8)
+    plt.title('Explained variance (%)')
+    ax2.spines['right'].set_visible(False)
+    ax2.spines['top'].set_visible(False)
+    ax2.yaxis.set_ticks_position('left')
+    ax2.set_yticks([0, max(var_norm)])
+    plt.xlim((-0.5, comps.shape[1]-0.5))
+    
+    # plot pcs
+    ax = plt.subplot(gs[2])
+    vmaxabs = np.max(np.abs(comps))
+    p = ax.imshow(comps, interpolation='None', aspect='auto',
+                  cmap=sns.diverging_palette(10, 240, as_cmap=True, center='light'),
+                  vmin=-vmaxabs, vmax=vmaxabs) # center at 0
+    plt.xlabel('PCA component number')
+    ax.set_yticklabels(list(X))
+    ax.set_yticks(range(len(list(X))))
+    
+
+    # make colorbar
+    colorAx = plt.subplot(gs[3])
+    cb = plt.colorbar(p, cax=colorAx)
+    plt.show()
