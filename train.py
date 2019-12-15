@@ -128,6 +128,9 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         idxs = df.cell_num.isin(cell_nums_feature_selection)
         feature_selector.fit(X[idxs], y[idxs])
         X = feature_selector.transform(X)
+        support = np.array(feature_selector.get_support())
+    else:
+        support = np.ones(len(feat_names)).astype(np.bool)
     
     # split testing data based on cell num
     idxs_test = df.cell_num.isin(cell_nums_test)
@@ -184,6 +187,6 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                'feature_selection_num': feature_selection_num,
                'model_type': model_type,
                'balancing': balancing,
-               'feat_names_selected': np.array(feat_names)[np.array(feature_selector.get_support())]
+               'feat_names_selected': np.array(feat_names)[support]
               }
     pkl.dump(results, open(out_name, 'wb'))

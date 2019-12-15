@@ -24,6 +24,8 @@ from style import *
 import math
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
+from sklearn import decomposition
+
 
 # auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
@@ -56,6 +58,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         df = remove_tracks_by_lifetime(df, outcome_key=outcome_def, plot=False, acc_thresh=0.90)
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
+        df = add_pcs(df)
         if save_processed:
             df.to_pickle(processed_file)
     return df
@@ -374,8 +377,22 @@ def get_feature_names(df):
         if not k.startswith('y')
         and not k.startswith('Y')
         and not k.startswith('pixel')
+#         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', # metadata
                       'X', 'X_pvals', 'x_pos',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
+
+def add_pcs(df):
+    '''adds 10 pcs based on feature names
+    '''
+    feat_names = get_feature_names(df)
+    X = df[feat_names]
+    X = (X - X.mean()) / X.std()
+    pca = decomposition.PCA(whiten=True)
+    pca.fit(X[~df.cell_num.isin(cell_nums_test)])
+    X_reduced = pca.transform(X)  
+    for i in range(10):
+        df['pc_' + str(i)] = X_reduced[:, i]
+    return df
