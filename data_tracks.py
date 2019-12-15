@@ -25,12 +25,12 @@ import math
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 
-# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
-cell_nums_train = np.array([2, 3, 4, 5])
+cell_nums_train = np.array([1, 2, 3, 4, 5])
 cell_nums_test = np.array([6])
 
 def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
