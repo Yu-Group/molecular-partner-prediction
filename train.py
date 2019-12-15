@@ -39,6 +39,10 @@ from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
 from data_tracks import cell_nums_feature_selection, cell_nums_train, cell_nums_test
 
+cell_nums_feature_selection = np.array([1])
+cell_nums_train = np.array([1, 2, 3, 4, 5])
+cell_nums_test = np.array([6])
+
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
                'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
                'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
