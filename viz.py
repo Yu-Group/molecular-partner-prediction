@@ -161,12 +161,12 @@ def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None
     plt.tight_layout()
     
     
-def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
+def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     '''visualize errs based on lifetime
     '''
     plt.figure(dpi=200)
     correct_idxs = preds == Y_test
-    lifetime = X_test['lifetime'] * norms['lifetime']['std'] + norms['lifetime']['mu']
+    lifetime = X_test[key] * norms[key]['std'] + norms[key]['mu']
 
     plt.plot(lifetime[(preds==Y_test) & (preds==1)], preds_proba[(preds==Y_test) & (preds==1)], 'o',
              color=cb, alpha=0.5, label='true pos')
@@ -174,7 +174,7 @@ def viz_errs_lifetime(X_test, preds, preds_proba, Y_test, norms):
              color=cb, alpha=0.5, label='true neg')
     plt.plot(lifetime[preds > Y_test], preds_proba[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')    
     plt.plot(lifetime[preds < Y_test], preds_proba[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')    
-    plt.xlabel('lifetime')
+    plt.xlabel(key)
     plt.ylabel('predicted probability')
     plt.legend()
     plt.show()
