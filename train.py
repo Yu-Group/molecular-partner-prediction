@@ -60,23 +60,38 @@ def get_feature_importance(model, model_type, X_val, Y_val):
         imps = perm.feature_importances_
     return imps.squeeze()
 
-def balance(X, y, balancing='ros'):
+def balance(X, y, balancing='ros', balancing_ratio=1):
     '''Balance classes in y using strategy specified by balancing
+    Params
+    -----
+    balancing_ratio: float
+        ratio of pos: neg samples
     '''
+    class0 = np.sum(y==0)
+    class1 = np.sum(y==1)
+    class_max = max(class0, class1)
+
+    if balancing_ratio >= 1:
+        sample_nums = {0: int(class_max), 1: int(class_max * balancing_ratio)}
+    else:
+        sample_nums = {0: int(class_max / balancing_ratio), 1: int(class_max)}
+        
     if balancing == 'none':
         return X, y
     
     if balancing == 'ros':
-        sampler = RandomOverSampler(random_state=42)
+        sampler = RandomOverSampler(sampling_strategy=sample_nums, random_state=42)
+        
     elif balancing == 'smote':
-        sampler = SMOTE(random_state=42)
+        sampler = SMOTE(sampling_strategy=sample_nums, random_state=42)
+    
     X_r, Y_r = sampler.fit_resample(X, y)   
     return X_r, Y_r
     
     
 
 def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
-          balancing='ros', out_name='results/classify/test.pkl',
+          balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl',
           feature_selection=None, feature_selection_num=3, seed=42):
     '''Run training and fit models
     This will balance the data
@@ -151,7 +166,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         num_pts_by_fold_cv.append(X_val_cv.shape[0])
         
         # resample training data
-        X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing)
+        X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing, balancing_ratio)
 
         # fit
         m.fit(X_train_r_cv, Y_train_r_cv)
