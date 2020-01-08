@@ -27,8 +27,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -56,6 +56,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         df = preprocess(df)
         df = add_outcomes(df)
         df = remove_tracks_by_lifetime(df, outcome_key=outcome_def, plot=False, acc_thresh=0.90)
+        df = remove_tracks_by_aux_peak_time(df)
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
@@ -171,18 +172,24 @@ def preprocess(df):
     df['Y_max'] = np.array([max(y) for y in df.Y.values])    
     df['Y_mean'] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
-    
+    df['X_peak_idx'] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
+    df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+
     # hand-engineeredd features
     def calc_rise(x):
+        '''max change before peak
+        '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        rise = val_max - np.min(x[:idx_max + 1]) # max change before peak
+        rise = val_max - np.min(x[:idx_max + 1])
         return rise
 
     def calc_fall(x):
+        '''max change after peak
+        '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        fall = val_max - np.min(x[idx_max:]) # drop after peak
+        fall = val_max - np.min(x[idx_max:])
         return fall
     
     def max_diff(x): return np.max(np.diff(x))
@@ -248,7 +255,7 @@ def extract_X_mat(df):
     return X_mat
 
 
-def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95):
+def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_key: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
     as a func of lifetime and return points within proper lifetime
     '''
@@ -293,6 +300,13 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
 
     # only df with lifetimes in proper range
     df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
+    
+    return df
+
+def remove_tracks_by_aux_peak_time(df: pd.DataFrame):
+    '''Remove tracks where aux peaks in first 30% of track
+    '''
+    df = df[df['Y_peak_idx'] + 1 > 0.3 * df['lifetime']]
     
     return df
 
