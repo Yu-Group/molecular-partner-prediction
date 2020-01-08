@@ -35,7 +35,8 @@ cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])
 cell_nums_test = np.array([6])
 
-def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
+def get_data(use_processed=True, save_processed=True, 
+             processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
              use_processed_dicts=True, outcome_def='y_consec_sig'):
     '''
     Params
@@ -47,16 +48,30 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
     use_processed_dicts: bool, optional
         if False, recalculate the dictionary features
     '''
+    
     if use_processed and os.path.exists(processed_file):
         return pd.read_pickle(processed_file)
     else:
         print('computing preprocessing...')
+        metadata = {}
         df = get_tracks() # note: different Xs can be different shapes
+        metadata['num_tracks_orig'] = df.shape[0]
+        
         df = remove_invalid_tracks(df)
+        metadata['num_tracks_valid'] = df.shape[0]
+        
         df = preprocess(df)
         df = add_outcomes(df)
-        df = remove_tracks_by_lifetime(df, outcome_key=outcome_def, plot=False, acc_thresh=0.90)
+        df = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.90)
+        metadata['num_tracks_after_lifetime'] = df.shape[0]
+        metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
+        
         df = remove_tracks_by_aux_peak_time(df)
+        metadata['num_tracks_after_peak_time'] = df.shape[0]
+        metadata['num_aux_pos_after_peak_time'] = df[outcome_def].sum()
+        pkl.dump(metadata, open(metadata_file, 'wb'))
+        
+        
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
@@ -255,27 +270,27 @@ def extract_X_mat(df):
     return X_mat
 
 
-def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_key: str, plot=False, acc_thresh=0.95):
+def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
     as a func of lifetime and return points within proper lifetime
     '''
-    vals = df[['lifetime', outcome_key]]
+    vals = df[['lifetime', outcome_def]]
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
 
-    props1 = np.array([1 - np.mean(vals[outcome_key][vals['lifetime'] <= l]) for l in lifetimes])
+    props1 = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
     idx_thresh = np.nonzero(props1 <= acc_thresh)[0][0]
     thresh_lower = lifetimes[idx_thresh]
     n = df.shape[0]    
     
-    props2 = np.array([np.mean(vals[outcome_key][vals['lifetime'] >= l]) for l in lifetimes])
+    props2 = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes])
     idx_thresh_2 = np.nonzero(props2 >= acc_thresh)[0][0]
     thresh_higher = lifetimes[idx_thresh_2]    
 
     if plot:
         plt.figure(figsize=(12, 4), dpi=200)
         plt.subplot(R, C, 1)
-        outcome = df[outcome_key]
+        outcome = df[outcome_def]
         plt.hist(df['lifetime'][outcome==1], label='aux+', alpha=1, color=cb, bins=25)
         plt.hist(df['lifetime'][outcome==0], label='aux-', alpha=0.7, color=cr, bins=25)
         plt.xlabel('lifetime')
