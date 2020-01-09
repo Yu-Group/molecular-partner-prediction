@@ -62,7 +62,10 @@ def get_data(use_processed=True, save_processed=True,
         
         df = preprocess(df)
         df = add_outcomes(df)
-        df = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.90)
+        metadata['num_aux_pos_valid'] = df[outcome_def].sum()
+        
+        df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.90)
+        metadata.update(meta2)
         metadata['num_tracks_after_lifetime'] = df.shape[0]
         metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
         
@@ -278,14 +281,20 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
 
+    # cumulative accuracy for different thresholds
     props1 = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
     idx_thresh = np.nonzero(props1 <= acc_thresh)[0][0]
     thresh_lower = lifetimes[idx_thresh]
-    n = df.shape[0]    
     
     props2 = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes])
     idx_thresh_2 = np.nonzero(props2 >= acc_thresh)[0][0]
-    thresh_higher = lifetimes[idx_thresh_2]    
+    thresh_higher = lifetimes[idx_thresh_2]
+    
+    n = df.shape[0]    
+    n_short = np.sum(vals["lifetime"]<=thresh_lower)
+    n_long = np.sum(vals["lifetime"]>=thresh_higher)
+    acc_short = props1[idx_thresh]
+    acc_long = props2[idx_thresh_2]
 
     if plot:
         plt.figure(figsize=(12, 4), dpi=200)
@@ -302,21 +311,22 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
     #     plt.axvline(thresh_lower)
         plt.axvspan(0, thresh_lower, alpha=0.2, color=cr)
         plt.ylabel('fraction of negative events')
-        plt.xlabel(f'lifetime <= value\nshaded includes {np.sum(vals["lifetime"]<=thresh_lower)/n*100:0.0f}% of pts')
+        plt.xlabel(f'lifetime <= value\nshaded includes {n_short/n*100:0.0f}% of pts')
 
 
         plt.subplot(R, C, 3)
         plt.plot(lifetimes, props2, cb)
         plt.axvspan(thresh_higher, max(lifetimes), alpha=0.2, color=cb)
         plt.ylabel('fraction of positive events')
-        plt.xlabel(f'lifetime >= value\nshaded includes {np.sum(vals["lifetime"]>=thresh_higher)/n*100:0.0f}% of pts')
+        plt.xlabel(f'lifetime >= value\nshaded includes {n_long/n*100:0.0f}% of pts')
         plt.tight_layout()
         plt.show()
 
     # only df with lifetimes in proper range
     df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
     
-    return df
+    return df, {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 'acc_long': acc_long, 
+                'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
 
 def remove_tracks_by_aux_peak_time(df: pd.DataFrame):
     '''Remove tracks where aux peaks in first 30% of track
