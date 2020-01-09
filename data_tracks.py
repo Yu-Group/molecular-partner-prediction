@@ -66,14 +66,14 @@ def get_data(use_processed=True, save_processed=True,
         df = add_outcomes(df)
         metadata['num_aux_pos_valid'] = df[outcome_def].sum()
         
+        df = remove_tracks_by_aux_peak_time(df)
+        metadata['num_tracks_after_peak_time'] = df.shape[0]
+        metadata['num_aux_pos_after_peak_time'] = df[outcome_def].sum()
+        
         df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
         metadata.update(meta2)
         metadata['num_tracks_after_lifetime'] = df.shape[0]
         metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
-        
-        df = remove_tracks_by_aux_peak_time(df)
-        metadata['num_tracks_after_peak_time'] = df.shape[0]
-        metadata['num_aux_pos_after_peak_time'] = df[outcome_def].sum()
         pkl.dump(metadata, open(metadata_file, 'wb'))
         
         
