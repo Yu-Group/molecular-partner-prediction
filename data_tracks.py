@@ -52,11 +52,13 @@ def get_data(use_processed=True, save_processed=True,
     if use_processed and os.path.exists(processed_file):
         return pd.read_pickle(processed_file)
     else:
-        print('computing preprocessing...')
+        print('loading + preprocessing data...')
         metadata = {}
+        print('\tloading tracks...')
         df = get_tracks() # note: different Xs can be different shapes
         metadata['num_tracks_orig'] = df.shape[0]
         
+        print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
         metadata['num_tracks_valid'] = df.shape[0]
         
@@ -64,7 +66,7 @@ def get_data(use_processed=True, save_processed=True,
         df = add_outcomes(df)
         metadata['num_aux_pos_valid'] = df[outcome_def].sum()
         
-        df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.90)
+        df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
         metadata.update(meta2)
         metadata['num_tracks_after_lifetime'] = df.shape[0]
         metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
@@ -215,6 +217,25 @@ def preprocess(df):
     
     df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
+    num = 3
+    df['rise_local_3'] = df.apply(lambda row: 
+                                  calc_rise(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    df['fall_local_3'] = df.apply(lambda row: 
+                                  calc_fall(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    
+    num2 = 11
+    df['rise_local_11'] = df.apply(lambda row: 
+                                   calc_rise(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                          axis=1)
+    df['fall_local_11'] = df.apply(lambda row: 
+                                   calc_fall(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                          axis=1)
     df['max_diff'] = df.apply(lambda row: max_diff(row['X']), axis=1)    
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
@@ -419,6 +440,7 @@ def get_feature_names(df):
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', # metadata
                       'X', 'X_pvals', 'x_pos',
+                      'X_peak_idx', 'Y_peak_idx',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
