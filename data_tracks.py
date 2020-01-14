@@ -27,15 +27,16 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])
 cell_nums_test = np.array([6])
 
-def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl',
+def get_data(use_processed=True, save_processed=True, 
+             processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
              use_processed_dicts=True, outcome_def='y_consec_sig'):
     '''
     Params
@@ -47,15 +48,35 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
     use_processed_dicts: bool, optional
         if False, recalculate the dictionary features
     '''
+    
     if use_processed and os.path.exists(processed_file):
         return pd.read_pickle(processed_file)
     else:
-        print('computing preprocessing...')
+        print('loading + preprocessing data...')
+        metadata = {}
+        print('\tloading tracks...')
         df = get_tracks() # note: different Xs can be different shapes
+        metadata['num_tracks_orig'] = df.shape[0]
+        
+        print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
+        metadata['num_tracks_valid'] = df.shape[0]
+        
         df = preprocess(df)
         df = add_outcomes(df)
-        df = remove_tracks_by_lifetime(df, outcome_key=outcome_def, plot=False, acc_thresh=0.90)
+        metadata['num_aux_pos_valid'] = df[outcome_def].sum()
+        
+        df = remove_tracks_by_aux_peak_time(df)
+        metadata['num_tracks_after_peak_time'] = df.shape[0]
+        metadata['num_aux_pos_after_peak_time'] = df[outcome_def].sum()
+        
+        df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
+        metadata.update(meta2)
+        metadata['num_tracks_after_lifetime'] = df.shape[0]
+        metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
+        pkl.dump(metadata, open(metadata_file, 'wb'))
+        
+        
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
@@ -171,18 +192,24 @@ def preprocess(df):
     df['Y_max'] = np.array([max(y) for y in df.Y.values])    
     df['Y_mean'] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
-    
+    df['X_peak_idx'] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
+    df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+
     # hand-engineeredd features
     def calc_rise(x):
+        '''max change before peak
+        '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        rise = val_max - np.min(x[:idx_max + 1]) # max change before peak
+        rise = val_max - np.min(x[:idx_max + 1])
         return rise
 
     def calc_fall(x):
+        '''max change after peak
+        '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        fall = val_max - np.min(x[idx_max:]) # drop after peak
+        fall = val_max - np.min(x[idx_max:])
         return fall
     
     def max_diff(x): return np.max(np.diff(x))
@@ -190,6 +217,25 @@ def preprocess(df):
     
     df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
+    num = 3
+    df['rise_local_3'] = df.apply(lambda row: 
+                                  calc_rise(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    df['fall_local_3'] = df.apply(lambda row: 
+                                  calc_fall(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    
+    num2 = 11
+    df['rise_local_11'] = df.apply(lambda row: 
+                                   calc_rise(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                          axis=1)
+    df['fall_local_11'] = df.apply(lambda row: 
+                                   calc_fall(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                          axis=1)
     df['max_diff'] = df.apply(lambda row: max_diff(row['X']), axis=1)    
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
@@ -248,27 +294,33 @@ def extract_X_mat(df):
     return X_mat
 
 
-def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh=0.95):
+def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
     as a func of lifetime and return points within proper lifetime
     '''
-    vals = df[['lifetime', outcome_key]]
+    vals = df[['lifetime', outcome_def]]
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
 
-    props1 = np.array([1 - np.mean(vals[outcome_key][vals['lifetime'] <= l]) for l in lifetimes])
+    # cumulative accuracy for different thresholds
+    props1 = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
     idx_thresh = np.nonzero(props1 <= acc_thresh)[0][0]
     thresh_lower = lifetimes[idx_thresh]
-    n = df.shape[0]    
     
-    props2 = np.array([np.mean(vals[outcome_key][vals['lifetime'] >= l]) for l in lifetimes])
+    props2 = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes])
     idx_thresh_2 = np.nonzero(props2 >= acc_thresh)[0][0]
-    thresh_higher = lifetimes[idx_thresh_2]    
+    thresh_higher = lifetimes[idx_thresh_2]
+    
+    n = df.shape[0]    
+    n_short = np.sum(vals["lifetime"]<=thresh_lower)
+    n_long = np.sum(vals["lifetime"]>=thresh_higher)
+    acc_short = props1[idx_thresh]
+    acc_long = props2[idx_thresh_2]
 
     if plot:
         plt.figure(figsize=(12, 4), dpi=200)
         plt.subplot(R, C, 1)
-        outcome = df[outcome_key]
+        outcome = df[outcome_def]
         plt.hist(df['lifetime'][outcome==1], label='aux+', alpha=1, color=cb, bins=25)
         plt.hist(df['lifetime'][outcome==0], label='aux-', alpha=0.7, color=cr, bins=25)
         plt.xlabel('lifetime')
@@ -280,19 +332,27 @@ def remove_tracks_by_lifetime(df, outcome_key='y_thresh', plot=False, acc_thresh
     #     plt.axvline(thresh_lower)
         plt.axvspan(0, thresh_lower, alpha=0.2, color=cr)
         plt.ylabel('fraction of negative events')
-        plt.xlabel(f'lifetime <= value\nshaded includes {np.sum(vals["lifetime"]<=thresh_lower)/n*100:0.0f}% of pts')
+        plt.xlabel(f'lifetime <= value\nshaded includes {n_short/n*100:0.0f}% of pts')
 
 
         plt.subplot(R, C, 3)
         plt.plot(lifetimes, props2, cb)
         plt.axvspan(thresh_higher, max(lifetimes), alpha=0.2, color=cb)
         plt.ylabel('fraction of positive events')
-        plt.xlabel(f'lifetime >= value\nshaded includes {np.sum(vals["lifetime"]>=thresh_higher)/n*100:0.0f}% of pts')
+        plt.xlabel(f'lifetime >= value\nshaded includes {n_long/n*100:0.0f}% of pts')
         plt.tight_layout()
         plt.show()
 
     # only df with lifetimes in proper range
     df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
+    
+    return df, {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 'acc_long': acc_long, 
+                'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
+
+def remove_tracks_by_aux_peak_time(df: pd.DataFrame):
+    '''Remove tracks where aux peaks in first 30% of track
+    '''
+    df = df[df['Y_peak_idx'] + 1 > 0.3 * df['lifetime']]
     
     return df
 
@@ -380,6 +440,7 @@ def get_feature_names(df):
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', # metadata
                       'X', 'X_pvals', 'x_pos',
+                      'X_peak_idx', 'Y_peak_idx',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
