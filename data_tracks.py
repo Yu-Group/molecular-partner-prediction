@@ -37,7 +37,7 @@ cell_nums_test = np.array([6])
 
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
-             use_processed_dicts=True, outcome_def='y_consec_sig'):
+             use_processed_dicts=True, outcome_def='y_consec_thresh'):
     '''
     Params
     ------
@@ -251,6 +251,7 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.3754691658837):
     num_sigs = [np.array(df['Y_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
     df['y_single_sig'] = np.array([num_sigs[i].sum() > 0 for i in range(df.shape[0])]).astype(np.int)
     df['y_double_sig'] = np.array([num_sigs[i].sum() > 1 for i in range(df.shape[0])]).astype(np.int)
+    df['y_conservative_thresh'] = (df['Y_max'].values > 973).astype(np.int)
     y_consec_sig = []
     for i in range(df.shape[0]):
         idxs_sig = np.where(num_sigs[i]==1)[0] # indices of significance
@@ -261,6 +262,34 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.3754691658837):
         else:
             y_consec_sig.append(0)
     df['y_consec_sig'] = y_consec_sig
+    df['y_consec_thresh'] = np.logical_or(df['y_consec_sig'], df['y_conservative_thresh'])
+    
+    def add_hotspots(df, num_sigs, outcome_def='consec_sig'):
+        '''Identify hotspots as any track which over its time course has multiple events
+        events must meet the event definition, then for a time not meet it, then meet it again
+        Example: two consecutive significant p-values, then non-significant p-value, then 2 more consecutive p-values
+        '''
+
+        if outcome_def=='consec_sig':
+            hotspots = np.zeros(df.shape[0]).astype(np.int)
+            for i in range(df.shape[0]):
+                idxs_sig = np.where(num_sigs[i]==1)[0] # indices of significance
+                if idxs_sig.size < 5:
+                    hotspots[i] = 0
+                else:
+                    diffs = np.diff(idxs_sig)
+                    consecs = np.where(diffs==1)[0] # diffs==1 means there were consecutive sigs
+                    consec_diffs = np.diff(consecs)
+                    if consec_diffs.shape[0] > 0 and np.max(consec_diffs) > 2: # there were greated than 2 non-consec sigs between the consec sigs
+                        hotspots[i] = 1
+                    else:
+                        hotspots[i] = 0
+        df['sig_idxs'] = num_sigs
+        df['hotspots'] = hotspots
+        return df
+    
+    df = add_hotspots(df, num_sigs)
+    
     return df
 
 def remove_invalid_tracks(df, keep=[1, 2]):
@@ -440,7 +469,8 @@ def get_feature_names(df):
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', # metadata
                       'X', 'X_pvals', 'x_pos',
-                      'X_peak_idx', 'Y_peak_idx',
+                      'X_peak_idx',
+                      'hotspots', 'sig_idxs',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
