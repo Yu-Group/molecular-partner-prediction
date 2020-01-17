@@ -113,7 +113,7 @@ def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_prob
 #     print(preds_proba.shape, X_traces_test.shape)
     residuals = np.abs(Y_test - preds_proba)
     
-    R, C = 4, 4
+    R, C = 5, 4
     args = np.argsort(residuals)[::-1][:R * C]
     lifetime_max = np.max(df.lifetime.values[:R*C])
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
@@ -285,6 +285,7 @@ def print_metadata(acc=None):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(f'valid:\t\t{m["num_aux_pos_valid"]} aux+ / {m["num_tracks_valid"]} ({m["num_aux_pos_valid"]/m["num_tracks_valid"]:.3f})')
+    print('----------------------------------------')
     print(f'no_hotspots:\t{m["num_aux_pos_after_hotspots"]} aux+ / {m["num_tracks_after_hotspots"]} ({m["num_aux_pos_after_hotspots"]/m["num_tracks_after_hotspots"]:.3f})')
     print('----------------------------------------')
     print(f'aux_early:\t{m["num_aux_pos_early"]:>4.0f} aux+ / {m["num_peaks_early"]:>4} ({m["num_aux_pos_early"]/m["num_peaks_early"]:.3f})')

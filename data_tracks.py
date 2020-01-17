@@ -38,7 +38,7 @@ cell_nums_test = np.array([6])
 
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
-             use_processed_dicts=True, outcome_def='y_consec_thresh'):
+             use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True):
     '''
     Params
     ------
@@ -66,8 +66,9 @@ def get_data(use_processed=True, save_processed=True,
         metadata['num_tracks_valid'] = df.shape[0]
         metadata['num_aux_pos_valid'] = df[outcome_def].sum()
         metadata['num_hospots_valid'] = df['hotspots'].sum()
-        
-        df = df[df['hotspots']==0]
+
+        if remove_hotspots:
+            df = df[df['hotspots']==0]
         metadata['num_tracks_after_hotspots'] = df.shape[0]
         metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
         
@@ -328,16 +329,11 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
-def remove_tracks_by_aux_peak_time(df: pd.DataFrame, outcome_def):
+def remove_tracks_by_aux_peak_time(df: pd.DataFrame, outcome_def, frac_early=0, frac_late=0.15):
     '''Remove tracks where aux peaks in beginning / end
     '''
-    early_peaks = df['Y_peak_idx'] < df['lifetime'] * 0.1
-    late_peaks = df['Y_peak_idx'] > (df['lifetime'] * 0.9)
-#     (df['lifetime'] - 1 -  df['Y_peak_idx']) <= 1
-    
-#     print(df.shape, early_peaks.shape, df[outcome_def].shape)
-#     print(early_peaks, df[early_peaks].shape)
-    # df = df[df['Y_peak_idx'] + 1 > 0.3 * df['lifetime']] # first 30% of track
+    early_peaks = df['Y_peak_idx'] < df['lifetime'] * frac_early
+    late_peaks = df['Y_peak_idx'] > (df['lifetime'] * (1 - frac_late))
     
     df2 = df[np.logical_and(~early_peaks, ~late_peaks)]
     meta = {
