@@ -193,7 +193,7 @@ def preprocess(df):
     '''
     df = df[df.lifetime > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
-    df['X_min'] = np.array([max(x) for x in df.X.values])
+    df['X_min'] = np.array([min(x) for x in df.X.values])
     df['X_mean'] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
     df['X_std'] = np.nan_to_num(np.array([np.std(x) for x in df.X.values]))
     df['Y_max'] = np.array([max(y) for y in df.Y.values])    
