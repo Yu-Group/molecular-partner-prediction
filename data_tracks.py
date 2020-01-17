@@ -19,6 +19,7 @@ from sklearn import metrics
 plt.style.use('dark_background')
 import mat4py
 import pandas as pd
+pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
 from style import *
 import math
@@ -60,23 +61,24 @@ def get_data(use_processed=True, save_processed=True,
         
         print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
-        metadata['num_tracks_valid'] = df.shape[0]
-        
         df = preprocess(df)
         df = add_outcomes(df)
+        metadata['num_tracks_valid'] = df.shape[0]
         metadata['num_aux_pos_valid'] = df[outcome_def].sum()
+        metadata['num_hospots_valid'] = df['hotspots'].sum()
         
-        df = remove_tracks_by_aux_peak_time(df)
-        metadata['num_tracks_after_peak_time'] = df.shape[0]
-        metadata['num_aux_pos_after_peak_time'] = df[outcome_def].sum()
+        df = df[df['hotspots']==0]
+        metadata['num_tracks_after_hotspots'] = df.shape[0]
+        metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
         
-        df, meta2 = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
-        metadata.update(meta2)
-        metadata['num_tracks_after_lifetime'] = df.shape[0]
-        metadata['num_aux_pos_after_lifetime'] = df[outcome_def].sum()
+        df, meta_peaks = remove_tracks_by_aux_peak_time(df, outcome_def)
+        metadata.update(meta_peaks)
+        
+        df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
+        metadata.update(meta_lifetime)
         pkl.dump(metadata, open(metadata_file, 'wb'))
         
-        
+        print('\tadding features...')
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
@@ -106,7 +108,9 @@ def get_images(cell_name, auxilin_dir=auxilin_dir):
     Y = imread(oj(data_dir, 'EGFP', fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)  
     return X, Y
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_file='processed/tracks.pkl'):
+    if os.path.exists(processed_tracks_file):
+        return pd.read_pickle(processed_tracks_file)
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
@@ -179,7 +183,9 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False):
             data['y_pos_seq'] = y_pos_seq
         df = pd.DataFrame.from_dict(data)
         dfs.append(deepcopy(df))
-    return pd.concat(dfs)
+    df = pd.concat(dfs)
+    df.to_pickle(processed_tracks_file)
+    return df
 
 def preprocess(df):
     '''Add a bunch of extra features to the df
@@ -322,6 +328,27 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
+def remove_tracks_by_aux_peak_time(df: pd.DataFrame, outcome_def):
+    '''Remove tracks where aux peaks in beginning / end
+    '''
+    early_peaks = df['Y_peak_idx'] < df['lifetime'] * 0.1
+    late_peaks = df['Y_peak_idx'] > (df['lifetime'] * 0.9)
+#     (df['lifetime'] - 1 -  df['Y_peak_idx']) <= 1
+    
+#     print(df.shape, early_peaks.shape, df[outcome_def].shape)
+#     print(early_peaks, df[early_peaks].shape)
+    # df = df[df['Y_peak_idx'] + 1 > 0.3 * df['lifetime']] # first 30% of track
+    
+    df2 = df[np.logical_and(~early_peaks, ~late_peaks)]
+    meta = {
+        'num_peaks_early': early_peaks.sum(),
+        'num_aux_pos_early': df[outcome_def].values[early_peaks].sum(),
+        'num_peaks_late': late_peaks.sum(),
+        'num_aux_pos_late': df[outcome_def].values[late_peaks].sum(),
+        'num_tracks_after_peak_time': df2.shape[0],
+        'num_aux_pos_after_peak_time': df2[outcome_def].sum()
+    }
+    return df2, meta
 
 def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
@@ -332,19 +359,23 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
     lifetimes = np.unique(vals['lifetime'])
 
     # cumulative accuracy for different thresholds
-    props1 = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
-    idx_thresh = np.nonzero(props1 <= acc_thresh)[0][0]
-    thresh_lower = lifetimes[idx_thresh]
+    accs_cum_lower = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
+    idx_thresh = np.nonzero(accs_cum_lower >= acc_thresh)[0][-1] # last nonzero index
+    thresh_lower = lifetimes[idx_thresh]    
     
-    props2 = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes])
-    idx_thresh_2 = np.nonzero(props2 >= acc_thresh)[0][0]
-    thresh_higher = lifetimes[idx_thresh_2]
+    accs_cum_higher = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes]).flatten()
+    try:
+        idx_thresh_2 = np.nonzero(accs_cum_higher >= acc_thresh)[0][0]
+        thresh_higher = lifetimes[idx_thresh_2]
+    except:
+        idx_thresh_2 = lifetimes.size - 1
+        thresh_higher = lifetimes[idx_thresh_2] + 1
     
-    n = df.shape[0]    
+    n = df.shape[0]
     n_short = np.sum(vals["lifetime"]<=thresh_lower)
     n_long = np.sum(vals["lifetime"]>=thresh_higher)
-    acc_short = props1[idx_thresh]
-    acc_long = props2[idx_thresh_2]
+    acc_short = accs_cum_lower[idx_thresh]
+    acc_long = accs_cum_higher[idx_thresh_2]
 
     if plot:
         plt.figure(figsize=(12, 4), dpi=200)
@@ -357,7 +388,7 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
         plt.legend()
     
         plt.subplot(R, C, 2)
-        plt.plot(lifetimes, props1, color=cr)
+        plt.plot(lifetimes, accs_cum_lower, color=cr)
     #     plt.axvline(thresh_lower)
         plt.axvspan(0, thresh_lower, alpha=0.2, color=cr)
         plt.ylabel('fraction of negative events')
@@ -365,7 +396,7 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
 
 
         plt.subplot(R, C, 3)
-        plt.plot(lifetimes, props2, cb)
+        plt.plot(lifetimes, accs_cum_higher, cb)
         plt.axvspan(thresh_higher, max(lifetimes), alpha=0.2, color=cb)
         plt.ylabel('fraction of positive events')
         plt.xlabel(f'lifetime >= value\nshaded includes {n_long/n*100:0.0f}% of pts')
@@ -374,16 +405,12 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
 
     # only df with lifetimes in proper range
     df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
-    
-    return df, {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 'acc_long': acc_long, 
-                'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
-
-def remove_tracks_by_aux_peak_time(df: pd.DataFrame):
-    '''Remove tracks where aux peaks in first 30% of track
-    '''
-    df = df[df['Y_peak_idx'] + 1 > 0.3 * df['lifetime']]
-    
-    return df
+    metadata = {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 
+                'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher,
+                'num_tracks_after_lifetime': df.shape[0], 'num_aux_pos_after_lifetime': df[outcome_def].sum(),
+                'num_hotspots_after_lifetime': df['hotspots'].sum()
+               }
+    return df, metadata
 
 def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', 
                       nmf_comps_file='processed/dictionaries/nmf_12.pkl', 

@@ -202,7 +202,7 @@ def plot_curves(df, extra_key=None, hline=True):
     plt.tight_layout()
     plt.show()
     
-def viz_errs_outliers(X_test, preds, Y_test, num_feats_reduced=5):
+def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
     '''Compare outliers to errors in venn-diagram
     '''
     feat_names = data_tracks.get_feature_names(X_test)
@@ -278,3 +278,24 @@ def plot_pcs(pca, X):
     colorAx = plt.subplot(gs[3])
     cb = plt.colorbar(p, cax=colorAx)
     plt.show()
+    
+    
+def print_metadata(acc=None):
+    metadata_file = 'processed/metadata.pkl'
+    m = pkl.load(open(metadata_file, 'rb'))
+
+    print(f'valid:\t\t{m["num_aux_pos_valid"]} aux+ / {m["num_tracks_valid"]} ({m["num_aux_pos_valid"]/m["num_tracks_valid"]:.3f})')
+    print(f'no_hotspots:\t{m["num_aux_pos_after_hotspots"]} aux+ / {m["num_tracks_after_hotspots"]} ({m["num_aux_pos_after_hotspots"]/m["num_tracks_after_hotspots"]:.3f})')
+    print('----------------------------------------')
+    print(f'aux_early:\t{m["num_aux_pos_early"]:>4.0f} aux+ / {m["num_peaks_early"]:>4} ({m["num_aux_pos_early"]/m["num_peaks_early"]:.3f})')
+    print(f'aux_late:\t{m["num_aux_pos_late"]:>4.0f} aux+ / {m["num_peaks_late"]:>4} ({m["num_aux_pos_late"]/m["num_peaks_late"]:.3f})')
+    print(f'aux_valid:\t{m["num_aux_pos_after_peak_time"]:>4.0f} aux+ / {m["num_tracks_after_peak_time"]} ({m["num_aux_pos_after_peak_time"]/m["num_tracks_after_peak_time"]:.3f})')
+    
+    print('----------------------------------------')
+    print(f'lifetime<={m["thresh_short"]}:\t{round(m["num_short"] * m["acc_short"]):>4.0f} aux+ / {m["num_short"]:>4} ({m["acc_short"]:.3f})')
+    print(f'lifetime>={m["thresh_long"]}:\t{round(m["num_long"] * m["acc_long"]):>4.0f} aux- / {m["num_long"]:>4} ({m["acc_long"]:.3f})')
+    print(f'remaining:\t{m["num_aux_pos_after_lifetime"]:>4.0f} aux+ / {m["num_tracks_after_lifetime"]:>4} ({m["num_aux_pos_after_lifetime"]/m["num_tracks_after_lifetime"]:.3f})')
+    if acc is not None:
+        print('----------------------------------------')
+        print(f'predicted acc:\t\t\t  {acc:.3f}')
+        print(f'total acc:\t\t\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_after_lifetime"]) / m["num_tracks_after_peak_time"]:.3f}')
