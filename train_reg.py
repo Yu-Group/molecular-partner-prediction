@@ -62,6 +62,25 @@ def log_transforms(df):
     
     df['rise_log'] = np.array([calc_rise_log(df.iloc[i].X) for i in range(len(df))])
     df['fall_log'] = np.array([calc_fall_log(df.iloc[i].X) for i in range(len(df))])
+    num = 3
+    df['rise_local_3_log'] = df.apply(lambda row: 
+                                  calc_rise_log(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    df['fall_local_3_log'] = df.apply(lambda row: 
+                                  calc_fall_log(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
+                                                            row['X_peak_idx'] + num + 1])), 
+                                          axis=1)
+    
+    num2 = 11
+    df['rise_local_11_log'] = df.apply(lambda row: 
+                                   calc_rise_log(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                          axis=1)
+    df['fall_local_11_log'] = df.apply(lambda row: 
+                                   calc_fall_log(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
+                                                            row['X_peak_idx'] + num2 + 1])), 
+                                        axis=1)
     df['patch_diff_log'] = np.log(df['center_max']) - 1/4*(np.log(df['left_max'])
                                                           +np.log(df['right_max'])
                                                           +np.log(df['up_max'])
@@ -156,14 +175,15 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
     pkl.dump(results, open(out_name, 'wb'))
     
     
-def load_results(out_dir):
+def load_results(out_dir, by_cell=True):
     r = []
     for fname in os.listdir(out_dir):
         d = pkl.load(open(oj(out_dir, fname), 'rb'))
         metrics = {k: d['cv'][k] for k in d['cv'].keys() if not 'curve' in k}
         num_pts_by_fold_cv = d['num_pts_by_fold_cv']
         out = {k: np.average(metrics[k], weights=num_pts_by_fold_cv) for k in metrics}
-        out.update({'cv_accuracy_by_cell': metrics['r2']})
+        if by_cell:
+            out.update({'cv_accuracy_by_cell': metrics['r2']})
         out.update({k + '_std': np.std(metrics[k]) for k in metrics})
         out['model_type'] = fname.replace('.pkl', '') #d['model_type']
         

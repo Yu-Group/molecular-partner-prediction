@@ -28,8 +28,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -38,7 +38,8 @@ cell_nums_test = np.array([6])
 
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
-             use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True):
+             use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True, 
+             frac_early=0, frac_late=0.15):
     '''
     Params
     ------
@@ -72,7 +73,7 @@ def get_data(use_processed=True, save_processed=True,
         metadata['num_tracks_after_hotspots'] = df.shape[0]
         metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
         
-        df, meta_peaks = remove_tracks_by_aux_peak_time(df, outcome_def)
+        df, meta_peaks = remove_tracks_by_aux_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
         metadata.update(meta_peaks)
         
         df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
