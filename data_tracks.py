@@ -208,22 +208,48 @@ def preprocess(df):
         '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        rise = val_max - np.min(x[:idx_max + 1])
-        return rise
+        return val_max - np.min(x[:idx_max + 1])
 
     def calc_fall(x):
         '''max change after peak
         '''
         idx_max = np.argmax(x)
         val_max = x[idx_max]
-        fall = val_max - np.min(x[idx_max:])
-        return fall
+        return val_max - np.min(x[idx_max:])
+    
+    def calc_rise_slope(x):
+        '''slope to max change before peak
+        '''
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_early = x[:idx_max + 1]
+        idx_min = np.argmin(x_early)
+        denom = (idx_max - idx_min)
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_early)) / denom
+
+
+    def calc_fall_slope(x):
+        '''slope to max change after peak
+        '''
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_late = x[idx_max :]
+        idx_min = np.argmin(x_late)
+        denom = idx_min
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_late)) / denom
+    
     
     def max_diff(x): return np.max(np.diff(x))
     def min_diff(x): return np.min(np.diff(x))
     
     df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
+    df['rise_slope'] = df.apply(lambda row: calc_rise_slope(row['X']), axis=1)
+    df['fall_slope'] = df.apply(lambda row: calc_fall_slope(row['X']), axis=1)
     num = 3
     df['rise_local_3'] = df.apply(lambda row: 
                                   calc_rise(np.array(row['X'][max(0, row['X_peak_idx'] - num): 
