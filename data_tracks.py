@@ -202,6 +202,7 @@ def preprocess(df):
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
     df['X_peak_idx'] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
     df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+    df['X_spike_time'] = df['X_peak_idx'].values/df['lifetime'].values
 
     # hand-engineeredd features
     def calc_rise(x):
