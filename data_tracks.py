@@ -28,8 +28,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -73,8 +73,10 @@ def get_data(use_processed=True, save_processed=True,
         metadata['num_tracks_after_hotspots'] = df.shape[0]
         metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
         
-        df, meta_peaks = remove_tracks_by_aux_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
+        '''
+        df, meta_peaks = remove_tracks_by_clath_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
         metadata.update(meta_peaks)
+        '''
         
         df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
         metadata.update(meta_lifetime)
@@ -357,11 +359,11 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
-def remove_tracks_by_aux_peak_time(df: pd.DataFrame, outcome_def, frac_early=0, frac_late=0.15):
+def remove_tracks_by_clath_peak_time(df: pd.DataFrame, outcome_def, frac_early=0, frac_late=0.15):
     '''Remove tracks where aux peaks in beginning / end
     '''
-    early_peaks = df['Y_peak_idx'] < df['lifetime'] * frac_early
-    late_peaks = df['Y_peak_idx'] > (df['lifetime'] * (1 - frac_late))
+    early_peaks = df['X_peak_idx'] < df['lifetime'] * frac_early
+    late_peaks = df['X_peak_idx'] > (df['lifetime'] * (1 - frac_late))
     
     df2 = df[np.logical_and(~early_peaks, ~late_peaks)]
     meta = {
