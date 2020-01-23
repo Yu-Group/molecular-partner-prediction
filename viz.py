@@ -103,7 +103,7 @@ def highlight_max(data, color='#0e5c99'):
     
 # visualize biggest errs
 def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642):
-    '''
+    '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
     X_traces_test: pd.Series
@@ -113,8 +113,10 @@ def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_prob
 #     print(preds_proba.shape, X_traces_test.shape)
     residuals = np.abs(Y_test - preds_proba)
     
+    if num_to_plot is None:
+        num_to_plot = X_traces_test.shape[0]
     R = int(np.sqrt(num_to_plot))
-    C = num_to_plot // R
+    C = num_to_plot // R + 1
     args = np.argsort(residuals)[::-1][:R * C]
     lifetime_max = np.max(df.lifetime.values[:R*C])
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
@@ -122,15 +124,18 @@ def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_prob
     i = 0
     for r in range(R):
         for c in range(C):
-            ax = plt.subplot(R, C, i + 1)
-            ax.text(.5, .9, f'{i}',
-                     horizontalalignment='right',
-                     transform=ax.transAxes)
-            plt.plot(X_traces_test.iloc[args[i]], color=cr)
-            plt.plot(Y_traces_test.iloc[args[i]], color='green')
-            i += 1
-            plt.xlim([-1, lifetime_max])
-            plt.axhline(aux_thresh, color='gray', alpha=0.5)
+            if i < X_traces_test.shape[0]:
+                ax = plt.subplot(R, C, i + 1)
+                ax.text(.5, .9, f'{i}',
+                         horizontalalignment='right',
+                         transform=ax.transAxes)
+                plt.axis('off')
+                plt.plot(X_traces_test.iloc[args[i]], color=cr)
+                plt.plot(Y_traces_test.iloc[args[i]], color='green')
+                i += 1
+                plt.xlim([-1, lifetime_max])
+                plt.axhline(aux_thresh, color='gray', alpha=0.5)
+            
     plt.tight_layout()
     
 

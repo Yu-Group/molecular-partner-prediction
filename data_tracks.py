@@ -69,6 +69,7 @@ def get_data(use_processed=True, save_processed=True,
         metadata['num_hospots_valid'] = df['hotspots'].sum()
 
         if remove_hotspots:
+            print('\tremoving hotspots....')
             df = df[df['hotspots']==0]
         metadata['num_tracks_after_hotspots'] = df.shape[0]
         metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
@@ -205,8 +206,11 @@ def preprocess(df):
     df['Y_std'] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
     df['X_peak_idx'] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
     df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
-    df['X_spike_time'] = df['X_peak_idx'].values/df['lifetime'].values
-
+    df['X_peak_time_frac'] = df['X_peak_idx'].values / df['lifetime'].values
+    df['slope_end'] = df.apply(lambda row: (row['X_max'] - row['X'][-1]) / (row['lifetime'] - row['X_peak_idx']), axis=1)
+    df['X_peak_last_15'] = df['X_peak_time_frac'] >= 0.85
+    df['X_peak_last_5'] = df['X_peak_time_frac'] >= 0.95
+    
     # hand-engineeredd features
     def calc_rise(x):
         '''max change before peak
