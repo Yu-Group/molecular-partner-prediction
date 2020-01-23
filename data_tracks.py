@@ -74,19 +74,20 @@ def get_data(use_processed=True, save_processed=True,
         metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
         
         '''
-        df, meta_peaks = remove_tracks_by_clath_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
+        df, meta_peaks = remove_tracks_by_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
         metadata.update(meta_peaks)
         '''
         
         df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
         metadata.update(meta_lifetime)
-        pkl.dump(metadata, open(metadata_file, 'wb'))
+        
         
         print('\tadding features...')
         df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
         if save_processed:
+            pkl.dump(metadata, open(metadata_file, 'wb'))
             df.to_pickle(processed_file)
     return df
 
@@ -277,7 +278,7 @@ def preprocess(df):
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
 
-def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.3754691658837):
+def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=973):
     '''Add binary outcome of whether spike happened and info on whether events were questionable
     '''
     df['y_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
@@ -288,7 +289,7 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.3754691658837):
     num_sigs = [np.array(df['Y_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
     df['y_single_sig'] = np.array([num_sigs[i].sum() > 0 for i in range(df.shape[0])]).astype(np.int)
     df['y_double_sig'] = np.array([num_sigs[i].sum() > 1 for i in range(df.shape[0])]).astype(np.int)
-    df['y_conservative_thresh'] = (df['Y_max'].values > 973).astype(np.int)
+    df['y_conservative_thresh'] = (df['Y_max'].values > aux_thresh).astype(np.int)
     y_consec_sig = []
     for i in range(df.shape[0]):
         idxs_sig = np.where(num_sigs[i]==1)[0] # indices of significance
@@ -359,11 +360,11 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
-def remove_tracks_by_clath_peak_time(df: pd.DataFrame, outcome_def, frac_early=0, frac_late=0.15):
+def remove_tracks_by_peak_time(df: pd.DataFrame, outcome_def, remove_key='X_peak_idx', frac_early=0, frac_late=0.15):
     '''Remove tracks where aux peaks in beginning / end
     '''
-    early_peaks = df['X_peak_idx'] < df['lifetime'] * frac_early
-    late_peaks = df['X_peak_idx'] > (df['lifetime'] * (1 - frac_late))
+    early_peaks = df[remove_key] < df['lifetime'] * frac_early
+    late_peaks = df[remove_key] > (df['lifetime'] * (1 - frac_late))
     
     df2 = df[np.logical_and(~early_peaks, ~late_peaks)]
     meta = {

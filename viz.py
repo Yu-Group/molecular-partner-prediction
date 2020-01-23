@@ -102,7 +102,7 @@ def highlight_max(data, color='#0e5c99'):
     
     
 # visualize biggest errs
-def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_proba):
+def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642):
     '''
     Params
     ------
@@ -113,7 +113,8 @@ def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_prob
 #     print(preds_proba.shape, X_traces_test.shape)
     residuals = np.abs(Y_test - preds_proba)
     
-    R, C = 5, 4
+    R = int(np.sqrt(num_to_plot))
+    C = num_to_plot // R
     args = np.argsort(residuals)[::-1][:R * C]
     lifetime_max = np.max(df.lifetime.values[:R*C])
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
@@ -121,12 +122,15 @@ def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_prob
     i = 0
     for r in range(R):
         for c in range(C):
-            plt.subplot(R, C, i + 1)
+            ax = plt.subplot(R, C, i + 1)
+            ax.text(.5, .9, f'{i}',
+                     horizontalalignment='right',
+                     transform=ax.transAxes)
             plt.plot(X_traces_test.iloc[args[i]], color=cr)
             plt.plot(Y_traces_test.iloc[args[i]], color='green')
             i += 1
             plt.xlim([-1, lifetime_max])
-            plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+            plt.axhline(aux_thresh, color='gray', alpha=0.5)
     plt.tight_layout()
     
 
@@ -288,15 +292,19 @@ def print_metadata(acc=None):
     print('----------------------------------------')
     print(f'no_hotspots:\t{m["num_aux_pos_after_hotspots"]} aux+ / {m["num_tracks_after_hotspots"]} ({m["num_aux_pos_after_hotspots"]/m["num_tracks_after_hotspots"]:.3f})')
     print('----------------------------------------')
-    print(f'aux_early:\t{m["num_aux_pos_early"]:>4.0f} aux+ / {m["num_peaks_early"]:>4} ({m["num_aux_pos_early"]/m["num_peaks_early"]:.3f})')
-    print(f'aux_late:\t{m["num_aux_pos_late"]:>4.0f} aux+ / {m["num_peaks_late"]:>4} ({m["num_aux_pos_late"]/m["num_peaks_late"]:.3f})')
-    print(f'aux_valid:\t{m["num_aux_pos_after_peak_time"]:>4.0f} aux+ / {m["num_tracks_after_peak_time"]} ({m["num_aux_pos_after_peak_time"]/m["num_tracks_after_peak_time"]:.3f})')
+    num_eval = m["num_tracks_after_hotspots"]
     
-    print('----------------------------------------')
+    if "num_aux_pos_early" in m:
+        print(f'aux_early:\t{m["num_aux_pos_early"]:>4.0f} aux+ / {m["num_peaks_early"]:>4} ({m["num_aux_pos_early"]/m["num_peaks_early"]:.3f})')
+        print(f'aux_late:\t{m["num_aux_pos_late"]:>4.0f} aux+ / {m["num_peaks_late"]:>4} ({m["num_aux_pos_late"]/m["num_peaks_late"]:.3f})')
+        print(f'aux_valid:\t{m["num_aux_pos_after_peak_time"]:>4.0f} aux+ / {m["num_tracks_after_peak_time"]} ({m["num_aux_pos_after_peak_time"]/m["num_tracks_after_peak_time"]:.3f})')
+        num_eval = m["num_tracks_after_peak_time"]
+        print('----------------------------------------')
+
     print(f'lifetime<={m["thresh_short"]}:\t{round(m["num_short"] * m["acc_short"]):>4.0f} aux+ / {m["num_short"]:>4} ({m["acc_short"]:.3f})')
     print(f'lifetime>={m["thresh_long"]}:\t{round(m["num_long"] * m["acc_long"]):>4.0f} aux- / {m["num_long"]:>4} ({m["acc_long"]:.3f})')
     print(f'remaining:\t{m["num_aux_pos_after_lifetime"]:>4.0f} aux+ / {m["num_tracks_after_lifetime"]:>4} ({m["num_aux_pos_after_lifetime"]/m["num_tracks_after_lifetime"]:.3f})')
     if acc is not None:
         print('----------------------------------------')
         print(f'predicted acc:\t\t\t  {acc:.3f}')
-        print(f'total acc:\t\t\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_after_lifetime"]) / m["num_tracks_after_peak_time"]:.3f}')
+        print(f'total acc:\t\t\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_after_lifetime"]) / num_eval:.3f}')
