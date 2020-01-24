@@ -155,6 +155,32 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
         t = np.array([tracks['t'][i] for i in range(n)])
         x_pos_seq = np.array([tracks['x'][i][0] for i in range(n)]) # position for clathrin (auxilin is very similar)
         y_pos_seq = np.array([tracks['y'][i][0] for i in range(n)])
+        X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
+        Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
+        
+        # buffers
+        X_starts = []
+        Y_starts = []
+        for d in tracks['startBuffer']:
+            if len(d) == 0:
+                X_starts.append([])
+                Y_starts.append([])
+            else:
+                X_starts.append(d['A'][0])
+                Y_starts.append(d['A'][1])
+        X_ends = []
+        Y_ends = []
+        for d in tracks['endBuffer']:
+            if len(d) == 0:
+                X_ends.append([])
+                Y_ends.append([])
+            else:
+                X_ends.append(d['A'][0])
+                Y_ends.append(d['A'][1])
+        X_extended = [X_starts[i] + X[i] + X_ends[i] for i in range(n)]
+                
+        
+        # image feats
         pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
                              for i in range(n)])
@@ -170,36 +196,39 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
         pixel_right = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j]+1), cla.shape[2]-1)]
                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
                              for i in range(n)])                            
-        X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
-        Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
-    #     df = pd.DataFrame(tracks)
-    #     print(df.keys()) # these lines help us look at the other stored vars
+        
         data = {
-            'X': X, 
+            'X': X,
+            'X_extended': X_extended,
             'Y': Y,
+            'X_starts': X_starts,
+            'Y_starts': Y_starts,
+            'X_ends': X_ends,
+            'Y_ends': Y_ends,
             'X_pvals': X_pvals,
             'Y_pvals': Y_pvals,
-            'pixel': pixel,
-            'pixel_left': pixel_left,
-            'pixel_right': pixel_right,
-            'pixel_up': pixel_up,
-            'pixel_down': pixel_down,
             'catIdx': tracks['catIdx'],
             'total_displacement': totalDisplacement,
             'mean_square_displacement': msd,
             'lifetime': tracks['lifetime_s'],
+            'lifetime_extended': [len(x) for x in X_extended],            
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
-            'center_max': [max(pixel[i]) for i in range(n)],
-            'left_max': [max(pixel_left[i]) for i in range(n)],
-            'right_max': [max(pixel_right[i]) for i in range(n)],
-            'up_max': [max(pixel_up[i]) for i in range(n)],
-            'down_max': [max(pixel_down[i]) for i in range(n)],
             'cell_num': [cell_num] * n,
         }
         if all_data:
             data['x_pos_seq'] = x_pos_seq
             data['y_pos_seq'] = y_pos_seq
+            data['pixel'] = pixel
+            data['pixel_left'] = pixel_left
+            data['pixel_right'] = pixel_right
+            data['pixel_up'] = pixel_up
+            data['pixel_down'] = pixel_down
+            data['center_max'] = [max(pixel[i]) for i in range(n)],
+            data['left_max'] = [max(pixel_left[i]) for i in range(n)],
+            data['right_max'] = [max(pixel_right[i]) for i in range(n)],
+            data['up_max'] = [max(pixel_up[i]) for i in range(n)],
+            data['down_max'] = [max(pixel_down[i]) for i in range(n)],
         df = pd.DataFrame.from_dict(data)
         dfs.append(deepcopy(df))
     df = pd.concat(dfs)
@@ -544,7 +573,7 @@ def get_feature_names(df):
         and not k.startswith('pixel')
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', 'pid', # metadata
-                      'X', 'X_pvals', 'x_pos',
+                      'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_clean',
                       'X_peak_idx',
                       'hotspots', 'sig_idxs',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
