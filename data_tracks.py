@@ -446,17 +446,18 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
 def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', 
                       nmf_comps_file='processed/dictionaries/nmf_12.pkl', 
                       use_processed=True):
+    
     '''Add features from saved dictionary to df
     '''
     def sparse_code(X_mat, n_comps=12, alpha=1, out_dir='processed/dictionaries'):
         print('sparse coding...')
-        d = DictionaryLearning(n_components=n_comps, alpha=alpha)
+        d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
         d.fit(X_mat)
         pkl.dump(d, open(oj(out_dir, f'sc_{n_comps}_alpha={alpha}.pkl'), 'wb'))
 
     def nmf(X_mat, n_comps=12, out_dir='processed/dictionaries'):
         print('running nmf...')
-        d = NMF(n_components=n_comps)
+        d = NMF(n_components=n_comps, random_state=42)
         d.fit(X_mat)
         pkl.dump(d, open(oj(out_dir, f'nmf_{n_comps}.pkl'), 'wb'))
     

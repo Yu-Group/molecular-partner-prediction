@@ -102,41 +102,50 @@ def highlight_max(data, color='#0e5c99'):
     
     
 # visualize biggest errs
-def viz_biggest_errs(df, X_traces_test, Y_traces_test, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642):
+def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba, 
+                     num_to_plot=20, aux_thresh=642):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
-    X_traces_test: pd.Series
-        each value is an X trace
+    idxs_cv: integer ndarray
+        which idxs are not part of the test set (usually just 0, 1, 2, ...)
+    idxs: boolean ndarray
+        subset of points to plot
     
     '''
-#     print(preds_proba.shape, X_traces_test.shape)
-    residuals = np.abs(Y_test - preds_proba)
     
+    # get args to sort by
+    Y_test = Y_test[idxs]
+    preds = preds[idxs]
+    preds_proba = preds_proba[idxs]
+    residuals = np.abs(Y_test - preds_proba)
+    args = np.argsort(residuals)[::-1]
+    
+    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
-        num_to_plot = X_traces_test.shape[0]
+        num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
     C = num_to_plot // R + 1
-    args = np.argsort(residuals)[::-1][:R * C]
-    lifetime_max = np.max(df.lifetime.values[:R*C])
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
     
     i = 0
     for r in range(R):
         for c in range(C):
-            if i < X_traces_test.shape[0]:
+            if i < dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
                 ax.text(.5, .9, f'{i}',
                          horizontalalignment='right',
                          transform=ax.transAxes)
                 plt.axis('off')
-                plt.plot(X_traces_test.iloc[args[i]], color=cr)
-                plt.plot(Y_traces_test.iloc[args[i]], color='green')
+                plt.plot(dft["X"].iloc[i], color=cr)
+                plt.plot(dft["Y"].iloc[i], color='green')
                 i += 1
                 plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color='gray', alpha=0.5)
             
     plt.tight_layout()
+    return dft
     
 
 def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None):
