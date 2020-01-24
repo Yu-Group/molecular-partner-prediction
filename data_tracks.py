@@ -241,6 +241,7 @@ def preprocess(df):
     '''
     df = df[df.lifetime > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
+    df['X_max_extended'] = np.array([max(x) for x in df.X_extended.values])
     df['X_min'] = np.array([min(x) for x in df.X.values])
     df['X_mean'] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
     df['X_std'] = np.nan_to_num(np.array([np.std(x) for x in df.X.values]))
@@ -300,6 +301,10 @@ def preprocess(df):
     
     df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
+    df['rise_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
+    df['fall_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
+    
+    
     df['rise_slope'] = df.apply(lambda row: calc_rise_slope(row['X']), axis=1)
     df['fall_slope'] = df.apply(lambda row: calc_fall_slope(row['X']), axis=1)
     num = 3
@@ -573,7 +578,7 @@ def get_feature_names(df):
         and not k.startswith('pixel')
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', 'pid', # metadata
-                      'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_clean',
+                      'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_extended',
                       'X_peak_idx',
                       'hotspots', 'sig_idxs',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
