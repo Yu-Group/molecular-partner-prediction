@@ -204,16 +204,17 @@ def plot_curves(df, extra_key=None, hline=True):
     R, C = 5, 8
     lifetime_max = np.max(df.lifetime.values[:R*C])
     for i in range(R * C):
-        plt.subplot(R, C, i + 1)
-        row = df.iloc[i]
-        plt.plot(row.X, color='red', label='clathrin')
-        if extra_key is not None:
-            plt.plot(row[extra_key], color='gray', label=extra_key)
-        else:
-            plt.plot(row.Y, color='green', label='auxilin')
-            if hline:
-                plt.axhline(642.3754691658837, color='gray', alpha=0.5)
-        plt.xlim([-1, lifetime_max + 1])
+        if i < df.shape[0]:
+            plt.subplot(R, C, i + 1)
+            row = df.iloc[i]
+            plt.plot(row.X, color='red', label='clathrin')
+            if extra_key is not None:
+                plt.plot(row[extra_key], color='gray', label=extra_key)
+            else:
+                plt.plot(row.Y, color='green', label='auxilin')
+                if hline:
+                    plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+            plt.xlim([-1, lifetime_max + 1])
 #         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi('off')
     plt.legend()

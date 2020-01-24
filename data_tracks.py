@@ -36,6 +36,8 @@ cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])
 cell_nums_test = np.array([6])
 
+
+
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
              use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True, 
@@ -58,6 +60,7 @@ def get_data(use_processed=True, save_processed=True,
         metadata = {}
         print('\tloading tracks...')
         df = get_tracks() # note: different Xs can be different shapes
+        df['pid'] = np.arange(df.shape[0]) # assign each track a unique id
         metadata['num_tracks_orig'] = df.shape[0]
         
         print('\tpreprocessing data...')
@@ -84,13 +87,23 @@ def get_data(use_processed=True, save_processed=True,
         
         
         print('\tadding features...')
-        df = add_dict_features(df, use_processed=use_processed_dicts)
+        # df = add_dict_features(df, use_processed=use_processed_dicts)
         df = add_smoothed_tracks(df)
         df = add_pcs(df)
         if save_processed:
             pkl.dump(metadata, open(metadata_file, 'wb'))
             df.to_pickle(processed_file)
     return df
+
+# gt labels (by pid)
+def get_labels():
+    return {
+        'hotspots': [6510, 6606, 2373, 6135, 6023, 7730, 2193, 8307, 5626, 4109, 2921, 4614, 2573, 7490, 6097, 
+            7836, 1011, 6493, 5779, 8660, 6232, 6009, 2579, 929, 3824, 357, 6162, 477, 5640, 6467, 
+            244, 2922, 4288, 2926, 1480, 4441, 4683],
+        'neg': [6725, 909, 5926, 983, 8224, 3363],
+        'pos': [3982, 8243, 777, 3940, 7559, 2455, 4748, 633, 2177, 1205, 603, 7972, 8458, 3041, 924, 8786, 4116, 885, 6298, 4658, 7889, 982, 829, 1210, 3054, 504, 1164, 347, 627, 1470, 2662, 2813, 422, 8400, 7474, 1273, 6365, 1559, 4348, 1156, 6250, 4864, 639, 930, 5424, 7818, 8463, 4358, 7656, 843, 890, 4373, 2737, 7524, 2590, 3804, 7667, 2148, 8585, 2919, 5712, 3331, 4440, 1440, 4699, 4803, 1089, 3004, 3126, 2869, 4183, 7335, 3166, 8461, 2180, 849, 6458, 4575, 4091, 3966, 4725, 2514, 7626, 3055, 4200, 6429, 1220, 4472, 8559, 412, 903, 5440, 1084, 2136, 6833, 1189, 7521, 8141, 7939, 8421, 944, 1264, 298, 6600, 1309, 3043, 243, 4161, 6813, 5464]
+    }
 
 def get_images(cell_name, auxilin_dir=auxilin_dir):
     '''Loads in X and Y for one cell
@@ -190,6 +203,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
         df = pd.DataFrame.from_dict(data)
         dfs.append(deepcopy(df))
     df = pd.concat(dfs)
+    os.makedirs(os.path.dirname(processed_tracks_file), exist_ok=True)
     df.to_pickle(processed_tracks_file)
     return df
 
@@ -305,6 +319,8 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
             y_consec_sig.append(0)
     df['y_consec_sig'] = y_consec_sig
     df['y_consec_thresh'] = np.logical_or(df['y_consec_sig'], df['y_conservative_thresh'])
+    df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
+    df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
     
     def add_hotspots(df, num_sigs, outcome_def='consec_sig'):
         '''Identify hotspots as any track which over its time course has multiple events
@@ -328,6 +344,7 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
                         hotspots[i] = 0
         df['sig_idxs'] = num_sigs
         df['hotspots'] = hotspots
+        df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = 1 # add manual hotspot labels
         return df
     
     df = add_hotspots(df, num_sigs)
@@ -526,7 +543,7 @@ def get_feature_names(df):
         and not k.startswith('Y')
         and not k.startswith('pixel')
 #         and not k.startswith('pc_')
-        and not k in ['catIdx', 'cell_num', # metadata
+        and not k in ['catIdx', 'cell_num', 'pid', # metadata
                       'X', 'X_pvals', 'x_pos',
                       'X_peak_idx',
                       'hotspots', 'sig_idxs',
