@@ -28,8 +28,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+#auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -339,19 +339,25 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
     
     # outcomes based on significant p-values
     num_sigs = [np.array(df['Y_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
+    df['y_num_sig'] = np.array([num_sigs[i].sum() for i in range(df.shape[0])]).astype(np.int)
     df['y_single_sig'] = np.array([num_sigs[i].sum() > 0 for i in range(df.shape[0])]).astype(np.int)
     df['y_double_sig'] = np.array([num_sigs[i].sum() > 1 for i in range(df.shape[0])]).astype(np.int)
     df['y_conservative_thresh'] = (df['Y_max'].values > aux_thresh).astype(np.int)
     y_consec_sig = []
+    y_sig_min_diff = []
     for i in range(df.shape[0]):
         idxs_sig = np.where(num_sigs[i]==1)[0] # indices of significance
-        
+        if len(idxs_sig) > 1:
+            y_sig_min_diff.append(np.min(np.diff(idxs_sig)))
+        else:
+            y_sig_min_diff.append(np.nan)
         # find whether there were consecutive sig. indices
         if len(idxs_sig) > 1 and np.min(np.diff(idxs_sig)) == 1:
             y_consec_sig.append(1)
         else:
             y_consec_sig.append(0)
     df['y_consec_sig'] = y_consec_sig
+    df['y_sig_min_diff'] = y_sig_min_diff
     df['y_consec_thresh'] = np.logical_or(df['y_consec_sig'], df['y_conservative_thresh'])
     df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
     df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
