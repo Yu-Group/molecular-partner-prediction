@@ -134,7 +134,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         for c in range(C):
             if i < dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
-                ax.text(.5, .9, f'{i}',
+                ax.text(.5, .9, f'{dft.pid.iloc[i]}',
                          horizontalalignment='right',
                          transform=ax.transAxes)
                 plt.axis('off')
