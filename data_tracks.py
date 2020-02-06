@@ -303,6 +303,7 @@ def preprocess(df):
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
     df['rise_extended'] = df.apply(lambda row: calc_rise(row['X_extended']), axis=1)
     df['fall_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
+    df['fall_late_extended'] = df.apply(lambda row: row['fall_extended'] if row['X_peak_last_15'] else row['fall'], axis=1)
     
     
     df['rise_slope'] = df.apply(lambda row: calc_rise_slope(row['X']), axis=1)
