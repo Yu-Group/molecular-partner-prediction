@@ -301,7 +301,7 @@ def preprocess(df):
     
     df['rise'] = df.apply(lambda row: calc_rise(row['X']), axis=1)
     df['fall'] = df.apply(lambda row: calc_fall(row['X']), axis=1)
-    df['rise_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
+    df['rise_extended'] = df.apply(lambda row: calc_rise(row['X_extended']), axis=1)
     df['fall_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
     
     
@@ -387,9 +387,9 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
     
     df = add_hotspots(df, num_sigs)
     
-#     df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
-#     df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
-#     df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = 1 # add manual hotspot labels
+    df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
+    df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
+    df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = 1 # add manual hotspot labels
 
     
     return df
