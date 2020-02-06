@@ -114,7 +114,7 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
     elif model_type == 'svm':
         m = SVR(gamma='scale')
     elif model_type == 'mlp2':
-        m = MLPRegressor()
+        m = MLPRegressor(hidden_layer_sizes=(10, ), max_iter=2000)
     elif model_type == 'gb':
         m = GradientBoostingRegressor()
     elif model_type == 'irf':
