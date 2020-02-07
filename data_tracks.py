@@ -345,7 +345,9 @@ def rule_based_model(track):
         return 0
     if track['y_consec_sig'] or track['y_conservative_thresh']:
         return 1
-    if track['X_max_diff'] > 260 and track['y_z_score'] > 2.6:
+    #if track['X_max_diff'] > 260 and track['y_z_score'] > 2.6:
+    #    return 1
+    if track['X_max_diff'] > 260 and track['Y_max'] > 560:
         return 1
     return 0
 
