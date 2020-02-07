@@ -331,6 +331,48 @@ def preprocess(df):
     df['min_diff'] = df.apply(lambda row: min_diff(row['X']), axis=1)        
     return df
 
+
+def rule_based_model(track):
+    
+    #three rules:
+    #  if aux peaks too early -- negative
+    #  elif:
+    #     if y_consec_sig or y_conservative_thresh or (cla drops around aux peak, and aux max is greater than 
+    #     mean + 2.6*std), then positive
+    #  else: negative
+    
+    if track['Y_peak_time_frac'] < 0.2:
+        return 0
+    if track['y_consec_sig'] or track['y_conservative_thresh']:
+        return 1
+    if track['X_max_diff'] > 260 and track['y_z_score'] > 2.6:
+        return 1
+    return 0
+
+
+def add_rule_based_label(df):
+    
+    df['Y_peak_time_frac'] = df['Y_peak_idx'].values / df['lifetime'].values
+    df['y_z_score'] = (df['Y_max'].values - df['Y_mean'].values)/df['Y_std'].values
+    X_max_around_Y_peak = []
+    X_max_after_Y_peak = []
+    for i in range(len(df)):
+        pt = df['Y_peak_idx'].values[i]
+        lt = df['lifetime'].values[i]
+        left_bf = np.int(0.2 * lt) + 1  # look at a window with length = 30%*lifetime
+        right_bf = np.int(0.1 * lt) + 1
+        arr_around = df['X'].iloc[i][max(0, pt - left_bf): min(pt + right_bf, lt)]
+        arr_after = df['X'].iloc[i][min(pt + right_bf, lt - 1): ]
+        X_max_around_Y_peak.append(max(arr_around))
+        X_max_after_Y_peak.append(max(arr_after))
+    df['X_max_around_Y_peak'] = X_max_around_Y_peak
+    df['X_max_after_Y_peak'] = X_max_after_Y_peak
+    df['X_max_diff'] = df['X_max_around_Y_peak'] - df['X_max_after_Y_peak']
+    
+    df['y_rule_based'] = np.array([rule_based_model(df.iloc[i]) for i in range(len(df))])
+    return df
+
+
 def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=973):
     '''Add binary outcome of whether spike happened and info on whether events were questionable
     '''
@@ -391,7 +433,8 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
     df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
     df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
     df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = 1 # add manual hotspot labels
-
+    
+    df = add_rule_based_label(df)
     
     return df
 
