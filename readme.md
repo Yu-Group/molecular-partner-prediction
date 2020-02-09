@@ -1,1 +1,1 @@
-# modelling images from the advanced bioimaging center
+# modeling images from the advanced bioimaging center
