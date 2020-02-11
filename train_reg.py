@@ -81,10 +81,6 @@ def log_transforms(df):
                                    calc_fall_log(np.array(row['X'][max(0, row['X_peak_idx'] - num2): 
                                                             row['X_peak_idx'] + num2 + 1])), 
                                         axis=1)
-    df['patch_diff_log'] = np.log(df['center_max']) - 1/4*(np.log(df['left_max'])
-                                                          +np.log(df['right_max'])
-                                                          +np.log(df['up_max'])
-                                                          +np.log(df['down_max']))
     return df
 
 
@@ -111,6 +107,8 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
         m = DecisionTreeRegressor()
     elif model_type == 'linear':
         m = LinearRegression()
+    elif model_type == 'ridge':
+        m = RidgeCV()
     elif model_type == 'svm':
         m = SVR(gamma='scale')
     elif model_type == 'mlp2':
