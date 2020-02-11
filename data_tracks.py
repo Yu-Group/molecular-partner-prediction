@@ -321,7 +321,7 @@ def preprocess(df):
     df['rise_extended'] = df.apply(lambda row: calc_rise(row['X_extended']), axis=1)
     df['fall_extended'] = df.apply(lambda row: calc_fall(row['X_extended']), axis=1)
     df['fall_late_extended'] = df.apply(lambda row: row['fall_extended'] if row['X_peak_last_15'] else row['fall'], axis=1)
-    
+    df['fall_final'] = df.apply(lambda row: row['X'][-3] - row['X'][-1], axis=1)
     
     df['rise_slope'] = df.apply(lambda row: calc_rise_slope(row['X']), axis=1)
     df['fall_slope'] = df.apply(lambda row: calc_fall_slope(row['X']), axis=1)
@@ -653,9 +653,13 @@ def get_feature_names(df):
                       'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_extended',
                       'X_peak_idx',
                       'hotspots', 'sig_idxs',
+                      'X_max_around_Y_peak',
+                      'X_max_after_Y_peak',                      
+                      'X_max_diff',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
+
 
 def add_pcs(df):
     '''adds 10 pcs based on feature names
