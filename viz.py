@@ -138,7 +138,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                          horizontalalignment='right',
                          transform=ax.transAxes)
                 plt.axis('off')
-                plt.plot(dft["X"].iloc[i], color=cr)
+                plt.plot(dft["X_extended"].iloc[i], color=cr)
                 plt.plot(dft["Y"].iloc[i], color='green')
                 i += 1
                 plt.xlim([-1, lifetime_max])
