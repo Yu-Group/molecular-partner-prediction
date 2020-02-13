@@ -28,8 +28,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-#auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -131,8 +131,8 @@ def get_images(cell_name, auxilin_dir=auxilin_dir):
     return X, Y
 
 def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_file='processed/tracks.pkl'):
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
+    #if os.path.exists(processed_tracks_file):
+    #    return pd.read_pickle(processed_tracks_file)
     dfs = []
     # 8 cell folders [1, 2, 3, ..., 8]
     for cell_num in cell_nums:
@@ -218,8 +218,12 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
             'x_pos': [sum(x) / len(x) for x in x_pos_seq], # mean position in the image
             'y_pos': [sum(y) / len(y) for y in y_pos_seq],
             'cell_num': [cell_num] * n,
+            't': [t[i][0] for i in range(n)],
+            'x_pos_seq': x_pos_seq,
+            'y_pos_seq': y_pos_seq,
         }
         if all_data:
+            data['t'] = [t[i][0] for i in range(n)]
             data['x_pos_seq'] = x_pos_seq
             data['y_pos_seq'] = y_pos_seq
             data['pixel'] = pixel
@@ -658,6 +662,7 @@ def get_feature_names(df):
                       'X_max_around_Y_peak',
                       'X_max_after_Y_peak',                      
                       'X_max_diff',
+                      't','x_pos_seq','y_pos_seq',
                       'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'] # curves not features
     ]
     return feat_names
