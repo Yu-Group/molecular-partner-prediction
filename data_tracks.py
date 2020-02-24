@@ -28,8 +28,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
-#auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -41,7 +41,7 @@ cell_nums_test = np.array([6])
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
              use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True, 
-             frac_early=0, frac_late=0.15):
+             frac_early=0, frac_late=0.15, all_data=False):
     '''
     Params
     ------
@@ -59,7 +59,7 @@ def get_data(use_processed=True, save_processed=True,
         print('loading + preprocessing data...')
         metadata = {}
         print('\tloading tracks...')
-        df = get_tracks() # note: different Xs can be different shapes
+        df = get_tracks(all_data=all_data) # note: different Xs can be different shapes
         df['pid'] = np.arange(df.shape[0]) # assign each track a unique id
         metadata['num_tracks_orig'] = df.shape[0]
         
@@ -223,9 +223,10 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
             'y_pos_seq': y_pos_seq,
         }
         if all_data:
-            data['t'] = [t[i][0] for i in range(n)]
             data['x_pos_seq'] = x_pos_seq
             data['y_pos_seq'] = y_pos_seq
+            '''
+            data['t'] = [t[i][0] for i in range(n)]
             data['pixel'] = pixel
             data['pixel_left'] = pixel_left
             data['pixel_right'] = pixel_right
@@ -236,6 +237,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
             data['right_max'] = [max(pixel_right[i]) for i in range(n)],
             data['up_max'] = [max(pixel_up[i]) for i in range(n)],
             data['down_max'] = [max(pixel_down[i]) for i in range(n)],
+            '''
         df = pd.DataFrame.from_dict(data)
         dfs.append(deepcopy(df))
     df = pd.concat(dfs)
