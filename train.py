@@ -92,7 +92,7 @@ def balance(X, y, balancing='ros', balancing_ratio=1):
 
 def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
           balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl',
-          feature_selection=None, feature_selection_num=3, seed=42):
+          feature_selection=None, feature_selection_num=3, hyperparam=0, seed=42):
     '''Run training and fit models
     This will balance the data
     This will normalize the features before fitting
@@ -109,15 +109,30 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
 
     if model_type == 'rf':
-        m = RandomForestClassifier(n_estimators=100)
+        h = {
+            -1: 50,
+            0: 100,
+            1: 150
+        }[hyperparam]
+        m = RandomForestClassifier(n_estimators=h)
     elif model_type == 'dt':
         m = DecisionTreeClassifier()
     elif model_type == 'logistic':
         m = LogisticRegression(solver='lbfgs')
     elif model_type == 'svm':
-        m = SVC(gamma='scale')
+        h = {
+            -1: 0.5,
+            0: 1,
+            1: 5
+        }[hyperparam]
+        m = SVC(C=h, gamma='scale')
     elif model_type == 'mlp2':
-        m = MLPClassifier()
+        h = {
+            -1: (50,),
+            0: (100,),
+            1: (50, 50,)
+        }[hyperparam]
+        m = MLPClassifier(hidden_layer_sizes=h)
     elif model_type == 'gb':
         m = GradientBoostingClassifier()
     elif model_type == 'irf':

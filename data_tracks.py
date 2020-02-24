@@ -153,13 +153,17 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
                 msd.append(np.nanmax(tracks['MotionAnalysis'][i]['MSD']))
             except:
                 msd.append(0)
-        X = np.array([tracks['A'][i][0] for i in range(n)])
-        Y = np.array([tracks['A'][i][1] for i in range(n)])
+
+        CLATH = 0
+        AUX = 1
+                
+        X = np.array([tracks['A'][i][CLATH] for i in range(n)])
+        Y = np.array([tracks['A'][i][AUX] for i in range(n)])
         t = np.array([tracks['t'][i] for i in range(n)])
-        x_pos_seq = np.array([tracks['x'][i][0] for i in range(n)]) # position for clathrin (auxilin is very similar)
-        y_pos_seq = np.array([tracks['y'][i][0] for i in range(n)])
-        X_pvals = np.array([tracks['pval_Ar'][i][0] for i in range(n)])
-        Y_pvals = np.array([tracks['pval_Ar'][i][1] for i in range(n)])
+        x_pos_seq = np.array([tracks['x'][i][CLATH] for i in range(n)]) # x-position for clathrin (auxilin is very similar)
+        y_pos_seq = np.array([tracks['y'][i][CLATH] for i in range(n)]) # y-position for clathrin (auxilin is very similar)
+        X_pvals = np.array([tracks['pval_Ar'][i][CLATH] for i in range(n)])
+        Y_pvals = np.array([tracks['pval_Ar'][i][AUX] for i in range(n)])
         
         # buffers
         X_starts = []
@@ -169,8 +173,8 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
                 X_starts.append([])
                 Y_starts.append([])
             else:
-                X_starts.append(d['A'][0])
-                Y_starts.append(d['A'][1])
+                X_starts.append(d['A'][CLATH])
+                Y_starts.append(d['A'][AUX])
         X_ends = []
         Y_ends = []
         for d in tracks['endBuffer']:
@@ -178,8 +182,8 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_fi
                 X_ends.append([])
                 Y_ends.append([])
             else:
-                X_ends.append(d['A'][0])
-                Y_ends.append(d['A'][1])
+                X_ends.append(d['A'][CLATH])
+                Y_ends.append(d['A'][AUX])
         X_extended = [X_starts[i] + X[i] + X_ends[i] for i in range(n)]
                 
         
