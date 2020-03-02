@@ -10,6 +10,7 @@ from sklearn.model_selection import cross_validate, train_test_split
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
 from sklearn import metrics
 import eli5
 import numpy as np
@@ -135,6 +136,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         m = MLPClassifier(hidden_layer_sizes=h)
     elif model_type == 'gb':
         m = GradientBoostingClassifier()
+    elif model_type == 'qda':
+        m = QDA()
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
     elif model_type == 'voting_mlp+svm+rf':
