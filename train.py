@@ -25,7 +25,7 @@ from sklearn.feature_selection import SelectFromModel
 from sklearn.pipeline import Pipeline
 import mat4py
 import pandas as pd
-import data_tracks
+import data
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 import models
@@ -38,7 +38,7 @@ sys.path.append('lib')
 import irf
 from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
-from data_tracks import cell_nums_feature_selection, cell_nums_train, cell_nums_test
+from data import cell_nums_feature_selection, cell_nums_train, cell_nums_test
 
 cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])

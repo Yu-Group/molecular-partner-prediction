@@ -23,7 +23,7 @@ from sklearn import metrics
 plt.style.use('dark_background')
 import mat4py
 import pandas as pd
-import data_tracks
+import data
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 import models
@@ -224,7 +224,7 @@ def plot_curves(df, extra_key=None, hline=True):
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
     '''Compare outliers to errors in venn-diagram
     '''
-    feat_names = data_tracks.get_feature_names(X_test)
+    feat_names = data.get_feature_names(X_test)
     X_feat = X_test[feat_names]
 
     if num_feats_reduced is not None:

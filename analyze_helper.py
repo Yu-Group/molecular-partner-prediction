@@ -18,14 +18,14 @@ from sklearn import metrics
 plt.style.use('dark_background')
 import mat4py
 import pandas as pd
-import data_tracks
+import data
 import models
 from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
 import viz
 from style import *
-from data_tracks import cell_nums_train
+from data import cell_nums_train
 
 def load_results(out_dir):
     r = []
@@ -70,7 +70,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     '''
     # split testing data based on cell num
     d = {}
-    cell_nums_train = data_tracks.cell_nums_train
+    cell_nums_train = data.cell_nums_train
     kf = KFold(n_splits=len(cell_nums_train))
     idxs_cv = []
     

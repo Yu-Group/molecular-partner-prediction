@@ -28,7 +28,6 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 
 
-# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 
 # data splitting

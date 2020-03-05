@@ -19,7 +19,7 @@ from sklearn import metrics
 plt.style.use('dark_background')
 import mat4py
 import pandas as pd
-import data_tracks
+import data
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 import models
