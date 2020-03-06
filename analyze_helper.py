@@ -65,7 +65,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
         n rows, one for each data point in the training set (over all folds)
         2 columns for each model, one for predictions, and one for predicted probabilities
     idxs_cv: np.array
-        indexes corresponding locations of the test set
+        indexes corresponding locations of the validation set
         for example, df.y_thresh.iloc[idxs_cv] would yield all the labels corresponding to the cv preds
     '''
     # split testing data based on cell num
@@ -107,7 +107,6 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
 
 def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
     scores_cv = results['cv']
-    scores_test = results['test']
     imps = results['imps']
     m = imps['model'][model_cv_fold]
     

@@ -148,7 +148,6 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
     
     scores_cv = {s: [] for s in scorers.keys()}
-    scores_test = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
 
     kf = KFold(n_splits=len(cell_nums_train))
@@ -169,12 +168,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     else:
         support = np.ones(len(feat_names)).astype(np.bool)
     
-    # split testing data based on cell num
-    idxs_test = df.cell_num.isin(cell_nums_test)
-    X_test, Y_test = X[idxs_test], y[idxs_test]
     num_pts_by_fold_cv = []
-    
-    # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
+    # loops over cv, where validation set order is cell_nums_train[0], ..., cell_nums_train[-1]
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
         # get sample indices
         idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
@@ -193,13 +188,10 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
             
         # get preds
         preds = m.predict(X_val_cv)
-        preds_test = m.predict(X_test)
         if 'svm' in model_type:
             preds_proba = preds
-            preds_test_proba = preds_test
         else:
             preds_proba = m.predict_proba(X_val_cv)[:, 1]
-            preds_test_proba = m.predict_proba(X_test)[:, 1]
 
 
         # add scores
@@ -207,10 +199,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
             scorer = scorers[s]
             if 'roc' in s or 'curve' in s:
                 scores_cv[s].append(scorer(Y_val_cv, preds_proba))
-                scores_test[s].append(scorer(Y_test, preds_test_proba))
             else:
                 scores_cv[s].append(scorer(Y_val_cv, preds))
-                scores_test[s].append(scorer(Y_test, preds_test))
                 
         imps['model'].append(deepcopy(m))
         imps['imps'].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
@@ -220,7 +210,6 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     results = {'metrics': list(scorers.keys()), 
                'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
                'cv': scores_cv, 
-               'test': scores_test, 
                'imps': imps, # note this contains the model
                'feat_names': feat_names,
                'feature_selector': feature_selector,

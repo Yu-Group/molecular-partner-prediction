@@ -35,10 +35,9 @@ cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])
 cell_nums_test = np.array([6, 7, 8]) # currently these are not even loaded
 
-def get_data(use_processed=True, save_processed=True, 
-             processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
-             use_processed_dicts=True, outcome_def='y_consec_thresh', remove_hotspots=True, 
-             frac_early=0, frac_late=0.15, all_data=False):
+def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl', 
+             metadata_file='processed/metadata.pkl', use_processed_dicts=True, 
+             outcome_def='y_consec_thresh', all_data=False):
     '''
     Params
     ------
@@ -58,35 +57,29 @@ def get_data(use_processed=True, save_processed=True,
         print('\tloading tracks...')
         df = get_tracks(all_data=all_data) # note: different Xs can be different shapes
         df['pid'] = np.arange(df.shape[0]) # assign each track a unique id
+        df['valid'] = 1 # all tracks start as valid
+        df['valid'][df.cell_num.isin(cell_nums_test)] = 0
         metadata['num_tracks_orig'] = df.shape[0]
         
         print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
         df = preprocess(df)
         df = add_outcomes(df)
-        metadata['num_tracks_valid'] = df.shape[0]
-        metadata['num_aux_pos_valid'] = df[outcome_def].sum()
-        metadata['num_hospots_valid'] = df['hotspots'].sum()
-
-        if remove_hotspots:
-            print('\tremoving hotspots....')
-            df = df[df['hotspots']==0]
-        metadata['num_tracks_after_hotspots'] = df.shape[0]
-        metadata['num_aux_pos_after_hotspots'] = df[outcome_def].sum()
+        metadata['num_tracks_valid'] = df.valid.sum()
+        metadata['num_aux_pos_valid'] = df[df.valid == 1][outcome_def].sum()
+        metadata['num_hospots_valid'] = df[df.valid == 1]['hotspots'].sum()
         
-        '''
-        df, meta_peaks = remove_tracks_by_peak_time(df, outcome_def, frac_early=frac_early, frac_late=frac_late)
-        metadata.update(meta_peaks)
-        '''
+        
+        df[df['hotspots'] == 1]['valid'] = 0
+        metadata['num_tracks_after_hotspots'] = df['valid'].sum()
+        metadata['num_aux_pos_after_hotspots'] = df[df.valid == 1][outcome_def].sum()
         
         df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
         metadata.update(meta_lifetime)
         
-        
         print('\tadding features...')
         # df = add_dict_features(df, use_processed=use_processed_dicts)
-        
-        df = add_smoothed_tracks(df)
+        # df = add_smoothed_tracks(df)
         df = add_pcs(df)
         if save_processed:
             pkl.dump(metadata, open(metadata_file, 'wb'))
@@ -127,7 +120,7 @@ def get_images(cell_name, auxilin_dir=auxilin_dir):
     Y = imread(oj(data_dir, 'EGFP', fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)  
     return X, Y
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5], all_data=False, processed_tracks_file='processed/tracks.pkl'):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6, 7, 8], all_data=False, processed_tracks_file='processed/tracks.pkl'):
     #if os.path.exists(processed_tracks_file):
     #    return pd.read_pickle(processed_tracks_file)
     dfs = []
@@ -491,28 +484,11 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
-def remove_tracks_by_peak_time(df: pd.DataFrame, outcome_def, remove_key='X_peak_idx', frac_early=0, frac_late=0.15):
-    '''Remove tracks where aux peaks in beginning / end
-    '''
-    early_peaks = df[remove_key] < df['lifetime'] * frac_early
-    late_peaks = df[remove_key] > (df['lifetime'] * (1 - frac_late))
-    
-    df2 = df[np.logical_and(~early_peaks, ~late_peaks)]
-    meta = {
-        'num_peaks_early': early_peaks.sum(),
-        'num_aux_pos_early': df[outcome_def].values[early_peaks].sum(),
-        'num_peaks_late': late_peaks.sum(),
-        'num_aux_pos_late': df[outcome_def].values[late_peaks].sum(),
-        'num_tracks_after_peak_time': df2.shape[0],
-        'num_aux_pos_after_peak_time': df2[outcome_def].sum()
-    }
-    return df2, meta
-
 def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
-    as a func of lifetime and return points within proper lifetime
+    as a func of lifetime and return points within proper lifetime (only looks at training cells)
     '''
-    vals = df[['lifetime', outcome_def]]
+    vals = df[['lifetime', outcome_def]][df.cell_num.isin(cell_nums_train)]
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
 
@@ -529,7 +505,6 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
         idx_thresh_2 = lifetimes.size - 1
         thresh_higher = lifetimes[idx_thresh_2] + 1
     
-    n = df.shape[0]
     n_short = np.sum(vals["lifetime"]<=thresh_lower)
     n_long = np.sum(vals["lifetime"]>=thresh_higher)
     acc_short = accs_cum_lower[idx_thresh]
@@ -562,10 +537,11 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
         plt.show()
 
     # only df with lifetimes in proper range
-    df = df[(df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)]
+    idxs_valid = (df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)
+    df[~idxs_valid]['valid'] = 0
     metadata = {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 
                 'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher,
-                'num_tracks_after_lifetime': df.shape[0], 'num_aux_pos_after_lifetime': df[outcome_def].sum(),
+                'num_tracks_after_lifetime': df['valid'].sum(), 'num_aux_pos_after_lifetime': df[outcome_def].sum(),
                 'num_hotspots_after_lifetime': df['hotspots'].sum()
                }
     return df, metadata
@@ -658,7 +634,7 @@ def get_feature_names(df):
         and not k.startswith('Y')
         and not k.startswith('pixel')
 #         and not k.startswith('pc_')
-        and not k in ['catIdx', 'cell_num', 'pid', # metadata
+        and not k in ['catIdx', 'cell_num', 'pid', 'valid', # metadata
                       'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_extended',
                       'X_peak_idx',
                       'hotspots', 'sig_idxs',
