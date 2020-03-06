@@ -110,12 +110,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
 
     if model_type == 'rf':
-        h = {
-            -1: 50,
-            0: 100,
-            1: 150
-        }[hyperparam]
-        m = RandomForestClassifier(n_estimators=h)
+        m = RandomForestClassifier(n_estimators=150)
     elif model_type == 'dt':
         m = DecisionTreeClassifier()
     elif model_type == 'logistic':

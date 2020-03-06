@@ -303,27 +303,18 @@ def print_metadata(acc=None):
     metadata_file = 'processed/metadata.pkl'
     m = pkl.load(open(metadata_file, 'rb'))
 
-    print(f'valid:\t\t{m["num_aux_pos_valid"]} aux+ / {m["num_tracks_valid"]} ({m["num_aux_pos_valid"]/m["num_tracks_valid"]:.3f})')
+    print(f'valid:\t\t{m["num_aux_pos_valid"]:>4.0f} aux+ / {m["num_tracks_valid"]:>4.0f} ({m["num_aux_pos_valid"]/m["num_tracks_valid"]:.3f})')
     print('----------------------------------------')
-    print(f'no_hotspots:\t{m["num_aux_pos_after_hotspots"]} aux+ / {m["num_tracks_after_hotspots"]} ({m["num_aux_pos_after_hotspots"]/m["num_tracks_after_hotspots"]:.3f})')
-    print('----------------------------------------')
-    num_eval = m["num_tracks_after_hotspots"]
+    print(f'hotspots:\t{m["num_hotspots_valid"]:>4.0f} aux+ / {m["num_hotspots_valid"]:>4.0f}')
+    print(f'short:\t\t{m["num_short"] - m["num_short"]*m["acc_short"]:>4.0f} aux+ / {m["num_short"]:>4.0f} ({m["acc_short"]:.3f})')
+    print(f'long:\t\t{m["num_long"]*m["acc_long"]:>4.0f} aux+ / {m["num_long"]:>4.0f} ({m["acc_long"]:.3f})')
+    print(f'hard:\t\t{m["num_aux_pos_hard"]:>4.0f} aux+ / {m["num_tracks_hard"]:>4.0f} ({m["num_aux_pos_hard"]/m["num_tracks_hard"]:.3f})')
     
-    if "num_aux_pos_early" in m:
-        print(f'aux_early:\t{m["num_aux_pos_early"]:>4.0f} aux+ / {m["num_peaks_early"]:>4} ({m["num_aux_pos_early"]/m["num_peaks_early"]:.3f})')
-        print(f'aux_late:\t{m["num_aux_pos_late"]:>4.0f} aux+ / {m["num_peaks_late"]:>4} ({m["num_aux_pos_late"]/m["num_peaks_late"]:.3f})')
-        print(f'aux_valid:\t{m["num_aux_pos_after_peak_time"]:>4.0f} aux+ / {m["num_tracks_after_peak_time"]} ({m["num_aux_pos_after_peak_time"]/m["num_tracks_after_peak_time"]:.3f})')
-        num_eval = m["num_tracks_after_peak_time"]
-        print('----------------------------------------')
-
-    print(f'lifetime<={m["thresh_short"]}:\t{round(m["num_short"] * m["acc_short"]):>4.0f} aux+ / {m["num_short"]:>4} ({m["acc_short"]:.3f})')
-    print(f'lifetime>={m["thresh_long"]}:\t{round(m["num_long"] * m["acc_long"]):>4.0f} aux- / {m["num_long"]:>4} ({m["acc_long"]:.3f})')
-    print(f'remaining:\t{m["num_aux_pos_after_lifetime"]:>4.0f} aux+ / {m["num_tracks_after_lifetime"]:>4} ({m["num_aux_pos_after_lifetime"]/m["num_tracks_after_lifetime"]:.3f})')
     if acc is not None:
         print('----------------------------------------')
-        print(f'predicted acc:\t\t\t  {acc:.3f}')
-        print(f'total acc:\t\t\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_after_lifetime"]) / num_eval:.3f}')
-        
+        print(f'hard acc:\t\t\t  {acc:.3f}')
+        num_eval = m["num_tracks_valid"] - m["num_hotspots_valid"]
+        print(f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
         
 def jointplot_grouped(col_x: str, col_y: str, col_k: str, df, 
                       k_is_color=False, scatter_alpha=.5, add_global_hists: bool=False):

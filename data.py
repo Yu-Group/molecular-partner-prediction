@@ -57,25 +57,26 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         print('\tloading tracks...')
         df = get_tracks(all_data=all_data) # note: different Xs can be different shapes
         df['pid'] = np.arange(df.shape[0]) # assign each track a unique id
-        df['valid'] = 1 # all tracks start as valid
-        df['valid'][df.cell_num.isin(cell_nums_test)] = 0
-        metadata['num_tracks_orig'] = df.shape[0]
+        df['valid'] = True # all tracks start as valid
+        df['valid'][df.cell_num.isin(cell_nums_test)] = False
+        metadata['num_tracks'] = df.valid.sum()
         
         print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
         df = preprocess(df)
         df = add_outcomes(df)
+        
         metadata['num_tracks_valid'] = df.valid.sum()
-        metadata['num_aux_pos_valid'] = df[df.valid == 1][outcome_def].sum()
-        metadata['num_hospots_valid'] = df[df.valid == 1]['hotspots'].sum()
+        metadata['num_aux_pos_valid'] = df[df.valid][outcome_def].sum()
+        metadata['num_hotspots_valid'] = df[df.valid]['hotspots'].sum()
+        df['valid'][df.hotspots] = False
         
-        
-        df[df['hotspots'] == 1]['valid'] = 0
-        metadata['num_tracks_after_hotspots'] = df['valid'].sum()
-        metadata['num_aux_pos_after_hotspots'] = df[df.valid == 1][outcome_def].sum()
-        
-        df, meta_lifetime = remove_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
+        df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
+        df['valid'][df.short] = False
+        df['valid'][df.long] = False
         metadata.update(meta_lifetime)
+        metadata['num_tracks_hard'] = df['valid'].sum()
+        metadata['num_aux_pos_hard'] = int(df[df.valid==1][outcome_def].sum())
         
         print('\tadding features...')
         # df = add_dict_features(df, use_processed=use_processed_dicts)
@@ -217,9 +218,6 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6, 7, 8], all_data=False, processed_tra
             'y_pos_seq': y_pos_seq,
         }
         if all_data:
-            data['x_pos_seq'] = x_pos_seq
-            data['y_pos_seq'] = y_pos_seq
-            '''
             data['t'] = [t[i][0] for i in range(n)]
             data['pixel'] = pixel
             data['pixel_left'] = pixel_left
@@ -231,7 +229,6 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6, 7, 8], all_data=False, processed_tra
             data['right_max'] = [max(pixel_right[i]) for i in range(n)],
             data['up_max'] = [max(pixel_up[i]) for i in range(n)],
             data['down_max'] = [max(pixel_down[i]) for i in range(n)],
-            '''
         df = pd.DataFrame.from_dict(data)
         dfs.append(deepcopy(df))
     df = pd.concat(dfs)
@@ -440,7 +437,7 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
                     else:
                         hotspots[i] = 0
         df['sig_idxs'] = num_sigs
-        df['hotspots'] = hotspots
+        df['hotspots'] = hotspots == 1
         
         return df
     
@@ -448,7 +445,7 @@ def add_outcomes(df, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=97
     
     df['y_consec_thresh'][df.pid.isin(get_labels()['pos'])] = 1 # add manual pos labels
     df['y_consec_thresh'][df.pid.isin(get_labels()['neg'])] = 0 # add manual neg labels    
-    df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = 1 # add manual hotspot labels
+    df['hotspots'][df.pid.isin(get_labels()['hotspots'])] = True # add manual hotspot labels
     
     df = add_rule_based_label(df)
     
@@ -484,11 +481,12 @@ def extract_X_mat(df):
     X_mat /= np.std(X_mat)
     return X_mat
 
-def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
+def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
     '''Calculate accuracy you can get by just predicting max class 
     as a func of lifetime and return points within proper lifetime (only looks at training cells)
     '''
-    vals = df[['lifetime', outcome_def]][df.cell_num.isin(cell_nums_train)]
+    vals = df[df.valid == 1][['lifetime', outcome_def]]
+    
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
 
@@ -537,13 +535,10 @@ def remove_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, ac
         plt.show()
 
     # only df with lifetimes in proper range
-    idxs_valid = (df['lifetime'] > thresh_lower) & (df['lifetime'] < thresh_higher)
-    df[~idxs_valid]['valid'] = 0
+    df['short'] = df['lifetime'] <= thresh_lower
+    df['long'] = df['lifetime'] >= thresh_higher
     metadata = {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short, 
-                'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher,
-                'num_tracks_after_lifetime': df['valid'].sum(), 'num_aux_pos_after_lifetime': df[outcome_def].sum(),
-                'num_hotspots_after_lifetime': df['hotspots'].sum()
-               }
+                'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
     return df, metadata
 
 def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', 
@@ -636,7 +631,7 @@ def get_feature_names(df):
 #         and not k.startswith('pc_')
         and not k in ['catIdx', 'cell_num', 'pid', 'valid', # metadata
                       'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_extended',
-                      'X_peak_idx',
+                      'X_peak_idx', 'short', 'long',
                       'hotspots', 'sig_idxs',
                       'X_max_around_Y_peak',
                       'X_max_after_Y_peak',                      
