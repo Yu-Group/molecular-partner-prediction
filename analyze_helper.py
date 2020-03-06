@@ -173,3 +173,21 @@ def load_results_many_models(out_dir, model_names, X_test, Y_test):
         d[model_name + '_errs'] = preds!=Y_test
     df_preds = pd.DataFrame.from_dict(d)
     return df_preds
+
+# normalize and store
+def normalize(df, outcome_def):
+    X = df[data.get_feature_names(df)]
+    X_mean = X.mean()
+    X_std = X.std()
+    ks = list(X.keys())
+    norms = {ks[i]: {'mu': X_mean[i], 'std': X_std[i]} for i in range(len(ks))}
+    X = (X - X_mean) / X_std
+    y = df[outcome_def].values
+    return X, y, norms
+
+def calc_errs(preds, y_full_cv):
+    tp = np.logical_and(preds==1, y_full_cv==1)
+    tn = np.logical_and(preds==0, y_full_cv==0)
+    fp = preds > y_full_cv
+    fn = preds < y_full_cv
+    return tp, tn, fp, fn

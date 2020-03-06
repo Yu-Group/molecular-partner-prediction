@@ -33,9 +33,7 @@ auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 # data splitting
 cell_nums_feature_selection = np.array([1])
 cell_nums_train = np.array([1, 2, 3, 4, 5])
-cell_nums_test = np.array([6])
-
-
+cell_nums_test = np.array([6, 7, 8]) # currently these are not even loaded
 
 def get_data(use_processed=True, save_processed=True, 
              processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl',
@@ -129,7 +127,7 @@ def get_images(cell_name, auxilin_dir=auxilin_dir):
     Y = imread(oj(data_dir, 'EGFP', fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)  
     return X, Y
 
-def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6], all_data=False, processed_tracks_file='processed/tracks.pkl'):
+def get_tracks(cell_nums=[1, 2, 3, 4, 5], all_data=False, processed_tracks_file='processed/tracks.pkl'):
     #if os.path.exists(processed_tracks_file):
     #    return pd.read_pickle(processed_tracks_file)
     dfs = []
