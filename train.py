@@ -40,6 +40,7 @@ import irf
 from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
 from data import cell_nums_feature_selection, cell_nums_train, cell_nums_test
+from sklearn.neighbors import KNeighborsClassifier as KNN
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
                'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
@@ -134,6 +135,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         m = GradientBoostingClassifier()
     elif model_type == 'qda':
         m = QDA()
+    elif model_type == 'KNN':
+        m = KNN()
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
     elif model_type == 'voting_mlp+svm+rf':
