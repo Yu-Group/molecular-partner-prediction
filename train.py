@@ -26,6 +26,7 @@ from sklearn.pipeline import Pipeline
 import mat4py
 import pandas as pd
 import data
+from sklearn.calibration import CalibratedClassifierCV
 from skorch.callbacks import Checkpoint, TrainEndCheckpoint
 from skorch import NeuralNetRegressor, NeuralNetClassifier
 import models
@@ -40,18 +41,17 @@ from irf import irf_utils
 from treeinterpreter.treeinterpreter.feature_importance import feature_importance
 from data import cell_nums_feature_selection, cell_nums_train, cell_nums_test
 
-cell_nums_feature_selection = np.array([1])
-cell_nums_train = np.array([1, 2, 3, 4, 5])
-cell_nums_test = np.array([6])
-
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
                'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
                'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
 
 def get_feature_importance(model, model_type, X_val, Y_val):
-    if model_type in ['dt']:
+    if 'Calibrated' in str(type(model)):
+        perm = eli5.sklearn.permutation_importance.PermutationImportance(model).fit(X_val, Y_val)
+        imps = perm.feature_importances_
+    elif model_type in ['dt']:
         imps = model.feature_importances_
-    if model_type in ['rf', 'irf']:
+    elif model_type in ['rf', 'irf']:
 #         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
         imps = model.feature_importances_
     elif model_type == 'logistic':
@@ -93,6 +93,7 @@ def balance(X, y, balancing='ros', balancing_ratio=1):
 
 def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
           balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl',
+          calibrated=False,
           feature_selection=None, feature_selection_num=3, hyperparam=0, seed=42):
     '''Run training and fit models
     This will balance the data
@@ -110,7 +111,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
 
     if model_type == 'rf':
-        m = RandomForestClassifier(n_estimators=150)
+        m = RandomForestClassifier(n_estimators=100)
     elif model_type == 'dt':
         m = DecisionTreeClassifier()
     elif model_type == 'logistic':
@@ -140,7 +141,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                        ('svm', SVC(gamma='scale')),
                        ('rf', RandomForestClassifier(n_estimators=100))]
         m = VotingClassifier(estimators=models_list, voting='hard')
-
+    if calibrated:
+        m = CalibratedClassifierCV(m)
     
     scores_cv = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
@@ -211,6 +213,7 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                'feature_selection_num': feature_selection_num,
                'model_type': model_type,
                'balancing': balancing,
-               'feat_names_selected': np.array(feat_names)[support]
+               'feat_names_selected': np.array(feat_names)[support],
+               'calibrated': calibrated
               }
     pkl.dump(results, open(out_name, 'wb'))
