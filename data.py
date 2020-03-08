@@ -36,7 +36,7 @@ cell_nums_test = np.array([7, 8]) # currently these are not even loaded
 
 def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl', 
              metadata_file='processed/metadata.pkl', use_processed_dicts=True, 
-             outcome_def='y_consec_thresh', all_data=False):
+             outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.92):
     '''
     Params
     ------
@@ -70,7 +70,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         metadata['num_hotspots_valid'] = df[df.valid]['hotspots'].sum()
         df['valid'][df.hotspots] = False
         
-        df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=0.92)
+        df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=acc_thresh)
         df['valid'][df.short] = False
         df['valid'][df.long] = False
         metadata.update(meta_lifetime)
