@@ -29,7 +29,7 @@ from sklearn import decomposition
 import trend_filtering
 
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
-auxilin_dir = '/accounts/grad/xsli/auxilin_data'
+# auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])

@@ -402,3 +402,58 @@ def plot_decision_boundary(X_col, Y_col, m, df, norms, num_pts=100):
     X = df[results_individual['feat_names_selected']]
     
     preds = m.predict(X)
+    
+
+def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    plt.plot(preds_proba[args], '.', ms=0.5, label='predicted prob')
+    plt.plot(accs, label='cumulative acc')
+    plt.yticks(np.arange(-0.05, 1.05, 0.1))
+    plt.xlabel('num pts included')
+    plt.grid(alpha=0.2)
+    plt.legend()
+    plt.show()
+    
+def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    dv = df[(df.cell_num.isin(data.cell_nums_train)) & (~df.hotspots)]
+    ds = dv[dv.short]
+    argss = np.argsort(ds.lifetime.values)
+    accs_s = (1 - ds[outcome_def]).values[argss]
+
+    dl = dv[dv.long]
+    argsl = np.argsort(dl.lifetime.values)
+    accs_l = (dl[outcome_def]).values[argsl]
+
+    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs_h = (preds == y_full_cv)[argsh]
+
+    # put things together
+    accs = np.hstack((accs_s, accs_l, accs_h))
+    args2 = np.argsort(dv.lifetime.values)
+    accs2 = (1 - dv[outcome_def]).values[args2]
+
+    ns = accs_s.size
+    nl = accs_l.size
+    plt.axvline(ns, lw=0.5)
+    plt.axvline(ns + nl, lw=0.5)
+    nums = np.arange(1, accs.size + 1)
+    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=0.5, label='pred aux-')
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=0.5, label='with model')
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=0.5, label='pred aux-')
+    plt.xlabel('num tracks included (sorted by uncertainty)')
+    plt.ylabel('cumulative accuracy')
+    plt.legend()
+    plt.grid(alpha=0.2)
+    plt.tight_layout()
+    plt.show()
