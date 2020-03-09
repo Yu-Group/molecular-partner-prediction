@@ -26,8 +26,10 @@ import math
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
+import trend_filtering
 
 auxilin_dir = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
+auxilin_dir = '/accounts/grad/xsli/auxilin_data'
 
 # data splitting
 cell_nums_feature_selection = np.array([1])
@@ -81,6 +83,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         # df = add_dict_features(df, use_processed=use_processed_dicts)
         # df = add_smoothed_tracks(df)
         df = add_pcs(df)
+        df = add_trend_filtering(df)
         if save_processed:
             pkl.dump(metadata, open(metadata_file, 'wb'))
             df.to_pickle(processed_file)
@@ -583,7 +586,7 @@ def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pk
         print('dict features not added!')
     return df
                    
-def add_smoothed_tracks(df, 
+def add_smoothed_splines(df, 
                         method='spline', 
                         s_spl=0.004):
     X_smooth_spl = []
@@ -652,4 +655,27 @@ def add_pcs(df):
     X_reduced = pca.transform(X)  
     for i in range(10):
         df['pc_' + str(i)] = X_reduced[:, i]
+    return df
+
+
+def add_trend_filtering(df):
+    df_tf = deepcopy(df)
+    for i in range(len(df)):
+        df_tf['X'].iloc[i] = trend_filtering.trend_filtering(y=df['X'].iloc[i], vlambda=len(df['X'].iloc[i])*5, order=1) 
+    df_tf = preprocess(df_tf)
+    feat_names = get_feature_names(df_tf)
+    feat_names = [x for x in feat_names 
+              if not x.startswith('sc_') 
+              and not x.startswith('nmf_')
+              and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max', 
+                            'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak',
+                           'X_tf']
+              and not x.startswith('pc_')
+#               and not 'local' in x
+#               and not 'X_peak' in x
+#               and not 'slope' in x
+#               and not x in ['fall_final', 'fall_slope', 'fall_imp', 'fall']
+             ]
+    for feat in feat_names:
+        df[feat+'_tf_smooth'] = df_tf[feat]
     return df
