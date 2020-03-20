@@ -52,7 +52,7 @@ def load_results(out_dir):
     r = r.set_index('model_type')
     return r
 
-def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y):
+def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def='y_consec_sig'):
     '''Returns predictions/labels over folds in the dataset
     Params
     ------

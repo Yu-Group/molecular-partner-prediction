@@ -126,7 +126,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
-    C = num_to_plot // R + 1
+    C = num_to_plot // R # + 1
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
     
     i = 0
@@ -151,25 +151,18 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
 def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None):
     '''visualize distribution of errs wrt to 2 dimensions
     '''
-    
-    if 'pc' in key1 and 'pc' in key2:
-        pca = decomposition.PCA(n_components=2, whiten=True)
-        X_reduced = pca.fit_transform(X.iloc[idxs_test])
-        x_pos = X_reduced[:, 0]
-        y_pos = X_reduced[:, 1]
-    else:
-        x_pos = df[key1].iloc[idxs_test]
-        y_pos = df[key2].iloc[idxs_test]
+    x_pos = df[key1].iloc[idxs_test]
+    y_pos = df[key2].iloc[idxs_test]
     
     plt.figure(dpi=200)
     ms = 4
     me = 1
     plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
              color=cb, alpha=0.4, label='true pos', ms=ms, markeredgewidth=0)
-    plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'x',
-             color=cb, alpha=0.4, label='true neg', ms=ms, markeredgewidth=1)
-    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'o', color=cr, 
-             alpha=0.4, label='false pos', ms=ms, markeredgewidth=0)    
+    plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'o',
+             color=cr, alpha=0.4, label='true neg', ms=ms, markeredgewidth=0)
+    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'x', color=cb, 
+             alpha=0.4, label='false pos', ms=ms, markeredgewidth=1)    
     plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, 
              alpha=0.4, label='false neg', ms=ms, markeredgewidth=1)    
     plt.legend()
@@ -457,3 +450,14 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
     plt.grid(alpha=0.2)
     plt.tight_layout()
     plt.show()
+    
+    
+def plot_example(ex):
+    '''ex - row of the dataframe
+    '''
+    plt.figure(dpi=200)
+    plt.plot(ex['X'], color='red', label='clathrin')
+    plt.plot(ex['Y'], color='green', label='auxilin')
+    plt.xlabel('Time')
+    plt.ylabel('Amplitude')
+    plt.legend()

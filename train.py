@@ -177,8 +177,6 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
         X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
         num_pts_by_fold_cv.append(X_val_cv.shape[0])
-        
-        
 
         # resample training data
         X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing, balancing_ratio)

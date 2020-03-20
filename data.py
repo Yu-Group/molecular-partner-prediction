@@ -38,7 +38,7 @@ cell_nums_test = np.array([7, 8]) # currently these are not even loaded
 
 def get_data(use_processed=True, save_processed=True, processed_file='processed/df.pkl', 
              metadata_file='processed/metadata.pkl', use_processed_dicts=True, 
-             outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.92):
+             outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95):
     '''
     Params
     ------
@@ -64,7 +64,7 @@ def get_data(use_processed=True, save_processed=True, processed_file='processed/
         
         print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)
-        df = preprocess(df)
+        df = add_features(df)
         df = add_outcomes(df)
         
         metadata['num_tracks_valid'] = df.valid.sum()
@@ -208,7 +208,7 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6, 7, 8], all_data=False, processed_tra
             'X_pvals': X_pvals,
             'Y_pvals': Y_pvals,
             'catIdx': tracks['catIdx'],
-            'total_displacement': totalDisplacement,
+            'mean_total_displacement': [totalDisplacement[i] / tracks['lifetime_s'][i] for i in range(n)] ,
             'mean_square_displacement': msd,
             'lifetime': tracks['lifetime_s'],
             'lifetime_extended': [len(x) for x in X_extended],            
@@ -238,8 +238,8 @@ def get_tracks(cell_nums=[1, 2, 3, 4, 5, 6, 7, 8], all_data=False, processed_tra
     df.to_pickle(processed_tracks_file)
     return df
 
-def preprocess(df):
-    '''Add a bunch of extra features to the df
+def add_features(df):
+    '''Add a bunch of extra features to the df based on df.X, df.X_extended, df.Y, df.lifetime
     '''
     df = df[df.lifetime > 2]
     df['X_max'] = np.array([max(x) for x in df.X.values])
@@ -662,7 +662,7 @@ def add_trend_filtering(df):
     df_tf = deepcopy(df)
     for i in range(len(df)):
         df_tf['X'].iloc[i] = trend_filtering.trend_filtering(y=df['X'].iloc[i], vlambda=len(df['X'].iloc[i])*5, order=1) 
-    df_tf = preprocess(df_tf)
+    df_tf = add_features(df_tf)
     feat_names = get_feature_names(df_tf)
     feat_names = [x for x in feat_names 
               if not x.startswith('sc_') 
