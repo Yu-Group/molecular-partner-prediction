@@ -1,33 +1,10 @@
 from matplotlib import pyplot as plt
 import seaborn as sns
-import numpy as np
-import os
-from os.path import join as oj
-from sklearn.feature_extraction.image import extract_patches_2d
-from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV
-from sklearn.neural_network import MLPRegressor
-from sklearn.model_selection import cross_validate, train_test_split
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.tree import DecisionTreeClassifier
-from sklearn import metrics
 from sklearn.utils.multiclass import unique_labels
-from sklearn.metrics import confusion_matrix
 import numpy as np
-from collections import Counter
-from sklearn.datasets import make_classification
-from torch import nn
-import torch.nn.functional as F
-import torch
-from copy import deepcopy
 from sklearn import metrics
-import mat4py
 import pandas as pd
 import data
-from skorch.callbacks import Checkpoint, TrainEndCheckpoint
-from skorch import NeuralNetRegressor, NeuralNetClassifier
-import models
-from sklearn.model_selection import KFold
-from colorama import Fore
 import pickle as pkl
 from style import *
 from sklearn.ensemble import IsolationForest
@@ -37,6 +14,7 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.covariance import EllipticEnvelope
 from sklearn.svm import OneClassSVM
 import matplotlib.gridspec as grd
+
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -64,16 +42,16 @@ def plot_confusion_matrix(y_true, y_pred, classes,
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
-#     fig, ax = plt.subplots()
+    #     fig, ax = plt.subplots()
     im = plt.imshow(cm, interpolation='nearest', cmap=cmap)
     ax = plt.gca()
-#     ax.figure.colorbar(im, ax=ax)
+    #     ax.figure.colorbar(im, ax=ax)
     # We want to show all ticks...
     ax.set(xticks=np.arange(cm.shape[1]),
            yticks=np.arange(cm.shape[0]),
            # ... and label them with the respective list entries
            xticklabels=classes, yticklabels=classes,
-#            title=title,
+           #            title=title,
            ylabel='True label',
            xlabel='Predicted label')
 
@@ -91,6 +69,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
                     color="white" if cm[i, j] > thresh else "black")
     return ax
 
+
 def highlight_max(data, color='#0e5c99'):
     '''
     highlight the maximum in a Series or DataFrame
@@ -103,10 +82,10 @@ def highlight_max(data, color='#0e5c99'):
         is_max = data == data.max().max()
         return pd.DataFrame(np.where(is_max, attr, ''),
                             index=data.index, columns=data.columns)
-    
-    
+
+
 # visualize biggest errs
-def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba, 
+def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
@@ -117,66 +96,66 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     '''
-    
+
     # get args to sort by
     Y_test = Y_test[idxs]
     preds = preds[idxs]
     preds_proba = preds_proba[idxs]
     residuals = np.abs(Y_test - preds_proba)
     args = np.argsort(residuals)[::-1]
-    
+
     dft = df.iloc[idxs_cv][idxs].iloc[args]
     lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
-    C = num_to_plot // R # + 1
+    C = num_to_plot // R  # + 1
     plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
-    
+
     i = 0
     for r in range(R):
         for c in range(C):
             if i < dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
                 ax.text(.5, .9, f'{dft.pid.iloc[i]}',
-                         horizontalalignment='right',
-                         transform=ax.transAxes)
+                        horizontalalignment='right',
+                        transform=ax.transAxes)
                 plt.axis('off')
                 plt.plot(dft["X_extended"].iloc[i], color=cr)
                 plt.plot(dft["Y"].iloc[i], color='green')
                 i += 1
                 plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color='gray', alpha=0.5)
-            
+
     plt.tight_layout()
     return dft
-    
+
 
 def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None, plot_correct=True):
     '''visualize distribution of errs wrt to 2 dimensions
     '''
     x_pos = df[key1].iloc[idxs_test]
     y_pos = df[key2].iloc[idxs_test]
-    
+
     plt.figure(dpi=200)
     ms = 4
     me = 1
     if plot_correct:
-        plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
+        plt.plot(x_pos[(preds == Y_test) & (preds == 1)], y_pos[(preds == Y_test) & (preds == 1)], 'o',
                  color=cb, alpha=0.4, label='true pos', ms=ms, markeredgewidth=0)
-        plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'o',
+        plt.plot(x_pos[(preds == Y_test) & (preds == 0)], y_pos[(preds == Y_test) & (preds == 0)], 'o',
                  color=cr, alpha=0.4, label='true neg', ms=ms, markeredgewidth=0)
-    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'x', color=cb, 
-             alpha=0.4, label='false pos', ms=ms, markeredgewidth=1)    
-    plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, 
-             alpha=0.4, label='false neg', ms=ms, markeredgewidth=1)    
+    plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'x', color=cb,
+             alpha=0.4, label='false pos', ms=ms, markeredgewidth=1)
+    plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr,
+             alpha=0.4, label='false neg', ms=ms, markeredgewidth=1)
     plt.legend()
-#     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
+    #     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
     plt.xlabel(key1)
     plt.ylabel(key2)
     plt.tight_layout()
-    
-    
+
+
 def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     '''visualize errs based on lifetime
     '''
@@ -184,23 +163,24 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     correct_idxs = preds == Y_test
     lifetime = X_test[key] * norms[key]['std'] + norms[key]['mu']
 
-    plt.plot(lifetime[(preds==Y_test) & (preds==1)], preds_proba[(preds==Y_test) & (preds==1)], 'o',
+    plt.plot(lifetime[(preds == Y_test) & (preds == 1)], preds_proba[(preds == Y_test) & (preds == 1)], 'o',
              color=cb, alpha=0.5, label='true pos')
-    plt.plot(lifetime[(preds==Y_test) & (preds==0)], preds_proba[(preds==Y_test) & (preds==0)], 'x',
+    plt.plot(lifetime[(preds == Y_test) & (preds == 0)], preds_proba[(preds == Y_test) & (preds == 0)], 'x',
              color=cb, alpha=0.5, label='true neg')
-    plt.plot(lifetime[preds > Y_test], preds_proba[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')    
-    plt.plot(lifetime[preds < Y_test], preds_proba[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')    
+    plt.plot(lifetime[preds > Y_test], preds_proba[preds > Y_test], 'o', color=cr, alpha=0.5, label='false pos')
+    plt.plot(lifetime[preds < Y_test], preds_proba[preds < Y_test], 'x', color=cr, alpha=0.5, label='false neg')
     plt.xlabel(key)
     plt.ylabel('predicted probability')
     plt.legend()
     plt.show()
-    
+
+
 def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
     '''Plot time-series curves from df
     '''
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200)
-    lifetime_max = np.max(df.lifetime.values[:R*C])
+    lifetime_max = np.max(df.lifetime.values[:R * C])
     for i in range(R * C):
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
@@ -213,12 +193,13 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             plt.xlim([-1, lifetime_max + 1])
-#         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+    #         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi('off')
     plt.legend()
     plt.tight_layout()
     plt.show()
-    
+
+
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
     '''Compare outliers to errors in venn-diagram
     '''
@@ -246,11 +227,12 @@ def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
         elif i == 3:
             clf = OneClassSVM()
         clf.fit(X_reduced)  # fit 10 trees  
-        is_outlier = clf.predict(X_reduced)==-1
+        is_outlier = clf.predict(X_reduced) == -1
         is_err = preds != Y_test
         idxs = np.arange(is_outlier.size)
         venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=['outliers', 'errors'])
-    
+
+
 def plot_pcs(pca, X):
     '''Pretty plot of pcs with explained var bars
     Params
@@ -258,64 +240,66 @@ def plot_pcs(pca, X):
     pca: sklearn PCA class after being fitted
     '''
     plt.figure(figsize=(6, 9), dpi=200)
-    
+
     # extract out relevant pars
     comps = pca.components_.transpose()
     var_norm = pca.explained_variance_ / np.sum(pca.explained_variance_) * 100
-    
-    
+
     # create a 2 X 2 grid 
-    gs = grd.GridSpec(2, 2, height_ratios=[2,10], 
+    gs = grd.GridSpec(2, 2, height_ratios=[2, 10],
                       width_ratios=[12, 1], wspace=0.1, hspace=0)
 
-    
     # plot explained variance
     ax2 = plt.subplot(gs[0])
-    ax2.bar(np.arange(0, comps.shape[1]), var_norm, 
+    ax2.bar(np.arange(0, comps.shape[1]), var_norm,
             color='gray', width=0.8)
     plt.title('Explained variance (%)')
     ax2.spines['right'].set_visible(False)
     ax2.spines['top'].set_visible(False)
     ax2.yaxis.set_ticks_position('left')
     ax2.set_yticks([0, max(var_norm)])
-    plt.xlim((-0.5, comps.shape[1]-0.5))
-    
+    plt.xlim((-0.5, comps.shape[1] - 0.5))
+
     # plot pcs
     ax = plt.subplot(gs[2])
     vmaxabs = np.max(np.abs(comps))
     p = ax.imshow(comps, interpolation='None', aspect='auto',
                   cmap=sns.diverging_palette(10, 240, as_cmap=True, center='light'),
-                  vmin=-vmaxabs, vmax=vmaxabs) # center at 0
+                  vmin=-vmaxabs, vmax=vmaxabs)  # center at 0
     plt.xlabel('PCA component number')
     ax.set_yticklabels(list(X))
     ax.set_yticks(range(len(list(X))))
-    
 
     # make colorbar
     colorAx = plt.subplot(gs[3])
     cb = plt.colorbar(p, cax=colorAx)
     plt.show()
-    
-    
+
+
 def print_metadata(acc=None):
     metadata_file = 'processed/metadata.pkl'
     m = pkl.load(open(metadata_file, 'rb'))
 
-    print(f'valid:\t\t{m["num_aux_pos_valid"]:>4.0f} aux+ / {m["num_tracks_valid"]:>4.0f} ({m["num_aux_pos_valid"]/m["num_tracks_valid"]:.3f})')
+    print(
+        f'valid:\t\t{m["num_aux_pos_valid"]:>4.0f} aux+ / {m["num_tracks_valid"]:>4.0f} ({m["num_aux_pos_valid"] / m["num_tracks_valid"]:.3f})')
     print('----------------------------------------')
     print(f'hotspots:\t{m["num_hotspots_valid"]:>4.0f} aux+ / {m["num_hotspots_valid"]:>4.0f}')
-    print(f'short:\t\t{m["num_short"] - m["num_short"]*m["acc_short"]:>4.0f} aux+ / {m["num_short"]:>4.0f} ({m["acc_short"]:.3f})')
-    print(f'long:\t\t{m["num_long"]*m["acc_long"]:>4.0f} aux+ / {m["num_long"]:>4.0f} ({m["acc_long"]:.3f})')
-    print(f'hard:\t\t{m["num_aux_pos_hard"]:>4.0f} aux+ / {m["num_tracks_hard"]:>4.0f} ({m["num_aux_pos_hard"]/m["num_tracks_hard"]:.3f})')
-    
+    print(
+        f'short:\t\t{m["num_short"] - m["num_short"] * m["acc_short"]:>4.0f} aux+ / {m["num_short"]:>4.0f} ({m["acc_short"]:.3f})')
+    print(f'long:\t\t{m["num_long"] * m["acc_long"]:>4.0f} aux+ / {m["num_long"]:>4.0f} ({m["acc_long"]:.3f})')
+    print(
+        f'hard:\t\t{m["num_aux_pos_hard"]:>4.0f} aux+ / {m["num_tracks_hard"]:>4.0f} ({m["num_aux_pos_hard"] / m["num_tracks_hard"]:.3f})')
+
     if acc is not None:
         print('----------------------------------------')
         print(f'hard acc:\t\t\t  {acc:.3f}')
         num_eval = m["num_tracks_valid"] - m["num_hotspots_valid"]
-        print(f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
-        
-def jointplot_grouped(col_x: str, col_y: str, col_k: str, df, 
-                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool=False):
+        print(
+            f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
+
+
+def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
+                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool = False):
     '''Jointplot of hists + densities
     Params
     ------
@@ -328,6 +312,7 @@ def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
     add_global_hists
         whether to plot the global hist as well
     '''
+
     def colored_scatter(x, y, c=None):
         def scatter(*args, **kwargs):
             args = (x, y)
@@ -344,13 +329,13 @@ def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
         data=df
     )
     color = None
-    legends=[]
+    legends = []
     for name, df_group in df.groupby(col_k):
         legends.append(name)
         if k_is_color:
-            color=name
+            color = name
         g.plot_joint(
-            colored_scatter(df_group[col_x],df_group[col_y],color),
+            colored_scatter(df_group[col_x], df_group[col_y], color),
         )
         sns.distplot(
             df_group[col_x].values,
@@ -360,7 +345,7 @@ def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
         sns.distplot(
             df_group[col_y].values,
             ax=g.ax_marg_y,
-            color=color,            
+            color=color,
             vertical=True
         )
     if add_global_hists:
@@ -376,8 +361,8 @@ def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
             vertical=True
         )
     plt.legend(legends)
-    
-    
+
+
 # 2d decision boundary
 def plot_decision_boundary(X_col, Y_col, m, df, norms, num_pts=100):
     '''still not finished...
@@ -386,21 +371,21 @@ def plot_decision_boundary(X_col, Y_col, m, df, norms, num_pts=100):
     y = df[Y_col]
     x = np.linspace(x.min(), x.max(), num_pts)
     y = np.linspace(y.min(), y.max(), num_pts)
-    
+
     # normalize
     xv, yv = np.meshgrid(x, y, indexing='ij')
     x = xv.flatten()
     y = yv.flatten()
     x = (x - norms[X_col]['mu']) / (norms[X_col]['std'])
     y = (y - norms[Y_col]['mu']) / (norms[Y_col]['std'])
-    
+
     X = np.hstack((x, y)).reshape(-1, 2)
     print(X.shape)
-    
+
     X = df[results_individual['feat_names_selected']]
-    
+
     preds = m.predict(X)
-    
+
 
 def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
@@ -416,7 +401,8 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.grid(alpha=0.2)
     plt.legend()
     plt.show()
-    
+
+
 def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
     args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
     accs = (preds == y_full_cv)[args]
@@ -455,8 +441,8 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
     plt.grid(alpha=0.2)
     plt.tight_layout()
     plt.show()
-    
-    
+
+
 def plot_example(ex):
     '''ex - row of the dataframe
     '''

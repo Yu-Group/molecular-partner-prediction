@@ -1,50 +1,30 @@
-import seaborn as sns
-import numpy as np
-import os
 import sys
-from os.path import join as oj
-from sklearn.feature_extraction.image import extract_patches_2d
-from sklearn.linear_model import LinearRegression, LogisticRegression, RidgeCV, Lasso
-from sklearn.neural_network import MLPRegressor, MLPClassifier
-from sklearn.model_selection import cross_validate, train_test_split
+from sklearn.linear_model import LogisticRegression, Lasso
+from sklearn.neural_network import MLPClassifier
 from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
 from sklearn.tree import DecisionTreeClassifier
 from sklearn.svm import SVC
 from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
-from sklearn import metrics
 import eli5
 import numpy as np
-from collections import Counter
-from sklearn.datasets import make_classification
-from torch import nn
-import torch.nn.functional as F
-import torch
 from copy import deepcopy
 from sklearn import metrics
 from sklearn.feature_selection import SelectFromModel
-from sklearn.pipeline import Pipeline
-import mat4py
-import pandas as pd
-import data
 from sklearn.calibration import CalibratedClassifierCV
-from skorch.callbacks import Checkpoint, TrainEndCheckpoint
-from skorch import NeuralNetRegressor, NeuralNetClassifier
-import models
 from imblearn.over_sampling import RandomOverSampler, SMOTE
 from sklearn.model_selection import KFold
-from colorama import Fore
 import pickle as pkl
-from tqdm import tqdm
+
 sys.path.append('lib')
 import irf
-from irf import irf_utils
-from treeinterpreter.treeinterpreter.feature_importance import feature_importance
-from data import cell_nums_feature_selection, cell_nums_train, cell_nums_test
+from data import cell_nums_feature_selection, cell_nums_train
 from sklearn.neighbors import KNeighborsClassifier as KNN
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
-               'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score, 'roc_auc': metrics.roc_auc_score,
-               'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
+           'precision': metrics.precision_score, 'recall': metrics.recall_score, 'f1': metrics.f1_score,
+           'roc_auc': metrics.roc_auc_score,
+           'precision_recall_curve': metrics.precision_recall_curve, 'roc_curve': metrics.roc_curve}
+
 
 def get_feature_importance(model, model_type, X_val, Y_val):
     if 'Calibrated' in str(type(model)):
@@ -53,7 +33,7 @@ def get_feature_importance(model, model_type, X_val, Y_val):
     elif model_type in ['dt']:
         imps = model.feature_importances_
     elif model_type in ['rf', 'irf']:
-#         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
+        #         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
         imps = model.feature_importances_
     elif model_type == 'logistic':
         imps = model.coef_
@@ -62,6 +42,7 @@ def get_feature_importance(model, model_type, X_val, Y_val):
         imps = perm.feature_importances_
     return imps.squeeze()
 
+
 def balance(X, y, balancing='ros', balancing_ratio=1):
     '''Balance classes in y using strategy specified by balancing
     Params
@@ -69,28 +50,27 @@ def balance(X, y, balancing='ros', balancing_ratio=1):
     balancing_ratio: float
         ratio of pos: neg samples
     '''
-    class0 = np.sum(y==0)
-    class1 = np.sum(y==1)
+    class0 = np.sum(y == 0)
+    class1 = np.sum(y == 1)
     class_max = max(class0, class1)
 
     if balancing_ratio >= 1:
         sample_nums = {0: int(class_max), 1: int(class_max * balancing_ratio)}
     else:
         sample_nums = {0: int(class_max / balancing_ratio), 1: int(class_max)}
-        
+
     if balancing == 'none':
         return X, y
-    
+
     if balancing == 'ros':
         sampler = RandomOverSampler(sampling_strategy=sample_nums, random_state=42)
-        
+
     elif balancing == 'smote':
         sampler = SMOTE(sampling_strategy=sample_nums, random_state=42)
-    
-    X_r, Y_r = sampler.fit_resample(X, y)   
+
+    X_r, Y_r = sampler.fit_resample(X, y)
     return X_r, Y_r
-    
-    
+
 
 def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
           balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl',
@@ -107,9 +87,8 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     '''
     np.random.seed(seed)
     X = df[feat_names]
-    X = (X - X.mean()) / X.std() # normalize the data
+    X = (X - X.mean()) / X.std()  # normalize the data
     y = df[outcome_def].values
-
 
     if model_type == 'rf':
         m = RandomForestClassifier(n_estimators=100)
@@ -140,34 +119,35 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
     elif model_type == 'voting_mlp+svm+rf':
-        models_list = [('mlp', MLPClassifier()), 
+        models_list = [('mlp', MLPClassifier()),
                        ('svm', SVC(gamma='scale')),
                        ('rf', RandomForestClassifier(n_estimators=100))]
         m = VotingClassifier(estimators=models_list, voting='hard')
     if calibrated:
         m = CalibratedClassifierCV(m)
-    
+
     scores_cv = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
 
     kf = KFold(n_splits=len(cell_nums_train))
-    
+
     # feature selection on cell num 1    
     feature_selector = None
-    if feature_selection is not None:        
+    if feature_selection is not None:
         if feature_selection == 'select_lasso':
             feature_selector_model = Lasso()
         elif feature_selection == 'select_rf':
             feature_selector_model = RandomForestClassifier()
         # select only feature_selection_num features
-        feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf, max_features=feature_selection_num)
+        feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf,
+                                           max_features=feature_selection_num)
         idxs = df.cell_num.isin(cell_nums_feature_selection)
         feature_selector.fit(X[idxs], y[idxs])
         X = feature_selector.transform(X)
         support = np.array(feature_selector.get_support())
     else:
         support = np.ones(len(feat_names)).astype(np.bool)
-    
+
     num_pts_by_fold_cv = []
     # loops over cv, where validation set order is cell_nums_train[0], ..., cell_nums_train[-1]
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
@@ -183,14 +163,13 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
 
         # fit
         m.fit(X_train_r_cv, Y_train_r_cv)
-            
+
         # get preds
         preds = m.predict(X_val_cv)
         if 'svm' in model_type:
             preds_proba = preds
         else:
             preds_proba = m.predict_proba(X_val_cv)[:, 1]
-
 
         # add scores
         for s in scorers.keys():
@@ -199,16 +178,16 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                 scores_cv[s].append(scorer(Y_val_cv, preds_proba))
             else:
                 scores_cv[s].append(scorer(Y_val_cv, preds))
-                
+
         imps['model'].append(deepcopy(m))
         imps['imps'].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
 
     # save results
     # os.makedirs(out_dir, exist_ok=True)
-    results = {'metrics': list(scorers.keys()), 
+    results = {'metrics': list(scorers.keys()),
                'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
-               'cv': scores_cv, 
-               'imps': imps, # note this contains the model
+               'cv': scores_cv,
+               'imps': imps,  # note this contains the model
                'feat_names': feat_names,
                'feature_selector': feature_selector,
                'feature_selection_num': feature_selection_num,
@@ -216,5 +195,5 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
                'balancing': balancing,
                'feat_names_selected': np.array(feat_names)[support],
                'calibrated': calibrated
-              }
+               }
     pkl.dump(results, open(out_name, 'wb'))
