@@ -20,7 +20,6 @@ import torch.nn.functional as F
 import torch
 from copy import deepcopy
 from sklearn import metrics
-plt.style.use('dark_background')
 import mat4py
 import pandas as pd
 import data
@@ -46,7 +45,12 @@ def plot_confusion_matrix(y_true, y_pred, classes,
     """
     This function prints and plots the confusion matrix.
     Normalization can be applied by setting `normalize=True`.
+    Params
+    ------
+    classes: np.ndarray(Str)
+        classes=np.array(['aux-', 'aux+'])
     """
+    plt.figure(dpi=300)
     if not title:
         if normalize:
             title = 'Normalized confusion matrix'
@@ -148,7 +152,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
     return dft
     
 
-def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None):
+def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None, plot_correct=True):
     '''visualize distribution of errs wrt to 2 dimensions
     '''
     x_pos = df[key1].iloc[idxs_test]
@@ -157,10 +161,11 @@ def viz_errs_2d(df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None
     plt.figure(dpi=200)
     ms = 4
     me = 1
-    plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
-             color=cb, alpha=0.4, label='true pos', ms=ms, markeredgewidth=0)
-    plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'o',
-             color=cr, alpha=0.4, label='true neg', ms=ms, markeredgewidth=0)
+    if plot_correct:
+        plt.plot(x_pos[(preds==Y_test) & (preds==1)], y_pos[(preds==Y_test) & (preds==1)], 'o',
+                 color=cb, alpha=0.4, label='true pos', ms=ms, markeredgewidth=0)
+        plt.plot(x_pos[(preds==Y_test) & (preds==0)], y_pos[(preds==Y_test) & (preds==0)], 'o',
+                 color=cr, alpha=0.4, label='true neg', ms=ms, markeredgewidth=0)
     plt.plot(x_pos[preds > Y_test], y_pos[preds > Y_test], 'x', color=cb, 
              alpha=0.4, label='false pos', ms=ms, markeredgewidth=1)    
     plt.plot(x_pos[preds < Y_test], y_pos[preds < Y_test], 'x', color=cr, 
@@ -190,11 +195,11 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     plt.legend()
     plt.show()
     
-def plot_curves(df, extra_key=None, hline=True):
-    '''Plot first  time-series curves from df
+def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
+    '''Plot time-series curves from df
     '''
-    plt.figure(figsize=(16, 10), dpi=200)
-    R, C = 5, 8
+    if fig is None:
+        plt.figure(figsize=(16, 10), dpi=200)
     lifetime_max = np.max(df.lifetime.values[:R*C])
     for i in range(R * C):
         if i < df.shape[0]:
@@ -404,8 +409,8 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     accs = np.cumsum(accs) / np.arange(1, n + 1)
 
     plt.figure(dpi=500)
-    plt.plot(preds_proba[args], '.', ms=0.5, label='predicted prob')
-    plt.plot(accs, label='cumulative acc')
+    plt.plot(preds_proba[args], '.', ms=0.5, label='predicted prob', color=cb)
+    plt.plot(accs, label='cumulative acc', color=cr)
     plt.yticks(np.arange(-0.05, 1.05, 0.1))
     plt.xlabel('num pts included')
     plt.grid(alpha=0.2)
@@ -441,9 +446,9 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
     plt.axvline(ns, lw=0.5)
     plt.axvline(ns + nl, lw=0.5)
     nums = np.arange(1, accs.size + 1)
-    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=0.5, label='pred aux-')
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=0.5, label='with model')
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=0.5, label='pred aux-')
+    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label='pred aux-', color=cr)
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label='with model', color=cb)
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
     plt.xlabel('num tracks included (sorted by uncertainty)')
     plt.ylabel('cumulative accuracy')
     plt.legend()
