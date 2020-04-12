@@ -2,8 +2,6 @@ from matplotlib import pyplot as plt
 import os
 from os.path import join as oj
 import numpy as np
-
-plt.style.use('dark_background')
 import pandas as pd
 import data
 from sklearn.model_selection import KFold

@@ -3,8 +3,6 @@ import os
 from os.path import join as oj
 from sklearn.linear_model import LinearRegression, RidgeCV
 import numpy as np
-
-plt.style.use('dark_background')
 import pandas as pd
 from statsmodels import robust
 from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor

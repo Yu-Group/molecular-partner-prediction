@@ -5,8 +5,6 @@ from skimage.external.tifffile import imread
 from sklearn.linear_model import LinearRegression, RidgeCV
 import numpy as np
 from copy import deepcopy
-
-plt.style.use('dark_background')
 import mat4py
 import pandas as pd
 
@@ -603,6 +601,7 @@ def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, a
         idx_thresh_2 = lifetimes.size - 1
         thresh_higher = lifetimes[idx_thresh_2] + 1
 
+    n = vals.shape[0]
     n_short = np.sum(vals["lifetime"] <= thresh_lower)
     n_long = np.sum(vals["lifetime"] >= thresh_higher)
     acc_short = accs_cum_lower[idx_thresh]
@@ -631,7 +630,6 @@ def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, a
         plt.ylabel('fraction of positive events')
         plt.xlabel(f'lifetime >= value\nshaded includes {n_long / n * 100:0.0f}% of pts')
         plt.tight_layout()
-        plt.show()
 
     # only df with lifetimes in proper range
     df['short'] = df['lifetime'] <= thresh_lower

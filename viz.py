@@ -185,11 +185,11 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            plt.plot(row.X, color='red', label='clathrin')
+            plt.plot(row.X, color=cr, label='clathrin')
             if extra_key is not None:
                 plt.plot(row[extra_key], color='gray', label=extra_key)
             else:
-                plt.plot(row.Y, color='green', label='auxilin')
+                plt.plot(row.Y, color=cb, label='auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             plt.xlim([-1, lifetime_max + 1])
@@ -197,7 +197,8 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
     #     plt.axi('off')
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    if fig is None:
+        plt.show()
 
 
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
