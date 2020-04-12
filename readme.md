@@ -1,1 +1,2 @@
-# modeling images from the advanced bioimaging center
+# predicting auxilin spikes in clathrin-mediated endocytosis
+

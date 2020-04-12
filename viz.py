@@ -404,7 +404,8 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.show()
 
 
-def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
+def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def, 
+                            plot_vert_line_for_high_lifetimes=False, show=True):
     args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
     accs = (preds == y_full_cv)[args]
     n = accs.size
@@ -430,18 +431,18 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
 
     ns = accs_s.size
     nl = accs_l.size
-    plt.axvline(ns, lw=0.5)
+    if plot_vert_line_for_high_lifetimes:
+        plt.axvline(ns, lw=0.5, color='gray')
     plt.axvline(ns + nl, lw=0.5)
     nums = np.arange(1, accs.size + 1)
     plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label='pred aux-', color=cr)
     plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label='with model', color=cb)
     plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
-    plt.xlabel('num tracks included (sorted by uncertainty)')
-    plt.ylabel('cumulative accuracy')
+    plt.xlabel('Number of tracks included (sorted by uncertainty)')
+    plt.ylabel('Cumulative accuracy')
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    plt.show()
 
 
 def plot_example(ex):
