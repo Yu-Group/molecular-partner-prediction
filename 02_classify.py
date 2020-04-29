@@ -11,10 +11,9 @@ from style import *
 from sklearn import decomposition
 import viz
 import config
-SPLIT = config.SPLITS['orig']
-
 
 if __name__ == '__main__':
+    SPLIT = config.SPLITS['orig']
     df = data.get_data(use_processed=True)
     df = df[df['valid']] # exclude test cells, short/long tracks, hotspots
     feat_names = data.get_feature_names(df)
