@@ -34,9 +34,14 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
     use_processed_dicts: bool, optional
         if False, recalculate the dictionary features
     '''
+    # get things based onn dset
     DATA_DIR = config.DATA_DIRS[dset]
     SPLIT = config.SPLITS[dset]
     LABELS = config.LABELS[dset]
+    
+    processed_file = processed_file[:-4] + '_' + dset + '.pkl'
+    metadata_file = metadata_file[:-4] + '_' + dset + '.pkl'
+    
     
     if use_processed and os.path.exists(processed_file):
         return pd.read_pickle(processed_file)
@@ -44,7 +49,7 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         print('loading + preprocessing data...')
         metadata = {}
         print('\tloading tracks...')
-        df = get_tracks(data_dir=DATA_DIR, split=SPLIT, all_data=all_data)  # note: different Xs can be different shapes
+        df = get_tracks(data_dir=DATA_DIR, split=SPLIT, all_data=all_data, dset=dset)  # note: different Xs can be different shapes
         df['pid'] = np.arange(df.shape[0])  # assign each track a unique id
         df['valid'] = True  # all tracks start as valid
         df['valid'][df.cell_num.isin(SPLIT['test'])] = False
@@ -59,7 +64,8 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         metadata['num_aux_pos_valid'] = df[df.valid][outcome_def].sum()
         metadata['num_hotspots_valid'] = df[df.valid]['hotspots'].sum()
         df['valid'][df.hotspots] = False
-        df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def, plot=False, acc_thresh=acc_thresh)
+        df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def,
+                                                       plot=False, acc_thresh=acc_thresh)
         df['valid'][df.short] = False
         df['valid'][df.long] = False
         metadata.update(meta_lifetime)
@@ -106,9 +112,12 @@ def get_images(cell_dir: str):
     return X, Y
 
 
-def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='processed/tracks.pkl'):
+def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='processed/tracks.pkl', dset='orig'):
     '''Read out tracks from folders within data_dir, assuming tracking has been done
     '''
+    processed_tracks_file = processed_tracks_file[:-4] + '_' + dset + '.pkl'
+    print(processed_tracks_file, data_dir)
+    
     if os.path.exists(processed_tracks_file):
         return pd.read_pickle(processed_tracks_file)
     dfs = []
@@ -122,12 +131,14 @@ def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='proc
         if '.' in upper_dir or 'Icon' in upper_dir:
             continue
         for cell_dir in sorted(os.listdir(oj(data_dir, upper_dir))):
+            
             if not 'Cell' in cell_dir:
                 continue
             cell_num = oj(upper_dir, cell_dir.replace('Cell', '').replace('_1s', ''))
             if split is not None:
                 if not cell_num in split:
                     continue
+            print(cell_num)
             fname = f'{data_dir}/{upper_dir}/{cell_dir}/TagRFP/Tracking/ProcessedTracks.mat'
             cla, aux = get_images(f'{data_dir}/{upper_dir}/{cell_dir}')
             # fname_image = oj(data_dir, upper_dir, cell_dir)
