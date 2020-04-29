@@ -23,7 +23,8 @@ import config
 
 def get_data(dset='orig', use_processed=True, save_processed=True, processed_file='processed/df.pkl',
              metadata_file='processed/metadata.pkl', use_processed_dicts=True,
-             outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95):
+             outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95,
+             previous_meta_file=None):
     '''
     Params
     ------
@@ -33,6 +34,9 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         if not using processed, determines whether to save the df
     use_processed_dicts: bool, optional
         if False, recalculate the dictionary features
+    previous_meta_file: str, optional
+        filename for metadata.pkl file saved by previous preprocessing
+        the thresholds for lifetime are taken from this file
     '''
     # get things based onn dset
     DATA_DIR = config.DATA_DIRS[dset]
@@ -65,7 +69,8 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         metadata['num_hotspots_valid'] = df[df.valid]['hotspots'].sum()
         df['valid'][df.hotspots] = False
         df, meta_lifetime = process_tracks_by_lifetime(df, outcome_def=outcome_def,
-                                                       plot=False, acc_thresh=acc_thresh)
+                                                       plot=False, acc_thresh=acc_thresh,
+                                                       previous_meta_file=previous_meta_file)
         df['valid'][df.short] = False
         df['valid'][df.long] = False
         metadata.update(meta_lifetime)
@@ -76,7 +81,7 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         # df = add_dict_features(df, use_processed=use_processed_dicts)
         # df = add_smoothed_tracks(df)
         df = add_pcs(df)
-        df = add_trend_filtering(df)
+        # df = add_trend_filtering(df) 
         if save_processed:
             pkl.dump(metadata, open(metadata_file, 'wb'))
             df.to_pickle(processed_file)
@@ -459,9 +464,10 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
 
     df = add_hotspots(df, num_sigs)
 
-    df['y_consec_thresh'][df.pid.isin(LABELS['pos'])] = 1  # add manual pos labels
-    df['y_consec_thresh'][df.pid.isin(LABELS['neg'])] = 0  # add manual neg labels
-    df['hotspots'][df.pid.isin(LABELS['hotspots'])] = True  # add manual hotspot labels
+    if LABELS is not None:
+        df['y_consec_thresh'][df.pid.isin(LABELS['pos'])] = 1  # add manual pos labels
+        df['y_consec_thresh'][df.pid.isin(LABELS['neg'])] = 0  # add manual neg labels
+        df['hotspots'][df.pid.isin(LABELS['hotspots'])] = True  # add manual hotspot labels
 
     df = add_rule_based_label(df)
 
@@ -478,6 +484,9 @@ def remove_invalid_tracks(df, keep=[1, 2]):
             4 - multiple - at the same place (continues throughout)
         5-8 (there is merging or splitting)
     '''
+    df['lifetime_ref'] = [len(x) for x in df['X']]
+    no_nan = df['lifetime'] == df['lifetime_ref']
+    df = df[no_nan]
     return df[df.catIdx.isin(keep)]
 
 
@@ -499,7 +508,8 @@ def extract_X_mat(df):
     return X_mat
 
 
-def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, acc_thresh=0.95):
+def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str,
+                               plot=False, acc_thresh=0.95, previous_meta_file=None):
     '''Calculate accuracy you can get by just predicting max class 
     as a func of lifetime and return points within proper lifetime (only looks at training cells)
     '''
@@ -507,26 +517,43 @@ def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, a
 
     R, C = 1, 3
     lifetimes = np.unique(vals['lifetime'])
+    
 
     # cumulative accuracy for different thresholds
     accs_cum_lower = np.array([1 - np.mean(vals[outcome_def][vals['lifetime'] <= l]) for l in lifetimes])
-    idx_thresh = np.nonzero(accs_cum_lower >= acc_thresh)[0][-1]  # last nonzero index
-    thresh_lower = lifetimes[idx_thresh]
-
     accs_cum_higher = np.array([np.mean(vals[outcome_def][vals['lifetime'] >= l]) for l in lifetimes]).flatten()
-    try:
-        idx_thresh_2 = np.nonzero(accs_cum_higher >= acc_thresh)[0][0]
-        thresh_higher = lifetimes[idx_thresh_2]
-    except:
-        idx_thresh_2 = lifetimes.size - 1
-        thresh_higher = lifetimes[idx_thresh_2] + 1
+    
+    
+    if previous_meta_file is None:
+        try:
+            idx_thresh = np.nonzero(accs_cum_lower >= acc_thresh)[0][-1]  # last nonzero index
+            thresh_lower = lifetimes[idx_thresh]
+        except:
+            idx_thresh = 0
+            thresh_lower = lifetimes[idx_thresh] - 1
+        try:
+            idx_thresh_2 = np.nonzero(accs_cum_higher >= acc_thresh)[0][0]
+            thresh_higher = lifetimes[idx_thresh_2]
+        except:
+            idx_thresh_2 = lifetimes.size - 1
+            thresh_higher = lifetimes[idx_thresh_2] + 1
+    else:
+        previous_meta = pkl.load(open(previous_meta_file, 'rb'))
+        thresh_lower = previous_meta['thresh_short']
+        thresh_higher = previous_meta['thresh_long']
 
+    # only df with lifetimes in proper range
+    df['short'] = df['lifetime'] <= thresh_lower
+    df['long'] = df['lifetime'] >= thresh_higher
     n = vals.shape[0]
-    n_short = np.sum(vals["lifetime"] <= thresh_lower)
-    n_long = np.sum(vals["lifetime"] >= thresh_higher)
-    acc_short = accs_cum_lower[idx_thresh]
-    acc_long = accs_cum_higher[idx_thresh_2]
-
+    n_short = np.sum(df['short'])
+    n_long = np.sum(df['long'])
+    acc_short = 1 - np.mean(vals[outcome_def][vals['lifetime'] <= thresh_lower])
+    acc_long = np.mean(vals[outcome_def][vals['lifetime'] >= thresh_higher])
+    
+    metadata = {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short,
+                'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
+    
     if plot:
         plt.figure(figsize=(12, 4), dpi=200)
         plt.subplot(R, C, 1)
@@ -550,12 +577,7 @@ def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str, plot=False, a
         plt.ylabel('fraction of positive events')
         plt.xlabel(f'lifetime >= value\nshaded includes {n_long / n * 100:0.0f}% of pts')
         plt.tight_layout()
-
-    # only df with lifetimes in proper range
-    df['short'] = df['lifetime'] <= thresh_lower
-    df['long'] = df['lifetime'] >= thresh_higher
-    metadata = {'num_short': n_short, 'num_long': n_long, 'acc_short': acc_short,
-                'acc_long': acc_long, 'thresh_short': thresh_lower, 'thresh_long': thresh_higher}
+        
     return df, metadata
 
 

@@ -38,11 +38,11 @@ SPLIT_ORIG = {
 }
 
 # s_clath_aux = 'CLTA-TagRFP EGFP-Aux1 EGFP-GAK F6' # goes [1-11]
-s_clath_aux = 'CLTA-TagRFP EGFP-Aux1-A7D2 EGFP-GAK-F6' # goes [1, 2] + [5-13]
+s_clath_aux = 'CLTA-TagRFP EGFP-Aux1-A7D2 EGFP-GAK-F6' # goes [1, 2] + [5-12] - 13 is there but missing some tifs
 SPLIT_CLATH_AUX = {
     'feature_selection': np.array([f'{s_clath_aux}/1']),
-    'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10, 11]]),
-    'test': np.array([f'{s_clath_aux}/{i}' for i in [12, 13]])
+    'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
+    'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
 }
 SPLITS = {
     'orig': SPLIT_ORIG,
