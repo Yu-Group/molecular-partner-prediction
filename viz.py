@@ -277,8 +277,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None):
-    metadata_file = 'processed/metadata.pkl'
+def print_metadata(acc=None, metadata_file = 'processed/metadata_orig.pkl'):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(
