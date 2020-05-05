@@ -2,13 +2,12 @@ from matplotlib import pyplot as plt
 import os
 from os.path import join as oj
 import numpy as np
-
-plt.style.use('dark_background')
 import pandas as pd
 import data
 from sklearn.model_selection import KFold
 from colorama import Fore
 import pickle as pkl
+import config
 import viz
 
 
@@ -37,7 +36,7 @@ def load_results(out_dir):
     return r
 
 
-def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def='y_consec_sig'):
+def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def='y_consec_sig', dset='orig'):
     '''Returns predictions/labels over folds in the dataset
     Params
     ------
@@ -55,7 +54,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     '''
     # split testing data based on cell num
     d = {}
-    cell_nums_train = data.cell_nums_train
+    cell_nums_train = config.SPLITS['orig']['train']
     kf = KFold(n_splits=len(cell_nums_train))
     idxs_cv = []
 

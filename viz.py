@@ -38,7 +38,7 @@ def plot_confusion_matrix(y_true, y_pred, classes,
     # Compute confusion matrix
     cm = metrics.confusion_matrix(y_true, y_pred)
     # Only use the labels that appear in the data
-    classes = classes[unique_labels(y_true, y_pred)]
+    classes = classes[unique_labels(y_true.astype(np.int), y_pred.astype(np.int))]
     if normalize:
         cm = cm.astype('float') / cm.sum(axis=1)[:, np.newaxis]
 
@@ -185,11 +185,11 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            plt.plot(row.X, color='red', label='clathrin')
+            plt.plot(row.X, color=cr, label='clathrin')
             if extra_key is not None:
                 plt.plot(row[extra_key], color='gray', label=extra_key)
             else:
-                plt.plot(row.Y, color='green', label='auxilin')
+                plt.plot(row.Y, color=cb, label='auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             plt.xlim([-1, lifetime_max + 1])
@@ -197,7 +197,8 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
     #     plt.axi('off')
     plt.legend()
     plt.tight_layout()
-    plt.show()
+    if fig is None:
+        plt.show()
 
 
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
@@ -276,8 +277,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None):
-    metadata_file = 'processed/metadata.pkl'
+def print_metadata(acc=None, metadata_file = 'processed/metadata_orig.pkl'):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(
@@ -403,7 +403,8 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.show()
 
 
-def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
+def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def, 
+                            plot_vert_line_for_high_lifetimes=False, show=True):
     args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
     accs = (preds == y_full_cv)[args]
     n = accs.size
@@ -429,18 +430,18 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def):
 
     ns = accs_s.size
     nl = accs_l.size
-    plt.axvline(ns, lw=0.5)
+    if plot_vert_line_for_high_lifetimes:
+        plt.axvline(ns, lw=0.5, color='gray')
     plt.axvline(ns + nl, lw=0.5)
     nums = np.arange(1, accs.size + 1)
     plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label='pred aux-', color=cr)
     plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label='with model', color=cb)
     plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
-    plt.xlabel('num tracks included (sorted by uncertainty)')
-    plt.ylabel('cumulative accuracy')
+    plt.xlabel('Number of tracks included (sorted by uncertainty)')
+    plt.ylabel('Cumulative accuracy')
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    plt.show()
 
 
 def plot_example(ex):

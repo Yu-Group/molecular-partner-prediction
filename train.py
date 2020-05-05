@@ -17,7 +17,6 @@ import pickle as pkl
 
 sys.path.append('lib')
 import irf
-from data import cell_nums_feature_selection, cell_nums_train
 from sklearn.neighbors import KNeighborsClassifier as KNN
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
@@ -72,10 +71,12 @@ def balance(X, y, balancing='ros', balancing_ratio=1):
     return X_r, Y_r
 
 
-def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
+def train(df, feat_names,
+          cell_nums_feature_selection, cell_nums_train,
+          model_type='rf', outcome_def='y_thresh',
           balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl',
-          calibrated=False,
-          feature_selection=None, feature_selection_num=3, hyperparam=0, seed=42):
+          calibrated=False, feature_selection=None, 
+          feature_selection_num=3, hyperparam=0, seed=42):
     '''Run training and fit models
     This will balance the data
     This will normalize the features before fitting
@@ -84,6 +85,9 @@ def train(df, feat_names, model_type='rf', outcome_def='y_thresh',
     ------
     normalize: bool
         if True, will normalize features before fitting
+    cell_nums_feature_selection: list[str]
+        cell names to use for feature selection
+    
     '''
     np.random.seed(seed)
     X = df[feat_names]
