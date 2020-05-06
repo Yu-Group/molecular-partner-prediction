@@ -175,12 +175,13 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     plt.show()
 
 
-def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
+def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True):
     '''Plot time-series curves from df
     '''
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200)
     lifetime_max = np.max(df.lifetime.values[:R * C])
+    df = df.iloc[range(R*C)]
     for i in range(R * C):
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
@@ -193,9 +194,11 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None):
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             plt.xlim([-1, lifetime_max + 1])
-    #         plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+            if ylim_constant:
+                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi('off')
-    plt.legend()
+    if legend:
+        plt.legend()
     plt.tight_layout()
     if fig is None:
         plt.show()
