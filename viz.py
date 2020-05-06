@@ -6,7 +6,7 @@ from sklearn import metrics
 import pandas as pd
 import data
 import pickle as pkl
-from style import *
+from util.style import *
 from sklearn.ensemble import IsolationForest
 from sklearn import decomposition
 from matplotlib_venn import venn3, venn2

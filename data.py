@@ -10,12 +10,12 @@ import pandas as pd
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
-from style import *
+from util.style import *
 import math
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
-import trend_filtering
+from util import trend_filtering
 import config
 
 
@@ -721,3 +721,12 @@ def add_trend_filtering(df):
     for feat in feat_names:
         df[feat + '_tf_smooth'] = df_tf[feat]
     return df
+
+if __name__ == '__main__':
+    dset = 'orig'
+    df = get_data(dset='orig') # save out orig
+    print(dset, 'full', df.shape, 'valid', df.valid.sum())
+    for dset in ['clath_aux', 'clath_aux_no_a7d2']:
+        df = get_data(dset=dset,
+                      previous_meta_file='processed/metadata_orig.pkl')
+        print(dset, 'full', df.shape, 'valid', df.valid.sum())

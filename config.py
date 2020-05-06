@@ -1,21 +1,6 @@
-from matplotlib import pyplot as plt
 import os
 from os.path import join as oj
-from skimage.external.tifffile import imread
-from sklearn.linear_model import LinearRegression, RidgeCV
 import numpy as np
-from copy import deepcopy
-import mat4py
-import pandas as pd
-
-pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
-import pickle as pkl
-from style import *
-import math
-from scipy.interpolate import UnivariateSpline
-from sklearn.decomposition import DictionaryLearning, NMF
-from sklearn import decomposition
-import trend_filtering
 
 
 # data paths

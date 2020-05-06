@@ -6,8 +6,8 @@ from os.path import join as oj
 plt.style.use('dark_background')
 import data
 from tqdm import tqdm
-import train
-from style import *
+from util import train
+from util.style import *
 from sklearn import decomposition
 import viz
 import config
