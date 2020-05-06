@@ -39,8 +39,7 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         the thresholds for lifetime are taken from this file
     '''
     # get things based onn dset
-    DATA_DIR = config.DATA_DIRS[dset]
-    SPLIT = config.SPLITS[dset]
+    DSET = config.DSETS[dset]
     LABELS = config.LABELS[dset]
     
     processed_file = processed_file[:-4] + '_' + dset + '.pkl'
@@ -53,10 +52,10 @@ def get_data(dset='orig', use_processed=True, save_processed=True, processed_fil
         print('loading + preprocessing data...')
         metadata = {}
         print('\tloading tracks...')
-        df = get_tracks(data_dir=DATA_DIR, split=SPLIT, all_data=all_data, dset=dset)  # note: different Xs can be different shapes
+        df = get_tracks(data_dir=DSET['data_dir'], split=DSET, all_data=all_data, dset=dset)  # note: different Xs can be different shapes
         df['pid'] = np.arange(df.shape[0])  # assign each track a unique id
         df['valid'] = True  # all tracks start as valid
-        df['valid'][df.cell_num.isin(SPLIT['test'])] = False
+        df['valid'][df.cell_num.isin(DSET['test'])] = False
         metadata['num_tracks'] = df.valid.sum()
 
         print('\tpreprocessing data...')
@@ -136,16 +135,16 @@ def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='proc
         if '.' in upper_dir or 'Icon' in upper_dir:
             continue
         for cell_dir in sorted(os.listdir(oj(data_dir, upper_dir))):
-            
             if not 'Cell' in cell_dir:
                 continue
             cell_num = oj(upper_dir, cell_dir.replace('Cell', '').replace('_1s', ''))
             if split is not None:
                 if not cell_num in split:
                     continue
+            full_dir = f'{data_dir}/{upper_dir}/{cell_dir}'
+            fname = full_dir + '/TagRFP/Tracking/ProcessedTracks.mat'
             print(cell_num)
-            fname = f'{data_dir}/{upper_dir}/{cell_dir}/TagRFP/Tracking/ProcessedTracks.mat'
-            cla, aux = get_images(f'{data_dir}/{upper_dir}/{cell_dir}')
+            cla, aux = get_images(full_dir)
             # fname_image = oj(data_dir, upper_dir, cell_dir)
             mat = mat4py.loadmat(fname)
             tracks = mat['tracks']
@@ -723,10 +722,12 @@ def add_trend_filtering(df):
     return df
 
 if __name__ == '__main__':
-    dset = 'orig'
+    # process original data (and save out lifetime thresholds)
     df = get_data(dset='orig') # save out orig
-    print(dset, 'full', df.shape, 'valid', df.valid.sum())
-    for dset in ['clath_aux', 'clath_aux_no_a7d2']:
+    outcome_def = 'y_consec_sig'
+    for dset in config.DSETS.keys():
+        # process new data (using lifetime thresholds from original data)
         df = get_data(dset=dset,
                       previous_meta_file='processed/metadata_orig.pkl')
-        print(dset, 'full', df.shape, 'valid', df.valid.sum())
+        print(dset, 'num tracks', df.shape[0], 'num aux+', df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
+              'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'ratio', (df[df.valid][outcome_def].sum() / df.valid.sum()).round(3))

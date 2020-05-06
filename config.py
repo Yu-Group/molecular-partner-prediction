@@ -7,39 +7,58 @@ import numpy as np
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'
-DATA_DIRS = {
-    'orig': data_dir_orig,
-    'clath_aux': oj(d_new, clath_aux_folder),
-    'clath_aux_no_a7d2': oj(d_new, clath_aux_folder),
-    
-    'clath_aux_diff': oj(d_new, 'CLTA-TagRFP+-+ EGFP-GAK-A8+-+  TIRF data'),
-    'clath_pi4p': oj(d_new, 'CLTA-TagRFP+-+ EGFP-DrrA-Aux1 PI4P probe TIRF data'),
-    'ap2_pi4p': oj(d_new, 'AP2-TagRFP+-+ EGFP-DrrA-Aux1 PI4P probe TIRF data'),
-}
-
 
 # data splitting
-SPLIT_ORIG = {
-    'feature_selection': np.array(['A7D2/1']),
-    'train': np.array([f'A7D2/{i}' for i in [1, 2, 3, 4, 5, 6]]),
-    'test': np.array(['A7D2/7', 'A7D2/8'])
-}
+s_orig = 'A7D2'
+s_orig_gak = 'EGFP-GAK F6'
 s_clath_aux_no_a7d2 = 'CLTA-TagRFP EGFP-Aux1 EGFP-GAK F6' # goes [1-11]
-SPLIT_CLATH_AUX_no_a7d2 = {
-    'feature_selection': np.array([f'{s_clath_aux_no_a7d2}/1']),
-    'train': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [1, 2, 3, 4, 5, 6, 7, 9]]),
-    'test': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [10, 11]])
-}
 s_clath_aux = 'CLTA-TagRFP EGFP-Aux1-A7D2 EGFP-GAK-F6' # goes [1, 2] + [5-12] - 13 is there but missing some tifs
-SPLIT_CLATH_AUX = {
-    'feature_selection': np.array([f'{s_clath_aux}/1']),
-    'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
-    'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
-}
-SPLITS = {
-    'orig': SPLIT_ORIG,
-    'clath_aux': SPLIT_CLATH_AUX,
-    'clath_aux_no_a7d2': SPLIT_CLATH_AUX_no_a7d2
+s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
+s_clath_pi4p = 'cme'
+s_ap2_pi4p = 'cme'
+DSETS = {
+    'orig': {
+        'data_dir': data_dir_orig,
+        'feature_selection': np.array([f'{s_orig}/1']),
+        'train': np.array([f'{s_orig}/{i}' for i in [1, 2, 3, 4, 5, 6]]),
+        'test': np.array([f'{s_orig}/{i}' for i in [7, 8]])
+    },
+    'orig_gak': {
+        'data_dir': data_dir_orig,
+        'feature_selection': np.array([f'{s_orig_gak}/1']),
+        'train': np.array([f'{s_orig_gak}/{i}' for i in [1, 2, 3, 4, 5, 6]]),
+        'test': np.array([f'{s_orig_gak}/{i}' for i in [7, 8]])
+    },
+    'clath_aux': {
+        'data_dir': oj(d_new, clath_aux_folder),        
+        'feature_selection': np.array([f'{s_clath_aux}/1']),
+        'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
+        'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
+    },
+    'clath_aux_no_a7d2': {
+        'data_dir': oj(d_new, clath_aux_folder),
+        'feature_selection': np.array([f'{s_clath_aux_no_a7d2}/1']),
+        'train': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [1, 2, 3, 4, 5, 6, 7, 9]]),
+        'test': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [10, 11]])
+    }, 
+    'clath_aux_a8': {
+        'data_dir': oj(d_new, 'CLTA-TagRFP+-+ EGFP-GAK-A8+-+  TIRF data'),
+        'feature_selection': np.array([f'{s_a8}/1']),
+        'train': np.array([f'{s_a8}/{i}' for i in [1, 2, 3, 4, 5, 6, 7]]),
+        'test': np.array([f'{s_a8}/{i}' for i in [8, 9]])    
+    },
+    'clath_pi4p_notreatment': {
+        'data_dir': oj(d_new, 'CLTA-TagRFP+-+ EGFP-DrrA-Aux1 PI4P probe TIRF data', 'notreatment'), 
+        'feature_selection': np.array([f'{s_clath_pi4p}/2']),
+        'train': np.array([f'{s_clath_pi4p}/{i}' for i in [2, 5]]),
+        'test': np.array([f'{s_clath_pi4p}/{i}' for i in [9, 10]])  
+    },
+    'ap2_pi4p_no': {
+        'data_dir': oj(d_new, 'AP2-TagRFP+-+ EGFP-DrrA-Aux1 PI4P probe TIRF data'),
+        'feature_selection': np.array([f'{s_ap2_pi4p}/1']),
+        'train': np.array([f'{s_ap2_pi4p}/{i}' for i in [1, 2, 4, 5, 6, 7, 8]]),
+        'test': np.array([f'{s_ap2_pi4p}/{i}' for i in [9, 11]])  
+    },
 }
 
 
@@ -120,5 +139,5 @@ LABELS_ORIG = {
                  5583, 10235, 6055, 7688, 5600, 5560, 3146, 5485, 10069, 5423, 5499, 6224, 5937, 292]
 }
 
-LABELS = {data_dir: None for data_dir in DATA_DIRS.keys()}
+LABELS = {data_dir: None for data_dir in DSETS.keys()}
 LABELS['orig'] = LABELS_ORIG
