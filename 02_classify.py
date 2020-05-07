@@ -13,7 +13,7 @@ import viz
 import config
 
 if __name__ == '__main__':
-    SPLIT = config.SPLITS['orig']
+    DSET = config.DSETS['orig']
     df = data.get_data(use_processed=True)
     df = df[df['valid']] # exclude test cells, short/long tracks, hotspots
     feat_names = data.get_feature_names(df)
@@ -40,12 +40,12 @@ if __name__ == '__main__':
 
 
     outcome_def = 'y_consec_thresh'
-    out_dir = oj('/scratch/users/vision/abc', 'apr28_1')
+    out_dir = oj('/scratch/users/vision/abc', 'may6_1')
     os.makedirs(out_dir, exist_ok=True)
-    feature_selection_nums = [3, 5, 15] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
+    feature_selection_nums = [2, 3, 4, 5, 6, 7, 15, 100] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
     for calibrated in [True, False]:
         for feature_selection_num in feature_selection_nums:
-            for feature_selection in ['select_rf', None]: # select_lasso, select_rf, None
+            for feature_selection in ['select_lasso', 'select_rf']: # select_lasso, select_rf, None
                 if feature_selection is None and feature_selection_num > feature_selection_nums[0]: # don't do extra computation
                     break
                 for model_type in tqdm(['logistic', 'rf', 'mlp2', 'svm']): #,'gb', 'logistic', 'dt', 'svm', 'gb', 'rf', 'mlp2', 'irf']):
@@ -57,8 +57,8 @@ if __name__ == '__main__':
                                     feats = feat_names[:num_feats]
                                     out_name = f'{model_type}_{num_feats}_{feature_selection}={feature_selection_num}_{balancing}={balancing_ratio}_h={hyperparam}_cal={calibrated}'
                                     train.train(df, feat_names=feats,
-                                                cell_nums_feature_selection=SPLIT['feature_selection'],
-                                                cell_nums_train=SPLIT['train'],
+                                                cell_nums_feature_selection=DSET['feature_selection'],
+                                                cell_nums_train=DSET['train'],
                                                 model_type=model_type, 
                                                 balancing=balancing, balancing_ratio=balancing_ratio,
                                                 outcome_def=outcome_def,

@@ -54,7 +54,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     '''
     # split testing data based on cell num
     d = {}
-    cell_nums_train = config.SPLITS['orig']['train']
+    cell_nums_train = config.DSETS['orig']['train']
     kf = KFold(n_splits=len(cell_nums_train))
     idxs_cv = []
 
