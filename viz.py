@@ -303,7 +303,7 @@ def print_metadata(acc=None, metadata_file = 'processed/metadata_orig.pkl'):
 
 
 def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
-                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool = False):
+                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool = False, ms=None):
     '''Jointplot of hists + densities
     Params
     ------
@@ -322,6 +322,7 @@ def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
             args = (x, y)
             if c is not None:
                 kwargs['c'] = c
+            kwargs['marker'] = '.'
             kwargs['alpha'] = scatter_alpha
             plt.scatter(*args, **kwargs)
 
