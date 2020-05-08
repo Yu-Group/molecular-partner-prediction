@@ -16,7 +16,6 @@ from sklearn.model_selection import KFold
 import pickle as pkl
 
 sys.path.append('lib')
-import irf
 from sklearn.neighbors import KNeighborsClassifier as KNN
 
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score,
@@ -121,6 +120,7 @@ def train(df, feat_names,
     elif model_type == 'KNN':
         m = KNN()
     elif model_type == 'irf':
+        import irf
         m = irf.ensemble.wrf()
     elif model_type == 'voting_mlp+svm+rf':
         models_list = [('mlp', MLPClassifier()),
