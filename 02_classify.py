@@ -25,7 +25,7 @@ if __name__ == '__main__':
                   and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max', 
                                 'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak']
                   and not x.startswith('pc_')
-    #               and not 'local' in x
+                  and not 'extended' in x
     #               and not 'X_peak' in x
     #               and not 'slope' in x
     #               and not x in ['fall_final', 'fall_slope', 'fall_imp', 'fall']
@@ -40,16 +40,16 @@ if __name__ == '__main__':
 
 
     outcome_def = 'y_consec_thresh'
-    out_dir = oj('/scratch/users/vision/abc', 'may6_1')
+    out_dir = oj('/scratch/users/vision/abc', 'may7_1')
     os.makedirs(out_dir, exist_ok=True)
-    feature_selection_nums = [2, 3, 4, 5, 6, 7, 15, 100] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
+    feature_selection_nums = [2, 3, 4, 5, 6, 7, 8, 9, 15, 100] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
     for calibrated in [True, False]:
         for feature_selection_num in feature_selection_nums:
             for feature_selection in ['select_lasso', 'select_rf']: # select_lasso, select_rf, None
                 if feature_selection is None and feature_selection_num > feature_selection_nums[0]: # don't do extra computation
                     break
                 for model_type in tqdm(['logistic', 'rf', 'mlp2', 'svm']): #,'gb', 'logistic', 'dt', 'svm', 'gb', 'rf', 'mlp2', 'irf']):
-                    for num_feats in [16, 25, len(feat_names)]: #[16, 25, len(feat_names)]: # number of total features to consider
+                    for num_feats in [len(feat_names)]: # [16, 25, len(feat_names)]: #[16, 25, len(feat_names)]: # number of total features to consider
                         for balancing in ['ros']: # None, ros                        
                             for balancing_ratio in [0.8, 1, 1.2]: # positive: negative  
                                 hyperparams = [0] if model_type in ['logistic', 'rf', 'gb', 'dt', 'irf', 'qda'] else [-1, 0, 1]
