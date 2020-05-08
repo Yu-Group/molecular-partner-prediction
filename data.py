@@ -729,5 +729,5 @@ if __name__ == '__main__':
         # process new data (using lifetime thresholds from original data)
         df = get_data(dset=dset,
                       previous_meta_file='processed/metadata_orig.pkl')
-        print(dset, 'num tracks', df.shape[0], 'num aux+', df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
+        print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+', df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
               'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'ratio', (df[df.valid][outcome_def].sum() / df.valid.sum()).round(3))
