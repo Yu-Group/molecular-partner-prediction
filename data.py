@@ -21,7 +21,7 @@ import config
 
 
 
-def get_data(dset='orig', use_processed=True, save_processed=True, processed_file='processed/df.pkl',
+def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='processed/df.pkl',
              metadata_file='processed/metadata.pkl', use_processed_dicts=True,
              outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95,
              previous_meta_file=None):
@@ -723,11 +723,12 @@ def add_trend_filtering(df):
 
 if __name__ == '__main__':
     # process original data (and save out lifetime thresholds)
-    df = get_data(dset='orig') # save out orig
+    dset_orig = 'clath_aux+gak_a7d2'
+    df = get_data(dset=dset_orig) # save out orig
     outcome_def = 'y_consec_sig'
     for dset in config.DSETS.keys():
         # process new data (using lifetime thresholds from original data)
         df = get_data(dset=dset,
-                      previous_meta_file='processed/metadata_orig.pkl')
+                      previous_meta_file=f'processed/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+', df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
               'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'ratio', (df[df.valid][outcome_def].sum() / df.valid.sum()).round(3))

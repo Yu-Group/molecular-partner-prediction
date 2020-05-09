@@ -17,31 +17,31 @@ s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
 s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
 DSETS = {
-    'orig': {
+    'clath_aux+gak_a7d2': {
         'data_dir': data_dir_orig,
         'feature_selection': np.array([f'{s_orig}/1']),
         'train': np.array([f'{s_orig}/{i}' for i in [1, 2, 3, 4, 5, 6]]),
         'test': np.array([f'{s_orig}/{i}' for i in [7, 8]])
     },
-    'orig_gak': {
+    'clath_aux+gak': {
         'data_dir': data_dir_orig,
         'feature_selection': np.array([f'{s_orig_gak}/1']),
         'train': np.array([f'{s_orig_gak}/{i}' for i in [1, 2, 3, 4, 5, 6]]),
         'test': np.array([f'{s_orig_gak}/{i}' for i in [7, 8]])
     },
-    'clath_aux': {
+    'clath_aux+gak_a7d2_new': {
         'data_dir': oj(d_new, clath_aux_folder),        
         'feature_selection': np.array([f'{s_clath_aux}/1']),
         'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
         'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
     },
-    'clath_aux_no_a7d2': {
+    'clath_aux+gak_new': {
         'data_dir': oj(d_new, clath_aux_folder),
         'feature_selection': np.array([f'{s_clath_aux_no_a7d2}/1']),
         'train': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [1, 2, 3, 4, 5, 6, 7, 9]]),
         'test': np.array([f'{s_clath_aux_no_a7d2}/{i}' for i in [10, 11]])
     }, 
-    'clath_aux_a8': {
+    'clath_gak': {
         'data_dir': oj(d_new, 'CLTA-TagRFP+-+ EGFP-GAK-A8+-+  TIRF data'),
         'feature_selection': np.array([f'{s_a8}/1']),
         'train': np.array([f'{s_a8}/{i}' for i in [1, 2, 3, 4, 5, 6, 7]]),
@@ -53,7 +53,7 @@ DSETS = {
         'train': np.array([f'{s_clath_pi4p}/{i}' for i in [2, 5]]),
         'test': np.array([f'{s_clath_pi4p}/{i}' for i in [9, 10]])  
     },
-    'ap2_pi4p_no': {
+    'ap2_pi4p': {
         'data_dir': oj(d_new, 'AP2-TagRFP+-+ EGFP-DrrA-Aux1 PI4P probe TIRF data'),
         'feature_selection': np.array([f'{s_ap2_pi4p}/1']),
         'train': np.array([f'{s_ap2_pi4p}/{i}' for i in [1, 2, 4, 5, 6, 7, 8]]),
@@ -140,4 +140,4 @@ LABELS_ORIG = {
 }
 
 LABELS = {data_dir: None for data_dir in DSETS.keys()}
-LABELS['orig'] = LABELS_ORIG
+LABELS['clath_aux+gak_a7d2'] = LABELS_ORIG
