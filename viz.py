@@ -280,7 +280,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None, metadata_file = 'processed/metadata_orig.pkl'):
+def print_metadata(acc=None, metadata_file = 'processed/metadata_clath_aux+gak_a7d2.pkl'):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(
@@ -297,8 +297,8 @@ def print_metadata(acc=None, metadata_file = 'processed/metadata_orig.pkl'):
         print('----------------------------------------')
         print(f'hard acc:\t\t\t  {acc:.3f}')
         num_eval = m["num_tracks_valid"] - m["num_hotspots_valid"]
-        print(
-            f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
+#         print(
+#             f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
     print('\nlifetime threshes', m['thresh_short'], m['thresh_long'])
 
 
