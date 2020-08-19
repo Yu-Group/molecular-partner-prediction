@@ -82,6 +82,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         # df = features.add_smoothed_tracks(df)
         df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
+        df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
             pkl.dump(metadata, open(metadata_file, 'wb'))
             df.to_pickle(processed_file)
@@ -121,7 +122,7 @@ def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='proc
     '''Read out tracks from folders within data_dir, assuming tracking has been done
     '''
     processed_tracks_file = processed_tracks_file[:-4] + '_' + dset + '.pkl'
-    print(processed_tracks_file, data_dir)
+    print('\t', processed_tracks_file, data_dir)
     
     if os.path.exists(processed_tracks_file):
         return pd.read_pickle(processed_tracks_file)
@@ -385,6 +386,29 @@ def get_feature_names(df):
                          'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x' # curves
                         ]  
     ]
+    return feat_names
+
+def select_final_feats(feat_names, binarize=False):
+    feat_names = [x for x in feat_names 
+                  if not x.startswith('sc_') 
+                  and not x.startswith('nmf_')
+                  and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max', 
+                                'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak']
+                  and not x.startswith('pc_')
+                  and not 'extended' in x
+    #               and not 'X_peak' in x
+    #               and not 'slope' in x
+    #               and not x in ['fall_final', 'fall_slope', 'fall_imp', 'fall']
+                 ]
+    feat_names = [x for x in feat_names if not '_tf_smooth' in x]
+    feat_names = [x for x in feat_names if not 'local' in x]
+    feat_names = [x for x in feat_names if not 'last' in x]
+    # feat_names = [x for x in feat_names if '_tf_smooth' in x]
+    
+    if binarize:
+        feat_names = [x for x in feat_names if 'binary' in x]
+    else:
+        feat_names = [x for x in feat_names if not 'binary' in x]
     return feat_names
 
 

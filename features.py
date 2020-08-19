@@ -17,12 +17,12 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 from util import trend_filtering
 import config
-from data import get_feature_names
+import data
 
 def add_pcs(df):
     '''adds 10 pcs based on feature names
     '''
-    feat_names = get_feature_names(df)
+    feat_names = data.get_feature_names(df)
     X = df[feat_names]
     X = (X - X.mean()) / X.std()
     pca = decomposition.PCA(whiten=True)
@@ -118,7 +118,7 @@ def add_trend_filtering(df):
         df_tf['X'].iloc[i] = trend_filtering.trend_filtering(y=df['X'].iloc[i], vlambda=len(df['X'].iloc[i]) * 5,
                                                              order=1)
     df_tf = add_features(df_tf)
-    feat_names = get_feature_names(df_tf)
+    feat_names = data.get_feature_names(df_tf)
     feat_names = [x for x in feat_names
                   if not x.startswith('sc_')
                   and not x.startswith('nmf_')
@@ -241,4 +241,14 @@ def add_basic_features(df):
     fall_imp[df['X_peak_time_frac'] > 0.8] = fall_pred[df['X_peak_time_frac'] > 0.8]
     df['fall_imp'] = fall_imp
 
+    return df
+
+def add_binary_features(df, outcome_def):
+    '''binarize features at the difference between the mean of each class
+    '''
+    feat_names = data.get_feature_names(df)
+    threshes = (df[df[outcome_def]==1].mean() + df[df[outcome_def]==0].mean())/2
+    for i, k in enumerate(feat_names):
+        thresh = threshes.loc[k]
+        df[k + '_binary'] = df[k] >= thresh
     return df

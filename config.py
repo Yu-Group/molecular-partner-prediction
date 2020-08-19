@@ -17,7 +17,7 @@ s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
 s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
 DSETS = {
-    'clath_aux+gak_a7d2': {
+    'clath_aux+gak_a7d2': {  # this was the original data
         'data_dir': data_dir_orig,
         'feature_selection': np.array([f'{s_orig}/1']),
         'train': np.array([f'{s_orig}/{i}' for i in [1, 2, 3, 4, 5, 6]]),

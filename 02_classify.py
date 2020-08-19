@@ -13,34 +13,22 @@ import viz
 import config
 
 if __name__ == '__main__':
-    DSET = config.DSETS['orig']
+    # some settings
+    outcome_def = 'y_consec_thresh'
+    out_dir = oj('/scratch/users/vision/abc', 'aug19_binary1')
+    DSET = config.DSETS['clath_aux+gak_a7d2']
+    binarize=True
+    
+    
+    # get data
     df = data.get_data(use_processed=True)
     df = df[df['valid']] # exclude test cells, short/long tracks, hotspots
     feat_names = data.get_feature_names(df)
-
-    # don't use dict_feats
-    feat_names = [x for x in feat_names 
-                  if not x.startswith('sc_') 
-                  and not x.startswith('nmf_')
-                  and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max', 
-                                'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak']
-                  and not x.startswith('pc_')
-                  and not 'extended' in x
-    #               and not 'X_peak' in x
-    #               and not 'slope' in x
-    #               and not x in ['fall_final', 'fall_slope', 'fall_imp', 'fall']
-                 ]
-    feat_names = [x for x in feat_names if not '_tf_smooth' in x]
-    feat_names = [x for x in feat_names if not 'local' in x]
-    feat_names = [x for x in feat_names if not 'last' in x]
-    # feat_names = [x for x in feat_names if '_tf_smooth' in x]
+    feat_names = data.select_final_feats(feat_names, binarize=binarize)
     print(feat_names)
     print('num feats', len(feat_names))
 
-
-
-    outcome_def = 'y_consec_thresh'
-    out_dir = oj('/scratch/users/vision/abc', 'may7_1')
+    # run
     os.makedirs(out_dir, exist_ok=True)
     feature_selection_nums = [2, 3, 4, 5, 6, 7, 8, 9, 15, 100] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
     for calibrated in [True, False]:
