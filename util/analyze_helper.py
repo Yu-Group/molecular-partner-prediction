@@ -36,7 +36,7 @@ def load_results(out_dir):
     return r
 
 
-def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def='y_consec_sig', dset='orig'):
+def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def='y_consec_sig', dset='clath_aux+gak_a7d2'):
     '''Returns predictions/labels over folds in the dataset
     Params
     ------
@@ -54,7 +54,7 @@ def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X
     '''
     # split testing data based on cell num
     d = {}
-    cell_nums_train = config.DSETS['orig']['train']
+    cell_nums_train = config.DSETS[dset]['train']
     kf = KFold(n_splits=len(cell_nums_train))
     idxs_cv = []
 
