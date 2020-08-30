@@ -14,7 +14,13 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
-from util.style import *
+
+cb2 = '#66ccff'
+cb = '#1f77b4'
+cr = '#cc0000'
+cp = '#cc3399'
+cy = '#d8b365'
+cg = '#5ab4ac'
 
 
 def plot_confusion_matrix(y_true, y_pred, classes,
@@ -182,7 +188,7 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constan
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200)
     lifetime_max = np.max(df.lifetime.values[:R * C])
-    df = df.iloc[range(R*C)]
+    df = df.iloc[range(R * C)]
     for i in range(R * C):
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
@@ -281,7 +287,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None, metadata_file = 'processed/metadata_clath_aux+gak_a7d2.pkl'):
+def print_metadata(acc=None, metadata_file='processed/metadata_clath_aux+gak_a7d2.pkl'):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(
@@ -298,8 +304,8 @@ def print_metadata(acc=None, metadata_file = 'processed/metadata_clath_aux+gak_a
         print('----------------------------------------')
         print(f'hard acc:\t\t\t  {acc:.3f}')
         num_eval = m["num_tracks_valid"] - m["num_hotspots_valid"]
-#         print(
-#             f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
+    #         print(
+    #             f'total acc (no hotspots):\t  {(m["num_short"] * m["acc_short"] + m["num_long"] * m["acc_long"] + acc * m["num_tracks_hard"]) / num_eval:.3f}')
     print('\nlifetime threshes', m['thresh_short'], m['thresh_long'])
 
 
@@ -409,7 +415,7 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.show()
 
 
-def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def, 
+def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
                             plot_vert_line_for_high_lifetimes=False, show=True):
     args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
     accs = (preds == y_full_cv)[args]

@@ -1,8 +1,16 @@
 % matlab code from: https://github.com/DanuserLab/cmeAnalysis
 
 addpath(genpath('cmeAnalysis'));
-data = loadConditionData('auxilin_data/A7D2', {'TagRFP', 'EGFP'}, {'rfp', 'gfp'}, 'Parameters', [1.49 200 16]);
+data = loadConditionData('auxilin_data/A7D2',
+                        {'TagRFP', 'EGFP'},
+                        {'rfp', 'gfp'},
+                        'Parameters', [1.49 200 16]);
 cmeDataViewer(data(1))
+
+data = loadConditionData('dynamin/20200707 GAK Dynamin2/CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646',
+                         {'TagRFP', 'EGFP', 'JF646'},
+                         {'rfp', 'gfp', 'alexa647'},
+                         'Parameters', [1.49 200 16]);
 
 %{
 cmeAnalysis
@@ -33,11 +41,10 @@ channel 2 name: "EGFP"
 % Saves tracks for RFP (clathrin) and tracks at RFP locations for GFP (auxilin)
 
 
-%{
-FINAL OUTPUT
+
+%%%%%%%%%%%%%%%% FINAL OUTPUT %%%%%%%%%%%%%%%%
 
 Remove outliers? (y/n) n
-
 
 Lifetime analysis - processing: 100%
 Max. intensity threshold on first 4 frames: 1314.53
@@ -60,4 +67,4 @@ Error in cmeAnalysis (line 151)
     res.lftRes = runLifetimeAnalysis(data, lopts{:},...
  
 
-%}
+%%%%%%%%%%%%%%%%

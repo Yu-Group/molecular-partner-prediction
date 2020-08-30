@@ -1,0 +1,617 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.features API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.features</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import os
+from copy import deepcopy
+from os.path import join as oj
+
+import numpy as np
+import pandas as pd
+from sklearn.linear_model import LinearRegression, RidgeCV
+
+pd.options.mode.chained_assignment = None  # default=&#39;warn&#39; - caution: this turns off setting with copy warning
+import pickle as pkl
+from viz import *
+from scipy.interpolate import UnivariateSpline
+from sklearn.decomposition import DictionaryLearning, NMF
+from sklearn import decomposition
+import trend_filtering
+import data
+
+
+def add_pcs(df):
+    &#39;&#39;&#39;adds 10 pcs based on feature names
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(df)
+    X = df[feat_names]
+    X = (X - X.mean()) / X.std()
+    pca = decomposition.PCA(whiten=True)
+    pca.fit(X[df.valid])
+    X_reduced = pca.transform(X)
+    for i in range(10):
+        df[&#39;pc_&#39; + str(i)] = X_reduced[:, i]
+    return df
+
+
+def add_dict_features(df, sc_comps_file=&#39;processed/dictionaries/sc_12_alpha=1.pkl&#39;,
+                      nmf_comps_file=&#39;processed/dictionaries/nmf_12.pkl&#39;,
+                      use_processed=True):
+    &#39;&#39;&#39;Add features from saved dictionary to df
+    &#39;&#39;&#39;
+
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=&#39;processed/dictionaries&#39;):
+        print(&#39;sparse coding...&#39;)
+        d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f&#39;sc_{n_comps}_alpha={alpha}.pkl&#39;), &#39;wb&#39;))
+
+    def nmf(X_mat, n_comps=12, out_dir=&#39;processed/dictionaries&#39;):
+        print(&#39;running nmf...&#39;)
+        d = NMF(n_components=n_comps, random_state=42)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f&#39;nmf_{n_comps}.pkl&#39;), &#39;wb&#39;))
+
+    X_mat = extract_X_mat(df)
+    X_mat -= np.min(X_mat)
+
+    # if feats don&#39;t exist, compute them
+    if not use_processed or not os.path.exists(sc_comps_file):
+        os.makedirs(&#39;processed/dictionaries&#39;, exist_ok=True)
+        sparse_code(X_mat)
+        nmf(X_mat)
+
+    try:
+        # sc
+        d_sc = pkl.load(open(sc_comps_file, &#39;rb&#39;))
+        encoding = d_sc.transform(X_mat)
+        for i in range(encoding.shape[1]):
+            df[f&#39;sc_{i}&#39;] = encoding[:, i]
+
+        # nmf
+        d_nmf = pkl.load(open(nmf_comps_file, &#39;rb&#39;))
+        encoding_nmf = d_nmf.transform(X_mat)
+        for i in range(encoding_nmf.shape[1]):
+            df[f&#39;nmf_{i}&#39;] = encoding_nmf[:, i]
+    except:
+        print(&#39;dict features not added!&#39;)
+    return df
+
+
+def add_smoothed_splines(df,
+                         method=&#39;spline&#39;,
+                         s_spl=0.004):
+    X_smooth_spl = []
+    X_smooth_spl_dx = []
+    X_smooth_spl_d2x = []
+
+    def num_local_maxima(x):
+        return (len([i for i in range(1, len(x) - 1) if x[i] &gt; x[i - 1] and x[i] &gt; x[i + 1]]))
+
+    for x in df[&#39;X&#39;]:
+        spl = UnivariateSpline(x=range(len(x)),
+                               y=x,
+                               w=[1.0 / len(x)] * len(x),
+                               s=np.var(x) * s_spl)
+        spl_dx = spl.derivative()
+        spl_d2x = spl_dx.derivative()
+        X_smooth_spl.append(spl(range(len(x))))
+        X_smooth_spl_dx.append(spl_dx(range(len(x))))
+        X_smooth_spl_d2x.append(spl_d2x(range(len(x))))
+    df[&#39;X_smooth_spl&#39;] = np.array(X_smooth_spl)
+    df[&#39;X_smooth_spl_dx&#39;] = np.array(X_smooth_spl_dx)
+    df[&#39;X_smooth_spl_d2x&#39;] = np.array(X_smooth_spl_d2x)
+    df[&#39;X_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl])
+    df[&#39;dx_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl_dx])
+    df[&#39;d2x_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl_d2x])
+    df[&#39;num_local_max_spl&#39;] = np.array([num_local_maxima(x) for x in X_smooth_spl])
+    df[&#39;num_local_min_spl&#39;] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
+
+    # linear fits
+    x = np.arange(5).reshape(-1, 1)
+    df[&#39;end_linear_fit&#39;] = [LinearRegression().fit(x, end).coef_[0] for end in df[&#39;X_ends&#39;]]
+    df[&#39;start_linear_fit&#39;] = [LinearRegression().fit(x, start).coef_[0] for start in df[&#39;X_starts&#39;]]
+    return df
+
+
+def add_trend_filtering(df):
+    df_tf = deepcopy(df)
+    for i in range(len(df)):
+        df_tf[&#39;X&#39;].iloc[i] = trend_filtering.trend_filtering(y=df[&#39;X&#39;].iloc[i], vlambda=len(df[&#39;X&#39;].iloc[i]) * 5,
+                                                             order=1)
+    df_tf = add_features(df_tf)
+    feat_names = data.get_feature_names(df_tf)
+    feat_names = [x for x in feat_names
+                  if not x.startswith(&#39;sc_&#39;)
+                  and not x.startswith(&#39;nmf_&#39;)
+                  and not x in [&#39;center_max&#39;, &#39;left_max&#39;, &#39;right_max&#39;, &#39;up_max&#39;, &#39;down_max&#39;,
+                                &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;, &#39;X_max_diff_after_Y_peak&#39;,
+                                &#39;X_tf&#39;]
+                  and not x.startswith(&#39;pc_&#39;)
+                  #               and not &#39;local&#39; in x
+                  #               and not &#39;X_peak&#39; in x
+                  #               and not &#39;slope&#39; in x
+                  #               and not x in [&#39;fall_final&#39;, &#39;fall_slope&#39;, &#39;fall_imp&#39;, &#39;fall&#39;]
+                  ]
+    for feat in feat_names:
+        df[feat + &#39;_tf_smooth&#39;] = df_tf[feat]
+    return df
+
+
+def add_basic_features(df):
+    &#39;&#39;&#39;Add a bunch of extra features to the df based on df.X, df.X_extended, df.Y, df.lifetime
+    &#39;&#39;&#39;
+    df = df[df.lifetime &gt; 2]
+    df[&#39;X_max&#39;] = np.array([max(x) for x in df.X.values])
+    df[&#39;X_max_extended&#39;] = np.array([max(x) for x in df.X_extended.values])
+    df[&#39;X_min&#39;] = np.array([min(x) for x in df.X.values])
+    df[&#39;X_mean&#39;] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
+    df[&#39;X_std&#39;] = np.nan_to_num(np.array([np.std(x) for x in df.X.values]))
+    df[&#39;Y_max&#39;] = np.array([max(y) for y in df.Y.values])
+    df[&#39;Y_mean&#39;] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
+    df[&#39;Y_std&#39;] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
+    df[&#39;X_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
+    df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+    df[&#39;X_peak_time_frac&#39;] = df[&#39;X_peak_idx&#39;].values / df[&#39;lifetime&#39;].values
+    df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
+                               axis=1)
+    df[&#39;X_peak_last_15&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.85
+    df[&#39;X_peak_last_5&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.95
+
+    # hand-engineeredd features
+    def calc_rise(x):
+        &#39;&#39;&#39;max change before peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        return val_max - np.min(x[:idx_max + 1])
+
+    def calc_fall(x):
+        &#39;&#39;&#39;max change after peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        return val_max - np.min(x[idx_max:])
+
+    def calc_rise_slope(x):
+        &#39;&#39;&#39;slope to max change before peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_early = x[:idx_max + 1]
+        idx_min = np.argmin(x_early)
+        denom = (idx_max - idx_min)
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_early)) / denom
+
+    def calc_fall_slope(x):
+        &#39;&#39;&#39;slope to max change after peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_late = x[idx_max:]
+        idx_min = np.argmin(x_late)
+        denom = idx_min
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_late)) / denom
+
+    def max_diff(x):
+        return np.max(np.diff(x))
+
+    def min_diff(x):
+        return np.min(np.diff(x))
+
+    df[&#39;rise&#39;] = df.apply(lambda row: calc_rise(row[&#39;X&#39;]), axis=1)
+    df[&#39;fall&#39;] = df.apply(lambda row: calc_fall(row[&#39;X&#39;]), axis=1)
+    df[&#39;rise_extended&#39;] = df.apply(lambda row: calc_rise(row[&#39;X_extended&#39;]), axis=1)
+    df[&#39;fall_extended&#39;] = df.apply(lambda row: calc_fall(row[&#39;X_extended&#39;]), axis=1)
+    df[&#39;fall_late_extended&#39;] = df.apply(lambda row: row[&#39;fall_extended&#39;] if row[&#39;X_peak_last_15&#39;] else row[&#39;fall&#39;],
+                                        axis=1)
+    df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
+
+    df[&#39;rise_slope&#39;] = df.apply(lambda row: calc_rise_slope(row[&#39;X&#39;]), axis=1)
+    df[&#39;fall_slope&#39;] = df.apply(lambda row: calc_fall_slope(row[&#39;X&#39;]), axis=1)
+    num = 3
+    df[&#39;rise_local_3&#39;] = df.apply(lambda row:
+                                  calc_rise(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num):
+                                                              row[&#39;X_peak_idx&#39;] + num + 1])),
+                                  axis=1)
+    df[&#39;fall_local_3&#39;] = df.apply(lambda row:
+                                  calc_fall(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num):
+                                                              row[&#39;X_peak_idx&#39;] + num + 1])),
+                                  axis=1)
+
+    num2 = 11
+    df[&#39;rise_local_11&#39;] = df.apply(lambda row:
+                                   calc_rise(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num2):
+                                                               row[&#39;X_peak_idx&#39;] + num2 + 1])),
+                                   axis=1)
+    df[&#39;fall_local_11&#39;] = df.apply(lambda row:
+                                   calc_fall(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num2):
+                                                               row[&#39;X_peak_idx&#39;] + num2 + 1])),
+                                   axis=1)
+    df[&#39;max_diff&#39;] = df.apply(lambda row: max_diff(row[&#39;X&#39;]), axis=1)
+    df[&#39;min_diff&#39;] = df.apply(lambda row: min_diff(row[&#39;X&#39;]), axis=1)
+
+    # imputed feats
+    d = df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;, &#39;fall&#39;]]
+    d = d[df[&#39;X_peak_time_frac&#39;] &lt;= 0.8]
+    m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
+    fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
+    fall_imp = df[&#39;fall&#39;]
+    fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
+    df[&#39;fall_imp&#39;] = fall_imp
+
+    return df
+
+
+def add_binary_features(df, outcome_def):
+    &#39;&#39;&#39;binarize features at the difference between the mean of each class
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(df)
+    threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
+    for i, k in enumerate(feat_names):
+        thresh = threshes.loc[k]
+        df[k + &#39;_binary&#39;] = df[k] &gt;= thresh
+    return df</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.features.add_basic_features"><code class="name flex">
+<span>def <span class="ident">add_basic_features</span></span>(<span>df)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Add a bunch of extra features to the df based on df.X, df.X_extended, df.Y, df.lifetime</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_basic_features(df):
+    &#39;&#39;&#39;Add a bunch of extra features to the df based on df.X, df.X_extended, df.Y, df.lifetime
+    &#39;&#39;&#39;
+    df = df[df.lifetime &gt; 2]
+    df[&#39;X_max&#39;] = np.array([max(x) for x in df.X.values])
+    df[&#39;X_max_extended&#39;] = np.array([max(x) for x in df.X_extended.values])
+    df[&#39;X_min&#39;] = np.array([min(x) for x in df.X.values])
+    df[&#39;X_mean&#39;] = np.nan_to_num(np.array([np.nanmean(x) for x in df.X.values]))
+    df[&#39;X_std&#39;] = np.nan_to_num(np.array([np.std(x) for x in df.X.values]))
+    df[&#39;Y_max&#39;] = np.array([max(y) for y in df.Y.values])
+    df[&#39;Y_mean&#39;] = np.nan_to_num(np.array([np.nanmean(y) for y in df.Y.values]))
+    df[&#39;Y_std&#39;] = np.nan_to_num(np.array([np.std(y) for y in df.Y.values]))
+    df[&#39;X_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
+    df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+    df[&#39;X_peak_time_frac&#39;] = df[&#39;X_peak_idx&#39;].values / df[&#39;lifetime&#39;].values
+    df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
+                               axis=1)
+    df[&#39;X_peak_last_15&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.85
+    df[&#39;X_peak_last_5&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.95
+
+    # hand-engineeredd features
+    def calc_rise(x):
+        &#39;&#39;&#39;max change before peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        return val_max - np.min(x[:idx_max + 1])
+
+    def calc_fall(x):
+        &#39;&#39;&#39;max change after peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        return val_max - np.min(x[idx_max:])
+
+    def calc_rise_slope(x):
+        &#39;&#39;&#39;slope to max change before peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_early = x[:idx_max + 1]
+        idx_min = np.argmin(x_early)
+        denom = (idx_max - idx_min)
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_early)) / denom
+
+    def calc_fall_slope(x):
+        &#39;&#39;&#39;slope to max change after peak
+        &#39;&#39;&#39;
+        idx_max = np.argmax(x)
+        val_max = x[idx_max]
+        x_late = x[idx_max:]
+        idx_min = np.argmin(x_late)
+        denom = idx_min
+        if denom == 0:
+            return 0
+        return (val_max - np.min(x_late)) / denom
+
+    def max_diff(x):
+        return np.max(np.diff(x))
+
+    def min_diff(x):
+        return np.min(np.diff(x))
+
+    df[&#39;rise&#39;] = df.apply(lambda row: calc_rise(row[&#39;X&#39;]), axis=1)
+    df[&#39;fall&#39;] = df.apply(lambda row: calc_fall(row[&#39;X&#39;]), axis=1)
+    df[&#39;rise_extended&#39;] = df.apply(lambda row: calc_rise(row[&#39;X_extended&#39;]), axis=1)
+    df[&#39;fall_extended&#39;] = df.apply(lambda row: calc_fall(row[&#39;X_extended&#39;]), axis=1)
+    df[&#39;fall_late_extended&#39;] = df.apply(lambda row: row[&#39;fall_extended&#39;] if row[&#39;X_peak_last_15&#39;] else row[&#39;fall&#39;],
+                                        axis=1)
+    df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
+
+    df[&#39;rise_slope&#39;] = df.apply(lambda row: calc_rise_slope(row[&#39;X&#39;]), axis=1)
+    df[&#39;fall_slope&#39;] = df.apply(lambda row: calc_fall_slope(row[&#39;X&#39;]), axis=1)
+    num = 3
+    df[&#39;rise_local_3&#39;] = df.apply(lambda row:
+                                  calc_rise(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num):
+                                                              row[&#39;X_peak_idx&#39;] + num + 1])),
+                                  axis=1)
+    df[&#39;fall_local_3&#39;] = df.apply(lambda row:
+                                  calc_fall(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num):
+                                                              row[&#39;X_peak_idx&#39;] + num + 1])),
+                                  axis=1)
+
+    num2 = 11
+    df[&#39;rise_local_11&#39;] = df.apply(lambda row:
+                                   calc_rise(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num2):
+                                                               row[&#39;X_peak_idx&#39;] + num2 + 1])),
+                                   axis=1)
+    df[&#39;fall_local_11&#39;] = df.apply(lambda row:
+                                   calc_fall(np.array(row[&#39;X&#39;][max(0, row[&#39;X_peak_idx&#39;] - num2):
+                                                               row[&#39;X_peak_idx&#39;] + num2 + 1])),
+                                   axis=1)
+    df[&#39;max_diff&#39;] = df.apply(lambda row: max_diff(row[&#39;X&#39;]), axis=1)
+    df[&#39;min_diff&#39;] = df.apply(lambda row: min_diff(row[&#39;X&#39;]), axis=1)
+
+    # imputed feats
+    d = df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;, &#39;fall&#39;]]
+    d = d[df[&#39;X_peak_time_frac&#39;] &lt;= 0.8]
+    m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
+    fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
+    fall_imp = df[&#39;fall&#39;]
+    fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
+    df[&#39;fall_imp&#39;] = fall_imp
+
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_binary_features"><code class="name flex">
+<span>def <span class="ident">add_binary_features</span></span>(<span>df, outcome_def)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>binarize features at the difference between the mean of each class</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_binary_features(df, outcome_def):
+    &#39;&#39;&#39;binarize features at the difference between the mean of each class
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(df)
+    threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
+    for i, k in enumerate(feat_names):
+        thresh = threshes.loc[k]
+        df[k + &#39;_binary&#39;] = df[k] &gt;= thresh
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_dict_features"><code class="name flex">
+<span>def <span class="ident">add_dict_features</span></span>(<span>df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', nmf_comps_file='processed/dictionaries/nmf_12.pkl', use_processed=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Add features from saved dictionary to df</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_dict_features(df, sc_comps_file=&#39;processed/dictionaries/sc_12_alpha=1.pkl&#39;,
+                      nmf_comps_file=&#39;processed/dictionaries/nmf_12.pkl&#39;,
+                      use_processed=True):
+    &#39;&#39;&#39;Add features from saved dictionary to df
+    &#39;&#39;&#39;
+
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=&#39;processed/dictionaries&#39;):
+        print(&#39;sparse coding...&#39;)
+        d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f&#39;sc_{n_comps}_alpha={alpha}.pkl&#39;), &#39;wb&#39;))
+
+    def nmf(X_mat, n_comps=12, out_dir=&#39;processed/dictionaries&#39;):
+        print(&#39;running nmf...&#39;)
+        d = NMF(n_components=n_comps, random_state=42)
+        d.fit(X_mat)
+        pkl.dump(d, open(oj(out_dir, f&#39;nmf_{n_comps}.pkl&#39;), &#39;wb&#39;))
+
+    X_mat = extract_X_mat(df)
+    X_mat -= np.min(X_mat)
+
+    # if feats don&#39;t exist, compute them
+    if not use_processed or not os.path.exists(sc_comps_file):
+        os.makedirs(&#39;processed/dictionaries&#39;, exist_ok=True)
+        sparse_code(X_mat)
+        nmf(X_mat)
+
+    try:
+        # sc
+        d_sc = pkl.load(open(sc_comps_file, &#39;rb&#39;))
+        encoding = d_sc.transform(X_mat)
+        for i in range(encoding.shape[1]):
+            df[f&#39;sc_{i}&#39;] = encoding[:, i]
+
+        # nmf
+        d_nmf = pkl.load(open(nmf_comps_file, &#39;rb&#39;))
+        encoding_nmf = d_nmf.transform(X_mat)
+        for i in range(encoding_nmf.shape[1]):
+            df[f&#39;nmf_{i}&#39;] = encoding_nmf[:, i]
+    except:
+        print(&#39;dict features not added!&#39;)
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_pcs"><code class="name flex">
+<span>def <span class="ident">add_pcs</span></span>(<span>df)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>adds 10 pcs based on feature names</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_pcs(df):
+    &#39;&#39;&#39;adds 10 pcs based on feature names
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(df)
+    X = df[feat_names]
+    X = (X - X.mean()) / X.std()
+    pca = decomposition.PCA(whiten=True)
+    pca.fit(X[df.valid])
+    X_reduced = pca.transform(X)
+    for i in range(10):
+        df[&#39;pc_&#39; + str(i)] = X_reduced[:, i]
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_smoothed_splines"><code class="name flex">
+<span>def <span class="ident">add_smoothed_splines</span></span>(<span>df, method='spline', s_spl=0.004)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_smoothed_splines(df,
+                         method=&#39;spline&#39;,
+                         s_spl=0.004):
+    X_smooth_spl = []
+    X_smooth_spl_dx = []
+    X_smooth_spl_d2x = []
+
+    def num_local_maxima(x):
+        return (len([i for i in range(1, len(x) - 1) if x[i] &gt; x[i - 1] and x[i] &gt; x[i + 1]]))
+
+    for x in df[&#39;X&#39;]:
+        spl = UnivariateSpline(x=range(len(x)),
+                               y=x,
+                               w=[1.0 / len(x)] * len(x),
+                               s=np.var(x) * s_spl)
+        spl_dx = spl.derivative()
+        spl_d2x = spl_dx.derivative()
+        X_smooth_spl.append(spl(range(len(x))))
+        X_smooth_spl_dx.append(spl_dx(range(len(x))))
+        X_smooth_spl_d2x.append(spl_d2x(range(len(x))))
+    df[&#39;X_smooth_spl&#39;] = np.array(X_smooth_spl)
+    df[&#39;X_smooth_spl_dx&#39;] = np.array(X_smooth_spl_dx)
+    df[&#39;X_smooth_spl_d2x&#39;] = np.array(X_smooth_spl_d2x)
+    df[&#39;X_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl])
+    df[&#39;dx_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl_dx])
+    df[&#39;d2x_max_spl&#39;] = np.array([np.max(x) for x in X_smooth_spl_d2x])
+    df[&#39;num_local_max_spl&#39;] = np.array([num_local_maxima(x) for x in X_smooth_spl])
+    df[&#39;num_local_min_spl&#39;] = np.array([num_local_maxima(-1 * x) for x in X_smooth_spl])
+
+    # linear fits
+    x = np.arange(5).reshape(-1, 1)
+    df[&#39;end_linear_fit&#39;] = [LinearRegression().fit(x, end).coef_[0] for end in df[&#39;X_ends&#39;]]
+    df[&#39;start_linear_fit&#39;] = [LinearRegression().fit(x, start).coef_[0] for start in df[&#39;X_starts&#39;]]
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_trend_filtering"><code class="name flex">
+<span>def <span class="ident">add_trend_filtering</span></span>(<span>df)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_trend_filtering(df):
+    df_tf = deepcopy(df)
+    for i in range(len(df)):
+        df_tf[&#39;X&#39;].iloc[i] = trend_filtering.trend_filtering(y=df[&#39;X&#39;].iloc[i], vlambda=len(df[&#39;X&#39;].iloc[i]) * 5,
+                                                             order=1)
+    df_tf = add_features(df_tf)
+    feat_names = data.get_feature_names(df_tf)
+    feat_names = [x for x in feat_names
+                  if not x.startswith(&#39;sc_&#39;)
+                  and not x.startswith(&#39;nmf_&#39;)
+                  and not x in [&#39;center_max&#39;, &#39;left_max&#39;, &#39;right_max&#39;, &#39;up_max&#39;, &#39;down_max&#39;,
+                                &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;, &#39;X_max_diff_after_Y_peak&#39;,
+                                &#39;X_tf&#39;]
+                  and not x.startswith(&#39;pc_&#39;)
+                  #               and not &#39;local&#39; in x
+                  #               and not &#39;X_peak&#39; in x
+                  #               and not &#39;slope&#39; in x
+                  #               and not x in [&#39;fall_final&#39;, &#39;fall_slope&#39;, &#39;fall_imp&#39;, &#39;fall&#39;]
+                  ]
+    for feat in feat_names:
+        df[feat + &#39;_tf_smooth&#39;] = df_tf[feat]
+    return df</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src" href="index.html">src</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.features.add_basic_features" href="#src.features.add_basic_features">add_basic_features</a></code></li>
+<li><code><a title="src.features.add_binary_features" href="#src.features.add_binary_features">add_binary_features</a></code></li>
+<li><code><a title="src.features.add_dict_features" href="#src.features.add_dict_features">add_dict_features</a></code></li>
+<li><code><a title="src.features.add_pcs" href="#src.features.add_pcs">add_pcs</a></code></li>
+<li><code><a title="src.features.add_smoothed_splines" href="#src.features.add_smoothed_splines">add_smoothed_splines</a></code></li>
+<li><code><a title="src.features.add_trend_filtering" href="#src.features.add_trend_filtering">add_trend_filtering</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

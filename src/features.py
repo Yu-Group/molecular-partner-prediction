@@ -8,12 +8,13 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
-from util.style import *
+from viz import *
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
-from util import trend_filtering
+import trend_filtering
 import data
+
 
 def add_pcs(df):
     '''adds 10 pcs based on feature names
@@ -108,6 +109,7 @@ def add_smoothed_splines(df,
     df['start_linear_fit'] = [LinearRegression().fit(x, start).coef_[0] for start in df['X_starts']]
     return df
 
+
 def add_trend_filtering(df):
     df_tf = deepcopy(df)
     for i in range(len(df)):
@@ -130,6 +132,7 @@ def add_trend_filtering(df):
     for feat in feat_names:
         df[feat + '_tf_smooth'] = df_tf[feat]
     return df
+
 
 def add_basic_features(df):
     '''Add a bunch of extra features to the df based on df.X, df.X_extended, df.Y, df.lifetime
@@ -239,11 +242,12 @@ def add_basic_features(df):
 
     return df
 
+
 def add_binary_features(df, outcome_def):
     '''binarize features at the difference between the mean of each class
     '''
     feat_names = data.get_feature_names(df)
-    threshes = (df[df[outcome_def]==1].mean() + df[df[outcome_def]==0].mean())/2
+    threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
     for i, k in enumerate(feat_names):
         thresh = threshes.loc[k]
         df[k + '_binary'] = df[k] >= thresh

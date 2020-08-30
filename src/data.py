@@ -1,7 +1,9 @@
 import os
+import sys
 from copy import deepcopy
 from os.path import join as oj
 
+sys.path.append('..')
 import mat4py
 import numpy as np
 import pandas as pd
@@ -10,7 +12,7 @@ from skimage.external.tifffile import imread
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
-from util.style import *
+from viz import *
 import math
 import config
 import features

@@ -1,0 +1,486 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.analyze_helper API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.analyze_helper</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from matplotlib import pyplot as plt
+import os
+from os.path import join as oj
+import numpy as np
+import pandas as pd
+import data
+from sklearn.model_selection import KFold
+from colorama import Fore
+import pickle as pkl
+import config
+import viz
+
+
+def load_results(out_dir):
+    r = []
+    for fname in os.listdir(out_dir):
+        d = pkl.load(open(oj(out_dir, fname), &#39;rb&#39;))
+        metrics = {k: d[&#39;cv&#39;][k] for k in d[&#39;cv&#39;].keys() if not &#39;curve&#39; in k}
+        num_pts_by_fold_cv = d[&#39;num_pts_by_fold_cv&#39;]
+        out = {k: np.average(metrics[k], weights=num_pts_by_fold_cv) for k in metrics}
+        out.update({k + &#39;_std&#39;: np.std(metrics[k]) for k in metrics})
+        out[&#39;model_type&#39;] = fname.replace(&#39;.pkl&#39;, &#39;&#39;)  # d[&#39;model_type&#39;]
+
+        imp_mat = np.array(d[&#39;imps&#39;][&#39;imps&#39;])
+        imp_mu = imp_mat.mean(axis=0)
+        imp_sd = imp_mat.std(axis=0)
+
+        feat_names = d[&#39;feat_names_selected&#39;]
+        out.update({feat_names[i] + &#39;_f&#39;: imp_mu[i] for i in range(len(feat_names))})
+        out.update({feat_names[i] + &#39;_std_f&#39;: imp_sd[i] for i in range(len(feat_names))})
+        r.append(pd.Series(out))
+    r = pd.concat(r, axis=1, sort=False).T.infer_objects()
+    r = r.reindex(sorted(r.columns), axis=1)  # sort the column names
+    r = r.round(3)
+    r = r.set_index(&#39;model_type&#39;)
+    return r
+
+
+def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def=&#39;y_consec_sig&#39;, dset=&#39;clath_aux+gak_a7d2&#39;):
+    &#39;&#39;&#39;Returns predictions/labels over folds in the dataset
+    Params
+    ------
+    cell_nums: pd.Series
+        equivalent to df.cell_num
+    
+    Returns
+    -------
+    d_full_cv: pd.DataFrame
+        n rows, one for each data point in the training set (over all folds)
+        2 columns for each model, one for predictions, and one for predicted probabilities
+    idxs_cv: np.array
+        indexes corresponding locations of the validation set
+        for example, df.y_thresh.iloc[idxs_cv] would yield all the labels corresponding to the cv preds
+    &#39;&#39;&#39;
+    # split testing data based on cell num
+    d = {}
+    cell_nums_train = config.DSETS[dset][&#39;train&#39;]
+    kf = KFold(n_splits=len(cell_nums_train))
+    idxs_cv = []
+
+    # get predictions over all folds and save into a dict
+    if not type(model_names) == &#39;list&#39; and not &#39;ndarray&#39; in str(type(model_names)):
+        model_names = [model_names]
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(f&#39;{out_dir}/{model_name}.pkl&#39;, &#39;rb&#39;))
+
+        fold_num = 0
+        for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+            # get sample indices
+            idxs_val_cv = cell_nums.isin(cell_nums_train[np.array(cv_val_idx)])
+            X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+
+            # get predictions
+            preds, preds_proba = analyze_individual_results(results_individual, X_val_cv, Y_val_cv,
+                                                            print_results=False, plot_results=False,
+                                                            model_cv_fold=fold_num)
+
+            d[f&#39;{model_name}_{fold_num}&#39;] = preds
+            d[f&#39;{model_name}_{fold_num}_proba&#39;] = preds_proba
+
+            if i == 0:
+                idxs_cv.append(np.arange(X.shape[0])[idxs_val_cv])
+
+            fold_num += 1
+
+    # concatenate over folds
+    d2 = {}
+    for model_name in model_names:
+        d2[model_name] = np.hstack([d[k] for k in d.keys() if model_name in k and not &#39;proba&#39; in k])
+        d2[model_name + &#39;_proba&#39;] = np.hstack([d[k] for k in d.keys() if model_name in k and &#39;proba&#39; in k])
+    return pd.DataFrame.from_dict(d2), np.hstack(idxs_cv)
+
+
+def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
+    scores_cv = results[&#39;cv&#39;]
+    imps = results[&#39;imps&#39;]
+    m = imps[&#39;model&#39;][model_cv_fold]
+
+    preds = m.predict(X_test[results[&#39;feat_names_selected&#39;]])
+    try:
+        preds_proba = m.predict_proba(X_test[results[&#39;feat_names_selected&#39;]])[:, 1]
+    except:
+        preds_proba = preds
+
+    if print_results:
+        print(Fore.CYAN + f&#39;{&#34;metric&#34;:&lt;25}\tvalidation&#39;)  # \ttest&#39;)
+        for s in results[&#39;metrics&#39;]:
+            if not &#39;curve&#39; in s:
+                print(Fore.WHITE + f&#39;{s:&lt;25}\t{np.mean(scores_cv[s]):.3f} ~ {np.std(scores_cv[s]):.3f}&#39;)
+        #         print(Fore.WHITE + f&#39;{s:&lt;25}\t{np.mean(scores_cv[s]):.3f} ~ {np.std(scores_cv[s]):.3f}\t{np.mean(scores_test[s]):.3f} ~ {np.std(scores_test[s]):.3f}&#39;)
+
+        print(Fore.CYAN + &#39;\nfeature importances&#39;)
+        imp_mat = np.array(imps[&#39;imps&#39;])
+        imp_mu = imp_mat.mean(axis=0)
+        imp_sd = imp_mat.std(axis=0)
+        for i, feat_name in enumerate(results[&#39;feat_names_selected&#39;]):
+            print(Fore.WHITE + f&#39;{feat_name:&lt;25}\t{imp_mu[i]:.3f} ~ {imp_sd[i]:.3f}&#39;)
+
+    if plot_results:
+        # print(m.coef_)
+        plt.figure(figsize=(10, 3), dpi=140)
+        R, C = 1, 3
+        plt.subplot(R, C, 1)
+        # print(X_test.shape, results[&#39;feat_names&#39;])
+
+        viz.plot_confusion_matrix(Y_test, preds, classes=np.array([&#39;Failure&#39;, &#39;Success&#39;]))
+
+        plt.subplot(R, C, 2)
+        prec, rec, thresh = scores_test[&#39;precision_recall_curve&#39;][0]
+        plt.plot(rec, prec)
+        plt.xlim((-0.1, 1.1))
+        plt.ylim((-0.1, 1.1))
+        plt.ylabel(&#39;Precision&#39;)
+        plt.xlabel(&#39;Recall&#39;)
+
+        plt.subplot(R, C, 3)
+        plt.hist(preds_proba[Y_test == 0], alpha=0.5, label=&#39;Failure&#39;)
+        plt.hist(preds_proba[Y_test == 1], alpha=0.5, label=&#39;Success&#39;)
+        plt.xlabel(&#39;Predicted probability&#39;)
+        plt.ylabel(&#39;Count&#39;)
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    return preds, preds_proba
+
+
+def load_results_many_models(out_dir, model_names, X_test, Y_test):
+    d = {}
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(oj(out_dir, f&#39;{model_name}.pkl&#39;), &#39;rb&#39;))
+        preds, preds_proba = analyze_individual_results(results_individual, X_test, Y_test,
+                                                        print_results=False, plot_results=False)
+        d[model_name] = preds
+        d[model_name + &#39;_proba&#39;] = preds_proba
+        d[model_name + &#39;_errs&#39;] = preds != Y_test
+    df_preds = pd.DataFrame.from_dict(d)
+    return df_preds
+
+
+# normalize and store
+def normalize(df, outcome_def):
+    X = df[data.get_feature_names(df)]
+    X_mean = X.mean()
+    X_std = X.std()
+    ks = list(X.keys())
+    norms = {ks[i]: {&#39;mu&#39;: X_mean[i], &#39;std&#39;: X_std[i]} for i in range(len(ks))}
+    X = (X - X_mean) / X_std
+    y = df[outcome_def].values
+    return X, y, norms
+
+
+def calc_errs(preds, y_full_cv):
+    tp = np.logical_and(preds == 1, y_full_cv == 1)
+    tn = np.logical_and(preds == 0, y_full_cv == 0)
+    fp = preds &gt; y_full_cv
+    fn = preds &lt; y_full_cv
+    return tp, tn, fp, fn</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.analyze_helper.analyze_individual_results"><code class="name flex">
+<span>def <span class="ident">analyze_individual_results</span></span>(<span>results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def analyze_individual_results(results, X_test, Y_test, print_results=False, plot_results=False, model_cv_fold=0):
+    scores_cv = results[&#39;cv&#39;]
+    imps = results[&#39;imps&#39;]
+    m = imps[&#39;model&#39;][model_cv_fold]
+
+    preds = m.predict(X_test[results[&#39;feat_names_selected&#39;]])
+    try:
+        preds_proba = m.predict_proba(X_test[results[&#39;feat_names_selected&#39;]])[:, 1]
+    except:
+        preds_proba = preds
+
+    if print_results:
+        print(Fore.CYAN + f&#39;{&#34;metric&#34;:&lt;25}\tvalidation&#39;)  # \ttest&#39;)
+        for s in results[&#39;metrics&#39;]:
+            if not &#39;curve&#39; in s:
+                print(Fore.WHITE + f&#39;{s:&lt;25}\t{np.mean(scores_cv[s]):.3f} ~ {np.std(scores_cv[s]):.3f}&#39;)
+        #         print(Fore.WHITE + f&#39;{s:&lt;25}\t{np.mean(scores_cv[s]):.3f} ~ {np.std(scores_cv[s]):.3f}\t{np.mean(scores_test[s]):.3f} ~ {np.std(scores_test[s]):.3f}&#39;)
+
+        print(Fore.CYAN + &#39;\nfeature importances&#39;)
+        imp_mat = np.array(imps[&#39;imps&#39;])
+        imp_mu = imp_mat.mean(axis=0)
+        imp_sd = imp_mat.std(axis=0)
+        for i, feat_name in enumerate(results[&#39;feat_names_selected&#39;]):
+            print(Fore.WHITE + f&#39;{feat_name:&lt;25}\t{imp_mu[i]:.3f} ~ {imp_sd[i]:.3f}&#39;)
+
+    if plot_results:
+        # print(m.coef_)
+        plt.figure(figsize=(10, 3), dpi=140)
+        R, C = 1, 3
+        plt.subplot(R, C, 1)
+        # print(X_test.shape, results[&#39;feat_names&#39;])
+
+        viz.plot_confusion_matrix(Y_test, preds, classes=np.array([&#39;Failure&#39;, &#39;Success&#39;]))
+
+        plt.subplot(R, C, 2)
+        prec, rec, thresh = scores_test[&#39;precision_recall_curve&#39;][0]
+        plt.plot(rec, prec)
+        plt.xlim((-0.1, 1.1))
+        plt.ylim((-0.1, 1.1))
+        plt.ylabel(&#39;Precision&#39;)
+        plt.xlabel(&#39;Recall&#39;)
+
+        plt.subplot(R, C, 3)
+        plt.hist(preds_proba[Y_test == 0], alpha=0.5, label=&#39;Failure&#39;)
+        plt.hist(preds_proba[Y_test == 1], alpha=0.5, label=&#39;Success&#39;)
+        plt.xlabel(&#39;Predicted probability&#39;)
+        plt.ylabel(&#39;Count&#39;)
+        plt.legend()
+
+        plt.tight_layout()
+        plt.show()
+
+    return preds, preds_proba</code></pre>
+</details>
+</dd>
+<dt id="src.analyze_helper.calc_errs"><code class="name flex">
+<span>def <span class="ident">calc_errs</span></span>(<span>preds, y_full_cv)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def calc_errs(preds, y_full_cv):
+    tp = np.logical_and(preds == 1, y_full_cv == 1)
+    tn = np.logical_and(preds == 0, y_full_cv == 0)
+    fp = preds &gt; y_full_cv
+    fn = preds &lt; y_full_cv
+    return tp, tn, fp, fn</code></pre>
+</details>
+</dd>
+<dt id="src.analyze_helper.get_data_over_folds"><code class="name flex">
+<span>def <span class="ident">get_data_over_folds</span></span>(<span>model_names, out_dir, cell_nums, X, y, outcome_def='y_consec_sig', dset='clath_aux+gak_a7d2')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Returns predictions/labels over folds in the dataset
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>cell_nums</code></strong> :&ensp;<code>pd.Series</code></dt>
+<dd>equivalent to df.cell_num</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>d_full_cv</code></strong> :&ensp;<code>pd.DataFrame</code></dt>
+<dd>n rows, one for each data point in the training set (over all folds)
+2 columns for each model, one for predictions, and one for predicted probabilities</dd>
+<dt><strong><code>idxs_cv</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>indexes corresponding locations of the validation set
+for example, df.y_thresh.iloc[idxs_cv] would yield all the labels corresponding to the cv preds</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_data_over_folds(model_names: list, out_dir: str, cell_nums: pd.Series, X, y, outcome_def=&#39;y_consec_sig&#39;, dset=&#39;clath_aux+gak_a7d2&#39;):
+    &#39;&#39;&#39;Returns predictions/labels over folds in the dataset
+    Params
+    ------
+    cell_nums: pd.Series
+        equivalent to df.cell_num
+    
+    Returns
+    -------
+    d_full_cv: pd.DataFrame
+        n rows, one for each data point in the training set (over all folds)
+        2 columns for each model, one for predictions, and one for predicted probabilities
+    idxs_cv: np.array
+        indexes corresponding locations of the validation set
+        for example, df.y_thresh.iloc[idxs_cv] would yield all the labels corresponding to the cv preds
+    &#39;&#39;&#39;
+    # split testing data based on cell num
+    d = {}
+    cell_nums_train = config.DSETS[dset][&#39;train&#39;]
+    kf = KFold(n_splits=len(cell_nums_train))
+    idxs_cv = []
+
+    # get predictions over all folds and save into a dict
+    if not type(model_names) == &#39;list&#39; and not &#39;ndarray&#39; in str(type(model_names)):
+        model_names = [model_names]
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(f&#39;{out_dir}/{model_name}.pkl&#39;, &#39;rb&#39;))
+
+        fold_num = 0
+        for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+            # get sample indices
+            idxs_val_cv = cell_nums.isin(cell_nums_train[np.array(cv_val_idx)])
+            X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+
+            # get predictions
+            preds, preds_proba = analyze_individual_results(results_individual, X_val_cv, Y_val_cv,
+                                                            print_results=False, plot_results=False,
+                                                            model_cv_fold=fold_num)
+
+            d[f&#39;{model_name}_{fold_num}&#39;] = preds
+            d[f&#39;{model_name}_{fold_num}_proba&#39;] = preds_proba
+
+            if i == 0:
+                idxs_cv.append(np.arange(X.shape[0])[idxs_val_cv])
+
+            fold_num += 1
+
+    # concatenate over folds
+    d2 = {}
+    for model_name in model_names:
+        d2[model_name] = np.hstack([d[k] for k in d.keys() if model_name in k and not &#39;proba&#39; in k])
+        d2[model_name + &#39;_proba&#39;] = np.hstack([d[k] for k in d.keys() if model_name in k and &#39;proba&#39; in k])
+    return pd.DataFrame.from_dict(d2), np.hstack(idxs_cv)</code></pre>
+</details>
+</dd>
+<dt id="src.analyze_helper.load_results"><code class="name flex">
+<span>def <span class="ident">load_results</span></span>(<span>out_dir)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_results(out_dir):
+    r = []
+    for fname in os.listdir(out_dir):
+        d = pkl.load(open(oj(out_dir, fname), &#39;rb&#39;))
+        metrics = {k: d[&#39;cv&#39;][k] for k in d[&#39;cv&#39;].keys() if not &#39;curve&#39; in k}
+        num_pts_by_fold_cv = d[&#39;num_pts_by_fold_cv&#39;]
+        out = {k: np.average(metrics[k], weights=num_pts_by_fold_cv) for k in metrics}
+        out.update({k + &#39;_std&#39;: np.std(metrics[k]) for k in metrics})
+        out[&#39;model_type&#39;] = fname.replace(&#39;.pkl&#39;, &#39;&#39;)  # d[&#39;model_type&#39;]
+
+        imp_mat = np.array(d[&#39;imps&#39;][&#39;imps&#39;])
+        imp_mu = imp_mat.mean(axis=0)
+        imp_sd = imp_mat.std(axis=0)
+
+        feat_names = d[&#39;feat_names_selected&#39;]
+        out.update({feat_names[i] + &#39;_f&#39;: imp_mu[i] for i in range(len(feat_names))})
+        out.update({feat_names[i] + &#39;_std_f&#39;: imp_sd[i] for i in range(len(feat_names))})
+        r.append(pd.Series(out))
+    r = pd.concat(r, axis=1, sort=False).T.infer_objects()
+    r = r.reindex(sorted(r.columns), axis=1)  # sort the column names
+    r = r.round(3)
+    r = r.set_index(&#39;model_type&#39;)
+    return r</code></pre>
+</details>
+</dd>
+<dt id="src.analyze_helper.load_results_many_models"><code class="name flex">
+<span>def <span class="ident">load_results_many_models</span></span>(<span>out_dir, model_names, X_test, Y_test)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_results_many_models(out_dir, model_names, X_test, Y_test):
+    d = {}
+    for i, model_name in enumerate(model_names):
+        results_individual = pkl.load(open(oj(out_dir, f&#39;{model_name}.pkl&#39;), &#39;rb&#39;))
+        preds, preds_proba = analyze_individual_results(results_individual, X_test, Y_test,
+                                                        print_results=False, plot_results=False)
+        d[model_name] = preds
+        d[model_name + &#39;_proba&#39;] = preds_proba
+        d[model_name + &#39;_errs&#39;] = preds != Y_test
+    df_preds = pd.DataFrame.from_dict(d)
+    return df_preds</code></pre>
+</details>
+</dd>
+<dt id="src.analyze_helper.normalize"><code class="name flex">
+<span>def <span class="ident">normalize</span></span>(<span>df, outcome_def)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def normalize(df, outcome_def):
+    X = df[data.get_feature_names(df)]
+    X_mean = X.mean()
+    X_std = X.std()
+    ks = list(X.keys())
+    norms = {ks[i]: {&#39;mu&#39;: X_mean[i], &#39;std&#39;: X_std[i]} for i in range(len(ks))}
+    X = (X - X_mean) / X_std
+    y = df[outcome_def].values
+    return X, y, norms</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src" href="index.html">src</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.analyze_helper.analyze_individual_results" href="#src.analyze_helper.analyze_individual_results">analyze_individual_results</a></code></li>
+<li><code><a title="src.analyze_helper.calc_errs" href="#src.analyze_helper.calc_errs">calc_errs</a></code></li>
+<li><code><a title="src.analyze_helper.get_data_over_folds" href="#src.analyze_helper.get_data_over_folds">get_data_over_folds</a></code></li>
+<li><code><a title="src.analyze_helper.load_results" href="#src.analyze_helper.load_results">load_results</a></code></li>
+<li><code><a title="src.analyze_helper.load_results_many_models" href="#src.analyze_helper.load_results_many_models">load_results_many_models</a></code></li>
+<li><code><a title="src.analyze_helper.normalize" href="#src.analyze_helper.normalize">normalize</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

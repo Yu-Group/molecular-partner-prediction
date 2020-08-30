@@ -1,0 +1,1147 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.viz API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.viz</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import pickle as pkl
+
+import data
+import matplotlib.gridspec as grd
+import numpy as np
+import pandas as pd
+import seaborn as sns
+from matplotlib import pyplot as plt
+from matplotlib_venn import venn2
+from sklearn import decomposition
+from sklearn import metrics
+from sklearn.covariance import EllipticEnvelope
+from sklearn.ensemble import IsolationForest
+from sklearn.neighbors import LocalOutlierFactor
+from sklearn.svm import OneClassSVM
+from sklearn.utils.multiclass import unique_labels
+
+cb2 = &#39;#66ccff&#39;
+cb = &#39;#1f77b4&#39;
+cr = &#39;#cc0000&#39;
+cp = &#39;#cc3399&#39;
+cy = &#39;#d8b365&#39;
+cg = &#39;#5ab4ac&#39;
+
+
+def plot_confusion_matrix(y_true, y_pred, classes,
+                          normalize=False,
+                          title=None,
+                          cmap=plt.cm.Blues):
+    &#34;&#34;&#34;
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    Params
+    ------
+    classes: np.ndarray(Str)
+        classes=np.array([&#39;aux-&#39;, &#39;aux+&#39;])
+    &#34;&#34;&#34;
+    plt.figure(dpi=300)
+    if not title:
+        if normalize:
+            title = &#39;Normalized confusion matrix&#39;
+        else:
+            title = &#39;Confusion matrix, without normalization&#39;
+
+    # Compute confusion matrix
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    # Only use the labels that appear in the data
+    classes = classes[unique_labels(y_true.astype(np.int), y_pred.astype(np.int))]
+    if normalize:
+        cm = cm.astype(&#39;float&#39;) / cm.sum(axis=1)[:, np.newaxis]
+
+    #     fig, ax = plt.subplots()
+    im = plt.imshow(cm, interpolation=&#39;nearest&#39;, cmap=cmap)
+    ax = plt.gca()
+    #     ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           # ... and label them with the respective list entries
+           xticklabels=classes, yticklabels=classes,
+           #            title=title,
+           ylabel=&#39;True label&#39;,
+           xlabel=&#39;Predicted label&#39;)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha=&#34;right&#34;,
+             rotation_mode=&#34;anchor&#34;)
+
+    # Loop over data dimensions and create text annotations.
+    fmt = &#39;.2f&#39; if normalize else &#39;d&#39;
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], fmt),
+                    ha=&#34;center&#34;, va=&#34;center&#34;,
+                    color=&#34;white&#34; if cm[i, j] &gt; thresh else &#34;black&#34;)
+    return ax
+
+
+def highlight_max(data, color=&#39;#0e5c99&#39;):
+    &#39;&#39;&#39;
+    highlight the maximum in a Series or DataFrame
+    &#39;&#39;&#39;
+    attr = &#39;background-color: {}&#39;.format(color)
+    if data.ndim == 1:  # Series from .apply(axis=0) or axis=1
+        is_max = data == data.max()
+        return [attr if v else &#39;&#39; for v in is_max]
+    else:  # from .apply(axis=None)
+        is_max = data == data.max().max()
+        return pd.DataFrame(np.where(is_max, attr, &#39;&#39;),
+                            index=data.index, columns=data.columns)
+
+
+# visualize biggest errs
+def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
+                     num_to_plot=20, aux_thresh=642):
+    &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
+    Params
+    ------
+    idxs_cv: integer ndarray
+        which idxs are not part of the test set (usually just 0, 1, 2, ...)
+    idxs: boolean ndarray
+        subset of points to plot
+    
+    &#39;&#39;&#39;
+
+    # get args to sort by
+    Y_test = Y_test[idxs]
+    preds = preds[idxs]
+    preds_proba = preds_proba[idxs]
+    residuals = np.abs(Y_test - preds_proba)
+    args = np.argsort(residuals)[::-1]
+
+    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    lifetime_max = np.max(dft.lifetime.values)
+    if num_to_plot is None:
+        num_to_plot = dft.shape[0]
+    R = int(np.sqrt(num_to_plot))
+    C = num_to_plot // R  # + 1
+    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
+
+    i = 0
+    for r in range(R):
+        for c in range(C):
+            if i &lt; dft.shape[0]:
+                ax = plt.subplot(R, C, i + 1)
+                ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                        horizontalalignment=&#39;right&#39;,
+                        transform=ax.transAxes)
+                plt.axis(&#39;off&#39;)
+                plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=&#39;green&#39;)
+                i += 1
+                plt.xlim([-1, lifetime_max])
+                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
+
+    plt.tight_layout()
+    return dft
+
+
+def viz_errs_2d(df, idxs_test, preds, Y_test, key1=&#39;x_pos&#39;, key2=&#39;y_pos&#39;, X=None, plot_correct=True):
+    &#39;&#39;&#39;visualize distribution of errs wrt to 2 dimensions
+    &#39;&#39;&#39;
+    x_pos = df[key1].iloc[idxs_test]
+    y_pos = df[key2].iloc[idxs_test]
+
+    plt.figure(dpi=200)
+    ms = 4
+    me = 1
+    if plot_correct:
+        plt.plot(x_pos[(preds == Y_test) &amp; (preds == 1)], y_pos[(preds == Y_test) &amp; (preds == 1)], &#39;o&#39;,
+                 color=cb, alpha=0.4, label=&#39;true pos&#39;, ms=ms, markeredgewidth=0)
+        plt.plot(x_pos[(preds == Y_test) &amp; (preds == 0)], y_pos[(preds == Y_test) &amp; (preds == 0)], &#39;o&#39;,
+                 color=cr, alpha=0.4, label=&#39;true neg&#39;, ms=ms, markeredgewidth=0)
+    plt.plot(x_pos[preds &gt; Y_test], y_pos[preds &gt; Y_test], &#39;x&#39;, color=cb,
+             alpha=0.4, label=&#39;false pos&#39;, ms=ms, markeredgewidth=1)
+    plt.plot(x_pos[preds &lt; Y_test], y_pos[preds &lt; Y_test], &#39;x&#39;, color=cr,
+             alpha=0.4, label=&#39;false neg&#39;, ms=ms, markeredgewidth=1)
+    plt.legend()
+    #     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
+    plt.xlabel(key1)
+    plt.ylabel(key2)
+    plt.tight_layout()
+
+
+def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39;):
+    &#39;&#39;&#39;visualize errs based on lifetime
+    &#39;&#39;&#39;
+    plt.figure(dpi=200)
+    correct_idxs = preds == Y_test
+    lifetime = X_test[key] * norms[key][&#39;std&#39;] + norms[key][&#39;mu&#39;]
+
+    plt.plot(lifetime[(preds == Y_test) &amp; (preds == 1)], preds_proba[(preds == Y_test) &amp; (preds == 1)], &#39;o&#39;,
+             color=cb, alpha=0.5, label=&#39;true pos&#39;)
+    plt.plot(lifetime[(preds == Y_test) &amp; (preds == 0)], preds_proba[(preds == Y_test) &amp; (preds == 0)], &#39;x&#39;,
+             color=cb, alpha=0.5, label=&#39;true neg&#39;)
+    plt.plot(lifetime[preds &gt; Y_test], preds_proba[preds &gt; Y_test], &#39;o&#39;, color=cr, alpha=0.5, label=&#39;false pos&#39;)
+    plt.plot(lifetime[preds &lt; Y_test], preds_proba[preds &lt; Y_test], &#39;x&#39;, color=cr, alpha=0.5, label=&#39;false neg&#39;)
+    plt.xlabel(key)
+    plt.ylabel(&#39;predicted probability&#39;)
+    plt.legend()
+    plt.show()
+
+
+def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True):
+    &#39;&#39;&#39;Plot time-series curves from df
+    &#39;&#39;&#39;
+    if fig is None:
+        plt.figure(figsize=(16, 10), dpi=200)
+    lifetime_max = np.max(df.lifetime.values[:R * C])
+    df = df.iloc[range(R * C)]
+    for i in range(R * C):
+        if i &lt; df.shape[0]:
+            plt.subplot(R, C, i + 1)
+            row = df.iloc[i]
+            plt.plot(row.X, color=cr, label=&#39;clathrin&#39;)
+            if extra_key is not None:
+                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
+            else:
+                plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
+                if hline:
+                    plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+            plt.xlim([-1, lifetime_max + 1])
+            if ylim_constant:
+                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+    #     plt.axi(&#39;off&#39;)
+    if legend:
+        plt.legend()
+    plt.tight_layout()
+    if fig is None:
+        plt.show()
+
+
+def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
+    &#39;&#39;&#39;Compare outliers to errors in venn-diagram
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(X_test)
+    X_feat = X_test[feat_names]
+
+    if num_feats_reduced is not None:
+        pca = decomposition.PCA(n_components=num_feats_reduced)
+        X_reduced = pca.fit_transform(X_feat)
+    else:
+        X_reduced = X_feat
+
+    R, C = 2, 2
+    titles = [&#39;isolation forest&#39;, &#39;local outlier factor&#39;, &#39;elliptic envelop&#39;, &#39;one-class svm&#39;]
+    plt.figure(figsize=(6, 5), dpi=200)
+    for i in range(4):
+        plt.subplot(R, C, i + 1)
+        plt.title(titles[i])
+        if i == 0:
+            clf = IsolationForest(n_estimators=10, warm_start=True)
+        elif i == 1:
+            clf = LocalOutlierFactor(novelty=True)
+        elif i == 2:
+            clf = EllipticEnvelope()
+        elif i == 3:
+            clf = OneClassSVM()
+        clf.fit(X_reduced)  # fit 10 trees  
+        is_outlier = clf.predict(X_reduced) == -1
+        is_err = preds != Y_test
+        idxs = np.arange(is_outlier.size)
+        venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=[&#39;outliers&#39;, &#39;errors&#39;])
+
+
+def plot_pcs(pca, X):
+    &#39;&#39;&#39;Pretty plot of pcs with explained var bars
+    Params
+    ------
+    pca: sklearn PCA class after being fitted
+    &#39;&#39;&#39;
+    plt.figure(figsize=(6, 9), dpi=200)
+
+    # extract out relevant pars
+    comps = pca.components_.transpose()
+    var_norm = pca.explained_variance_ / np.sum(pca.explained_variance_) * 100
+
+    # create a 2 X 2 grid 
+    gs = grd.GridSpec(2, 2, height_ratios=[2, 10],
+                      width_ratios=[12, 1], wspace=0.1, hspace=0)
+
+    # plot explained variance
+    ax2 = plt.subplot(gs[0])
+    ax2.bar(np.arange(0, comps.shape[1]), var_norm,
+            color=&#39;gray&#39;, width=0.8)
+    plt.title(&#39;Explained variance (%)&#39;)
+    ax2.spines[&#39;right&#39;].set_visible(False)
+    ax2.spines[&#39;top&#39;].set_visible(False)
+    ax2.yaxis.set_ticks_position(&#39;left&#39;)
+    ax2.set_yticks([0, max(var_norm)])
+    plt.xlim((-0.5, comps.shape[1] - 0.5))
+
+    # plot pcs
+    ax = plt.subplot(gs[2])
+    vmaxabs = np.max(np.abs(comps))
+    p = ax.imshow(comps, interpolation=&#39;None&#39;, aspect=&#39;auto&#39;,
+                  cmap=sns.diverging_palette(10, 240, as_cmap=True, center=&#39;light&#39;),
+                  vmin=-vmaxabs, vmax=vmaxabs)  # center at 0
+    plt.xlabel(&#39;PCA component number&#39;)
+    ax.set_yticklabels(list(X))
+    ax.set_yticks(range(len(list(X))))
+
+    # make colorbar
+    colorAx = plt.subplot(gs[3])
+    cb = plt.colorbar(p, cax=colorAx)
+    plt.show()
+
+
+def print_metadata(acc=None, metadata_file=&#39;processed/metadata_clath_aux+gak_a7d2.pkl&#39;):
+    m = pkl.load(open(metadata_file, &#39;rb&#39;))
+
+    print(
+        f&#39;valid:\t\t{m[&#34;num_aux_pos_valid&#34;]:&gt;4.0f} aux+ / {m[&#34;num_tracks_valid&#34;]:&gt;4.0f} ({m[&#34;num_aux_pos_valid&#34;] / m[&#34;num_tracks_valid&#34;]:.3f})&#39;)
+    print(&#39;----------------------------------------&#39;)
+    print(f&#39;hotspots:\t{m[&#34;num_hotspots_valid&#34;]:&gt;4.0f} aux+ / {m[&#34;num_hotspots_valid&#34;]:&gt;4.0f}&#39;)
+    print(
+        f&#39;short:\t\t{m[&#34;num_short&#34;] - m[&#34;num_short&#34;] * m[&#34;acc_short&#34;]:&gt;4.0f} aux+ / {m[&#34;num_short&#34;]:&gt;4.0f} ({m[&#34;acc_short&#34;]:.3f})&#39;)
+    print(f&#39;long:\t\t{m[&#34;num_long&#34;] * m[&#34;acc_long&#34;]:&gt;4.0f} aux+ / {m[&#34;num_long&#34;]:&gt;4.0f} ({m[&#34;acc_long&#34;]:.3f})&#39;)
+    print(
+        f&#39;hard:\t\t{m[&#34;num_aux_pos_hard&#34;]:&gt;4.0f} aux+ / {m[&#34;num_tracks_hard&#34;]:&gt;4.0f} ({m[&#34;num_aux_pos_hard&#34;] / m[&#34;num_tracks_hard&#34;]:.3f})&#39;)
+
+    if acc is not None:
+        print(&#39;----------------------------------------&#39;)
+        print(f&#39;hard acc:\t\t\t  {acc:.3f}&#39;)
+        num_eval = m[&#34;num_tracks_valid&#34;] - m[&#34;num_hotspots_valid&#34;]
+    #         print(
+    #             f&#39;total acc (no hotspots):\t  {(m[&#34;num_short&#34;] * m[&#34;acc_short&#34;] + m[&#34;num_long&#34;] * m[&#34;acc_long&#34;] + acc * m[&#34;num_tracks_hard&#34;]) / num_eval:.3f}&#39;)
+    print(&#39;\nlifetime threshes&#39;, m[&#39;thresh_short&#39;], m[&#39;thresh_long&#39;])
+
+
+def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
+                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool = False, ms=None):
+    &#39;&#39;&#39;Jointplot of hists + densities
+    Params
+    ------
+    col_x
+        name of X var
+    col_y
+        name of Y var
+    col_k
+        name of variable to group/color by
+    add_global_hists
+        whether to plot the global hist as well
+    &#39;&#39;&#39;
+
+    def colored_scatter(x, y, c=None):
+        def scatter(*args, **kwargs):
+            args = (x, y)
+            if c is not None:
+                kwargs[&#39;c&#39;] = c
+            kwargs[&#39;marker&#39;] = &#39;.&#39;
+            kwargs[&#39;alpha&#39;] = scatter_alpha
+            plt.scatter(*args, **kwargs)
+
+        return scatter
+
+    g = sns.JointGrid(
+        x=col_x,
+        y=col_y,
+        data=df
+    )
+    color = None
+    legends = []
+    for name, df_group in df.groupby(col_k):
+        legends.append(name)
+        if k_is_color:
+            color = name
+        g.plot_joint(
+            colored_scatter(df_group[col_x], df_group[col_y], color),
+        )
+        sns.distplot(
+            df_group[col_x].values,
+            ax=g.ax_marg_x,
+            color=color,
+        )
+        sns.distplot(
+            df_group[col_y].values,
+            ax=g.ax_marg_y,
+            color=color,
+            vertical=True
+        )
+    if add_global_hists:
+        sns.distplot(
+            df[col_x].values,
+            ax=g.ax_marg_x,
+            color=&#39;grey&#39;
+        )
+        sns.distplot(
+            df[col_y].values.ravel(),
+            ax=g.ax_marg_y,
+            color=&#39;grey&#39;,
+            vertical=True
+        )
+    plt.legend(legends)
+
+
+# 2d decision boundary
+def plot_decision_boundary(X_col, Y_col, m, df, norms, num_pts=100):
+    &#39;&#39;&#39;still not finished...
+    &#39;&#39;&#39;
+    x = df[X_col]
+    y = df[Y_col]
+    x = np.linspace(x.min(), x.max(), num_pts)
+    y = np.linspace(y.min(), y.max(), num_pts)
+
+    # normalize
+    xv, yv = np.meshgrid(x, y, indexing=&#39;ij&#39;)
+    x = xv.flatten()
+    y = yv.flatten()
+    x = (x - norms[X_col][&#39;mu&#39;]) / (norms[X_col][&#39;std&#39;])
+    y = (y - norms[Y_col][&#39;mu&#39;]) / (norms[Y_col][&#39;std&#39;])
+
+    X = np.hstack((x, y)).reshape(-1, 2)
+    print(X.shape)
+
+    X = df[results_individual[&#39;feat_names_selected&#39;]]
+
+    preds = m.predict(X)
+
+
+def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    plt.plot(preds_proba[args], &#39;.&#39;, ms=0.5, label=&#39;predicted prob&#39;, color=cb)
+    plt.plot(accs, label=&#39;cumulative acc&#39;, color=cr)
+    plt.yticks(np.arange(-0.05, 1.05, 0.1))
+    plt.xlabel(&#39;num pts included&#39;)
+    plt.grid(alpha=0.2)
+    plt.legend()
+    plt.show()
+
+
+def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
+                            plot_vert_line_for_high_lifetimes=False, show=True):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    dv = df[(df.cell_num.isin(data.cell_nums_train)) &amp; (~df.hotspots)]
+    ds = dv[dv.short]
+    argss = np.argsort(ds.lifetime.values)
+    accs_s = (1 - ds[outcome_def]).values[argss]
+
+    dl = dv[dv.long]
+    argsl = np.argsort(dl.lifetime.values)
+    accs_l = (dl[outcome_def]).values[argsl]
+
+    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs_h = (preds == y_full_cv)[argsh]
+
+    # put things together
+    accs = np.hstack((accs_s, accs_l, accs_h))
+    args2 = np.argsort(dv.lifetime.values)
+    accs2 = (1 - dv[outcome_def]).values[args2]
+
+    ns = accs_s.size
+    nl = accs_l.size
+    if plot_vert_line_for_high_lifetimes:
+        plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
+    plt.axvline(ns + nl, lw=0.5)
+    nums = np.arange(1, accs.size + 1)
+    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label=&#39;pred aux-&#39;, color=cr)
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label=&#39;with model&#39;, color=cb)
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
+    plt.xlabel(&#39;Number of tracks included (sorted by uncertainty)&#39;)
+    plt.ylabel(&#39;Cumulative accuracy&#39;)
+    plt.legend()
+    plt.grid(alpha=0.2)
+    plt.tight_layout()
+
+
+def plot_example(ex):
+    &#39;&#39;&#39;ex - row of the dataframe
+    &#39;&#39;&#39;
+    plt.figure(dpi=200)
+    plt.plot(ex[&#39;X&#39;], color=&#39;red&#39;, label=&#39;clathrin&#39;)
+    plt.plot(ex[&#39;Y&#39;], color=&#39;green&#39;, label=&#39;auxilin&#39;)
+    plt.xlabel(&#39;Time&#39;)
+    plt.ylabel(&#39;Amplitude&#39;)
+    plt.legend()</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.viz.cumulative_acc_plot_all"><code class="name flex">
+<span>def <span class="ident">cumulative_acc_plot_all</span></span>(<span>preds_proba, preds, y_full_cv, df, outcome_def, plot_vert_line_for_high_lifetimes=False, show=True)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
+                            plot_vert_line_for_high_lifetimes=False, show=True):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    dv = df[(df.cell_num.isin(data.cell_nums_train)) &amp; (~df.hotspots)]
+    ds = dv[dv.short]
+    argss = np.argsort(ds.lifetime.values)
+    accs_s = (1 - ds[outcome_def]).values[argss]
+
+    dl = dv[dv.long]
+    argsl = np.argsort(dl.lifetime.values)
+    accs_l = (dl[outcome_def]).values[argsl]
+
+    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs_h = (preds == y_full_cv)[argsh]
+
+    # put things together
+    accs = np.hstack((accs_s, accs_l, accs_h))
+    args2 = np.argsort(dv.lifetime.values)
+    accs2 = (1 - dv[outcome_def]).values[args2]
+
+    ns = accs_s.size
+    nl = accs_l.size
+    if plot_vert_line_for_high_lifetimes:
+        plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
+    plt.axvline(ns + nl, lw=0.5)
+    nums = np.arange(1, accs.size + 1)
+    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label=&#39;pred aux-&#39;, color=cr)
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label=&#39;with model&#39;, color=cb)
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
+    plt.xlabel(&#39;Number of tracks included (sorted by uncertainty)&#39;)
+    plt.ylabel(&#39;Cumulative accuracy&#39;)
+    plt.legend()
+    plt.grid(alpha=0.2)
+    plt.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.cumulative_acc_plot_hard"><code class="name flex">
+<span>def <span class="ident">cumulative_acc_plot_hard</span></span>(<span>preds_proba, preds, y_full_cv)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
+    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
+    accs = (preds == y_full_cv)[args]
+    n = accs.size
+    accs = np.cumsum(accs) / np.arange(1, n + 1)
+
+    plt.figure(dpi=500)
+    plt.plot(preds_proba[args], &#39;.&#39;, ms=0.5, label=&#39;predicted prob&#39;, color=cb)
+    plt.plot(accs, label=&#39;cumulative acc&#39;, color=cr)
+    plt.yticks(np.arange(-0.05, 1.05, 0.1))
+    plt.xlabel(&#39;num pts included&#39;)
+    plt.grid(alpha=0.2)
+    plt.legend()
+    plt.show()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.highlight_max"><code class="name flex">
+<span>def <span class="ident">highlight_max</span></span>(<span>data, color='#0e5c99')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>highlight the maximum in a Series or DataFrame</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def highlight_max(data, color=&#39;#0e5c99&#39;):
+    &#39;&#39;&#39;
+    highlight the maximum in a Series or DataFrame
+    &#39;&#39;&#39;
+    attr = &#39;background-color: {}&#39;.format(color)
+    if data.ndim == 1:  # Series from .apply(axis=0) or axis=1
+        is_max = data == data.max()
+        return [attr if v else &#39;&#39; for v in is_max]
+    else:  # from .apply(axis=None)
+        is_max = data == data.max().max()
+        return pd.DataFrame(np.where(is_max, attr, &#39;&#39;),
+                            index=data.index, columns=data.columns)</code></pre>
+</details>
+</dd>
+<dt id="src.viz.jointplot_grouped"><code class="name flex">
+<span>def <span class="ident">jointplot_grouped</span></span>(<span>col_x, col_y, col_k, df, k_is_color=False, scatter_alpha=0.5, add_global_hists=False, ms=None)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Jointplot of hists + densities
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>col_x</code></strong></dt>
+<dd>name of X var</dd>
+<dt><strong><code>col_y</code></strong></dt>
+<dd>name of Y var</dd>
+<dt><strong><code>col_k</code></strong></dt>
+<dd>name of variable to group/color by</dd>
+<dt><strong><code>add_global_hists</code></strong></dt>
+<dd>whether to plot the global hist as well</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def jointplot_grouped(col_x: str, col_y: str, col_k: str, df,
+                      k_is_color=False, scatter_alpha=.5, add_global_hists: bool = False, ms=None):
+    &#39;&#39;&#39;Jointplot of hists + densities
+    Params
+    ------
+    col_x
+        name of X var
+    col_y
+        name of Y var
+    col_k
+        name of variable to group/color by
+    add_global_hists
+        whether to plot the global hist as well
+    &#39;&#39;&#39;
+
+    def colored_scatter(x, y, c=None):
+        def scatter(*args, **kwargs):
+            args = (x, y)
+            if c is not None:
+                kwargs[&#39;c&#39;] = c
+            kwargs[&#39;marker&#39;] = &#39;.&#39;
+            kwargs[&#39;alpha&#39;] = scatter_alpha
+            plt.scatter(*args, **kwargs)
+
+        return scatter
+
+    g = sns.JointGrid(
+        x=col_x,
+        y=col_y,
+        data=df
+    )
+    color = None
+    legends = []
+    for name, df_group in df.groupby(col_k):
+        legends.append(name)
+        if k_is_color:
+            color = name
+        g.plot_joint(
+            colored_scatter(df_group[col_x], df_group[col_y], color),
+        )
+        sns.distplot(
+            df_group[col_x].values,
+            ax=g.ax_marg_x,
+            color=color,
+        )
+        sns.distplot(
+            df_group[col_y].values,
+            ax=g.ax_marg_y,
+            color=color,
+            vertical=True
+        )
+    if add_global_hists:
+        sns.distplot(
+            df[col_x].values,
+            ax=g.ax_marg_x,
+            color=&#39;grey&#39;
+        )
+        sns.distplot(
+            df[col_y].values.ravel(),
+            ax=g.ax_marg_y,
+            color=&#39;grey&#39;,
+            vertical=True
+        )
+    plt.legend(legends)</code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_confusion_matrix"><code class="name flex">
+<span>def <span class="ident">plot_confusion_matrix</span></span>(<span>y_true, y_pred, classes, normalize=False, title=None, cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>This function prints and plots the confusion matrix.
+Normalization can be applied by setting <code>normalize=True</code>.
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>classes</code></strong> :&ensp;<code>np.ndarray</code>(<code>Str</code>)</dt>
+<dd>classes=np.array(['aux-', 'aux+'])</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_confusion_matrix(y_true, y_pred, classes,
+                          normalize=False,
+                          title=None,
+                          cmap=plt.cm.Blues):
+    &#34;&#34;&#34;
+    This function prints and plots the confusion matrix.
+    Normalization can be applied by setting `normalize=True`.
+    Params
+    ------
+    classes: np.ndarray(Str)
+        classes=np.array([&#39;aux-&#39;, &#39;aux+&#39;])
+    &#34;&#34;&#34;
+    plt.figure(dpi=300)
+    if not title:
+        if normalize:
+            title = &#39;Normalized confusion matrix&#39;
+        else:
+            title = &#39;Confusion matrix, without normalization&#39;
+
+    # Compute confusion matrix
+    cm = metrics.confusion_matrix(y_true, y_pred)
+    # Only use the labels that appear in the data
+    classes = classes[unique_labels(y_true.astype(np.int), y_pred.astype(np.int))]
+    if normalize:
+        cm = cm.astype(&#39;float&#39;) / cm.sum(axis=1)[:, np.newaxis]
+
+    #     fig, ax = plt.subplots()
+    im = plt.imshow(cm, interpolation=&#39;nearest&#39;, cmap=cmap)
+    ax = plt.gca()
+    #     ax.figure.colorbar(im, ax=ax)
+    # We want to show all ticks...
+    ax.set(xticks=np.arange(cm.shape[1]),
+           yticks=np.arange(cm.shape[0]),
+           # ... and label them with the respective list entries
+           xticklabels=classes, yticklabels=classes,
+           #            title=title,
+           ylabel=&#39;True label&#39;,
+           xlabel=&#39;Predicted label&#39;)
+
+    # Rotate the tick labels and set their alignment.
+    plt.setp(ax.get_xticklabels(), rotation=45, ha=&#34;right&#34;,
+             rotation_mode=&#34;anchor&#34;)
+
+    # Loop over data dimensions and create text annotations.
+    fmt = &#39;.2f&#39; if normalize else &#39;d&#39;
+    thresh = cm.max() / 2.
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            ax.text(j, i, format(cm[i, j], fmt),
+                    ha=&#34;center&#34;, va=&#34;center&#34;,
+                    color=&#34;white&#34; if cm[i, j] &gt; thresh else &#34;black&#34;)
+    return ax</code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_curves"><code class="name flex">
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Plot time-series curves from df</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True):
+    &#39;&#39;&#39;Plot time-series curves from df
+    &#39;&#39;&#39;
+    if fig is None:
+        plt.figure(figsize=(16, 10), dpi=200)
+    lifetime_max = np.max(df.lifetime.values[:R * C])
+    df = df.iloc[range(R * C)]
+    for i in range(R * C):
+        if i &lt; df.shape[0]:
+            plt.subplot(R, C, i + 1)
+            row = df.iloc[i]
+            plt.plot(row.X, color=cr, label=&#39;clathrin&#39;)
+            if extra_key is not None:
+                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
+            else:
+                plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
+                if hline:
+                    plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+            plt.xlim([-1, lifetime_max + 1])
+            if ylim_constant:
+                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+    #     plt.axi(&#39;off&#39;)
+    if legend:
+        plt.legend()
+    plt.tight_layout()
+    if fig is None:
+        plt.show()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_decision_boundary"><code class="name flex">
+<span>def <span class="ident">plot_decision_boundary</span></span>(<span>X_col, Y_col, m, df, norms, num_pts=100)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>still not finished&hellip;</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_decision_boundary(X_col, Y_col, m, df, norms, num_pts=100):
+    &#39;&#39;&#39;still not finished...
+    &#39;&#39;&#39;
+    x = df[X_col]
+    y = df[Y_col]
+    x = np.linspace(x.min(), x.max(), num_pts)
+    y = np.linspace(y.min(), y.max(), num_pts)
+
+    # normalize
+    xv, yv = np.meshgrid(x, y, indexing=&#39;ij&#39;)
+    x = xv.flatten()
+    y = yv.flatten()
+    x = (x - norms[X_col][&#39;mu&#39;]) / (norms[X_col][&#39;std&#39;])
+    y = (y - norms[Y_col][&#39;mu&#39;]) / (norms[Y_col][&#39;std&#39;])
+
+    X = np.hstack((x, y)).reshape(-1, 2)
+    print(X.shape)
+
+    X = df[results_individual[&#39;feat_names_selected&#39;]]
+
+    preds = m.predict(X)</code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_example"><code class="name flex">
+<span>def <span class="ident">plot_example</span></span>(<span>ex)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>ex - row of the dataframe</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_example(ex):
+    &#39;&#39;&#39;ex - row of the dataframe
+    &#39;&#39;&#39;
+    plt.figure(dpi=200)
+    plt.plot(ex[&#39;X&#39;], color=&#39;red&#39;, label=&#39;clathrin&#39;)
+    plt.plot(ex[&#39;Y&#39;], color=&#39;green&#39;, label=&#39;auxilin&#39;)
+    plt.xlabel(&#39;Time&#39;)
+    plt.ylabel(&#39;Amplitude&#39;)
+    plt.legend()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_pcs"><code class="name flex">
+<span>def <span class="ident">plot_pcs</span></span>(<span>pca, X)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Pretty plot of pcs with explained var bars
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>pca</code></strong> :&ensp;<code>sklearn</code> <code>PCA</code> <code>class</code> <code>after</code> <code>being</code> <code>fitted</code></dt>
+<dd>&nbsp;</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_pcs(pca, X):
+    &#39;&#39;&#39;Pretty plot of pcs with explained var bars
+    Params
+    ------
+    pca: sklearn PCA class after being fitted
+    &#39;&#39;&#39;
+    plt.figure(figsize=(6, 9), dpi=200)
+
+    # extract out relevant pars
+    comps = pca.components_.transpose()
+    var_norm = pca.explained_variance_ / np.sum(pca.explained_variance_) * 100
+
+    # create a 2 X 2 grid 
+    gs = grd.GridSpec(2, 2, height_ratios=[2, 10],
+                      width_ratios=[12, 1], wspace=0.1, hspace=0)
+
+    # plot explained variance
+    ax2 = plt.subplot(gs[0])
+    ax2.bar(np.arange(0, comps.shape[1]), var_norm,
+            color=&#39;gray&#39;, width=0.8)
+    plt.title(&#39;Explained variance (%)&#39;)
+    ax2.spines[&#39;right&#39;].set_visible(False)
+    ax2.spines[&#39;top&#39;].set_visible(False)
+    ax2.yaxis.set_ticks_position(&#39;left&#39;)
+    ax2.set_yticks([0, max(var_norm)])
+    plt.xlim((-0.5, comps.shape[1] - 0.5))
+
+    # plot pcs
+    ax = plt.subplot(gs[2])
+    vmaxabs = np.max(np.abs(comps))
+    p = ax.imshow(comps, interpolation=&#39;None&#39;, aspect=&#39;auto&#39;,
+                  cmap=sns.diverging_palette(10, 240, as_cmap=True, center=&#39;light&#39;),
+                  vmin=-vmaxabs, vmax=vmaxabs)  # center at 0
+    plt.xlabel(&#39;PCA component number&#39;)
+    ax.set_yticklabels(list(X))
+    ax.set_yticks(range(len(list(X))))
+
+    # make colorbar
+    colorAx = plt.subplot(gs[3])
+    cb = plt.colorbar(p, cax=colorAx)
+    plt.show()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.print_metadata"><code class="name flex">
+<span>def <span class="ident">print_metadata</span></span>(<span>acc=None, metadata_file='processed/metadata_clath_aux+gak_a7d2.pkl')</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def print_metadata(acc=None, metadata_file=&#39;processed/metadata_clath_aux+gak_a7d2.pkl&#39;):
+    m = pkl.load(open(metadata_file, &#39;rb&#39;))
+
+    print(
+        f&#39;valid:\t\t{m[&#34;num_aux_pos_valid&#34;]:&gt;4.0f} aux+ / {m[&#34;num_tracks_valid&#34;]:&gt;4.0f} ({m[&#34;num_aux_pos_valid&#34;] / m[&#34;num_tracks_valid&#34;]:.3f})&#39;)
+    print(&#39;----------------------------------------&#39;)
+    print(f&#39;hotspots:\t{m[&#34;num_hotspots_valid&#34;]:&gt;4.0f} aux+ / {m[&#34;num_hotspots_valid&#34;]:&gt;4.0f}&#39;)
+    print(
+        f&#39;short:\t\t{m[&#34;num_short&#34;] - m[&#34;num_short&#34;] * m[&#34;acc_short&#34;]:&gt;4.0f} aux+ / {m[&#34;num_short&#34;]:&gt;4.0f} ({m[&#34;acc_short&#34;]:.3f})&#39;)
+    print(f&#39;long:\t\t{m[&#34;num_long&#34;] * m[&#34;acc_long&#34;]:&gt;4.0f} aux+ / {m[&#34;num_long&#34;]:&gt;4.0f} ({m[&#34;acc_long&#34;]:.3f})&#39;)
+    print(
+        f&#39;hard:\t\t{m[&#34;num_aux_pos_hard&#34;]:&gt;4.0f} aux+ / {m[&#34;num_tracks_hard&#34;]:&gt;4.0f} ({m[&#34;num_aux_pos_hard&#34;] / m[&#34;num_tracks_hard&#34;]:.3f})&#39;)
+
+    if acc is not None:
+        print(&#39;----------------------------------------&#39;)
+        print(f&#39;hard acc:\t\t\t  {acc:.3f}&#39;)
+        num_eval = m[&#34;num_tracks_valid&#34;] - m[&#34;num_hotspots_valid&#34;]
+    #         print(
+    #             f&#39;total acc (no hotspots):\t  {(m[&#34;num_short&#34;] * m[&#34;acc_short&#34;] + m[&#34;num_long&#34;] * m[&#34;acc_long&#34;] + acc * m[&#34;num_tracks_hard&#34;]) / num_eval:.3f}&#39;)
+    print(&#39;\nlifetime threshes&#39;, m[&#39;thresh_short&#39;], m[&#39;thresh_long&#39;])</code></pre>
+</details>
+</dd>
+<dt id="src.viz.viz_biggest_errs"><code class="name flex">
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>idxs_cv</code></strong> :&ensp;<code>integer</code> <code>ndarray</code></dt>
+<dd>which idxs are not part of the test set (usually just 0, 1, 2, &hellip;)</dd>
+<dt><strong><code>idxs</code></strong> :&ensp;<code>boolean</code> <code>ndarray</code></dt>
+<dd>subset of points to plot</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
+                     num_to_plot=20, aux_thresh=642):
+    &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
+    Params
+    ------
+    idxs_cv: integer ndarray
+        which idxs are not part of the test set (usually just 0, 1, 2, ...)
+    idxs: boolean ndarray
+        subset of points to plot
+    
+    &#39;&#39;&#39;
+
+    # get args to sort by
+    Y_test = Y_test[idxs]
+    preds = preds[idxs]
+    preds_proba = preds_proba[idxs]
+    residuals = np.abs(Y_test - preds_proba)
+    args = np.argsort(residuals)[::-1]
+
+    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    lifetime_max = np.max(dft.lifetime.values)
+    if num_to_plot is None:
+        num_to_plot = dft.shape[0]
+    R = int(np.sqrt(num_to_plot))
+    C = num_to_plot // R  # + 1
+    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
+
+    i = 0
+    for r in range(R):
+        for c in range(C):
+            if i &lt; dft.shape[0]:
+                ax = plt.subplot(R, C, i + 1)
+                ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                        horizontalalignment=&#39;right&#39;,
+                        transform=ax.transAxes)
+                plt.axis(&#39;off&#39;)
+                plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=&#39;green&#39;)
+                i += 1
+                plt.xlim([-1, lifetime_max])
+                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
+
+    plt.tight_layout()
+    return dft</code></pre>
+</details>
+</dd>
+<dt id="src.viz.viz_errs_1d"><code class="name flex">
+<span>def <span class="ident">viz_errs_1d</span></span>(<span>X_test, preds, preds_proba, Y_test, norms, key='lifetime')</span>
+</code></dt>
+<dd>
+<section class="desc"><p>visualize errs based on lifetime</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39;):
+    &#39;&#39;&#39;visualize errs based on lifetime
+    &#39;&#39;&#39;
+    plt.figure(dpi=200)
+    correct_idxs = preds == Y_test
+    lifetime = X_test[key] * norms[key][&#39;std&#39;] + norms[key][&#39;mu&#39;]
+
+    plt.plot(lifetime[(preds == Y_test) &amp; (preds == 1)], preds_proba[(preds == Y_test) &amp; (preds == 1)], &#39;o&#39;,
+             color=cb, alpha=0.5, label=&#39;true pos&#39;)
+    plt.plot(lifetime[(preds == Y_test) &amp; (preds == 0)], preds_proba[(preds == Y_test) &amp; (preds == 0)], &#39;x&#39;,
+             color=cb, alpha=0.5, label=&#39;true neg&#39;)
+    plt.plot(lifetime[preds &gt; Y_test], preds_proba[preds &gt; Y_test], &#39;o&#39;, color=cr, alpha=0.5, label=&#39;false pos&#39;)
+    plt.plot(lifetime[preds &lt; Y_test], preds_proba[preds &lt; Y_test], &#39;x&#39;, color=cr, alpha=0.5, label=&#39;false neg&#39;)
+    plt.xlabel(key)
+    plt.ylabel(&#39;predicted probability&#39;)
+    plt.legend()
+    plt.show()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.viz_errs_2d"><code class="name flex">
+<span>def <span class="ident">viz_errs_2d</span></span>(<span>df, idxs_test, preds, Y_test, key1='x_pos', key2='y_pos', X=None, plot_correct=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>visualize distribution of errs wrt to 2 dimensions</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def viz_errs_2d(df, idxs_test, preds, Y_test, key1=&#39;x_pos&#39;, key2=&#39;y_pos&#39;, X=None, plot_correct=True):
+    &#39;&#39;&#39;visualize distribution of errs wrt to 2 dimensions
+    &#39;&#39;&#39;
+    x_pos = df[key1].iloc[idxs_test]
+    y_pos = df[key2].iloc[idxs_test]
+
+    plt.figure(dpi=200)
+    ms = 4
+    me = 1
+    if plot_correct:
+        plt.plot(x_pos[(preds == Y_test) &amp; (preds == 1)], y_pos[(preds == Y_test) &amp; (preds == 1)], &#39;o&#39;,
+                 color=cb, alpha=0.4, label=&#39;true pos&#39;, ms=ms, markeredgewidth=0)
+        plt.plot(x_pos[(preds == Y_test) &amp; (preds == 0)], y_pos[(preds == Y_test) &amp; (preds == 0)], &#39;o&#39;,
+                 color=cr, alpha=0.4, label=&#39;true neg&#39;, ms=ms, markeredgewidth=0)
+    plt.plot(x_pos[preds &gt; Y_test], y_pos[preds &gt; Y_test], &#39;x&#39;, color=cb,
+             alpha=0.4, label=&#39;false pos&#39;, ms=ms, markeredgewidth=1)
+    plt.plot(x_pos[preds &lt; Y_test], y_pos[preds &lt; Y_test], &#39;x&#39;, color=cr,
+             alpha=0.4, label=&#39;false neg&#39;, ms=ms, markeredgewidth=1)
+    plt.legend()
+    #     plt.scatter(x_pos, y_pos, c=preds==Y_test, alpha=0.5)
+    plt.xlabel(key1)
+    plt.ylabel(key2)
+    plt.tight_layout()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.viz_errs_outliers_venn"><code class="name flex">
+<span>def <span class="ident">viz_errs_outliers_venn</span></span>(<span>X_test, preds, Y_test, num_feats_reduced=5)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Compare outliers to errors in venn-diagram</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
+    &#39;&#39;&#39;Compare outliers to errors in venn-diagram
+    &#39;&#39;&#39;
+    feat_names = data.get_feature_names(X_test)
+    X_feat = X_test[feat_names]
+
+    if num_feats_reduced is not None:
+        pca = decomposition.PCA(n_components=num_feats_reduced)
+        X_reduced = pca.fit_transform(X_feat)
+    else:
+        X_reduced = X_feat
+
+    R, C = 2, 2
+    titles = [&#39;isolation forest&#39;, &#39;local outlier factor&#39;, &#39;elliptic envelop&#39;, &#39;one-class svm&#39;]
+    plt.figure(figsize=(6, 5), dpi=200)
+    for i in range(4):
+        plt.subplot(R, C, i + 1)
+        plt.title(titles[i])
+        if i == 0:
+            clf = IsolationForest(n_estimators=10, warm_start=True)
+        elif i == 1:
+            clf = LocalOutlierFactor(novelty=True)
+        elif i == 2:
+            clf = EllipticEnvelope()
+        elif i == 3:
+            clf = OneClassSVM()
+        clf.fit(X_reduced)  # fit 10 trees  
+        is_outlier = clf.predict(X_reduced) == -1
+        is_err = preds != Y_test
+        idxs = np.arange(is_outlier.size)
+        venn2([set(idxs[is_outlier]), set(idxs[is_err])], set_labels=[&#39;outliers&#39;, &#39;errors&#39;])</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src" href="index.html">src</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.viz.cumulative_acc_plot_all" href="#src.viz.cumulative_acc_plot_all">cumulative_acc_plot_all</a></code></li>
+<li><code><a title="src.viz.cumulative_acc_plot_hard" href="#src.viz.cumulative_acc_plot_hard">cumulative_acc_plot_hard</a></code></li>
+<li><code><a title="src.viz.highlight_max" href="#src.viz.highlight_max">highlight_max</a></code></li>
+<li><code><a title="src.viz.jointplot_grouped" href="#src.viz.jointplot_grouped">jointplot_grouped</a></code></li>
+<li><code><a title="src.viz.plot_confusion_matrix" href="#src.viz.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
+<li><code><a title="src.viz.plot_curves" href="#src.viz.plot_curves">plot_curves</a></code></li>
+<li><code><a title="src.viz.plot_decision_boundary" href="#src.viz.plot_decision_boundary">plot_decision_boundary</a></code></li>
+<li><code><a title="src.viz.plot_example" href="#src.viz.plot_example">plot_example</a></code></li>
+<li><code><a title="src.viz.plot_pcs" href="#src.viz.plot_pcs">plot_pcs</a></code></li>
+<li><code><a title="src.viz.print_metadata" href="#src.viz.print_metadata">print_metadata</a></code></li>
+<li><code><a title="src.viz.viz_biggest_errs" href="#src.viz.viz_biggest_errs">viz_biggest_errs</a></code></li>
+<li><code><a title="src.viz.viz_errs_1d" href="#src.viz.viz_errs_1d">viz_errs_1d</a></code></li>
+<li><code><a title="src.viz.viz_errs_2d" href="#src.viz.viz_errs_2d">viz_errs_2d</a></code></li>
+<li><code><a title="src.viz.viz_errs_outliers_venn" href="#src.viz.viz_errs_outliers_venn">viz_errs_outliers_venn</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

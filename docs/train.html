@@ -1,0 +1,492 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.train API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.train</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import sys
+from sklearn.linear_model import LogisticRegression, Lasso
+from sklearn.neural_network import MLPClassifier
+from sklearn.ensemble import RandomForestClassifier, GradientBoostingClassifier, VotingClassifier
+from sklearn.tree import DecisionTreeClassifier
+from sklearn.svm import SVC
+from sklearn.discriminant_analysis import QuadraticDiscriminantAnalysis as QDA
+import eli5
+import numpy as np
+from copy import deepcopy
+from sklearn import metrics
+from sklearn.feature_selection import SelectFromModel
+from sklearn.calibration import CalibratedClassifierCV
+from imblearn.over_sampling import RandomOverSampler, SMOTE
+from sklearn.model_selection import KFold
+import pickle as pkl
+
+sys.path.append(&#39;lib&#39;)
+from sklearn.neighbors import KNeighborsClassifier as KNN
+
+scorers = {&#39;balanced_accuracy&#39;: metrics.balanced_accuracy_score, &#39;accuracy&#39;: metrics.accuracy_score,
+           &#39;precision&#39;: metrics.precision_score, &#39;recall&#39;: metrics.recall_score, &#39;f1&#39;: metrics.f1_score,
+           &#39;roc_auc&#39;: metrics.roc_auc_score,
+           &#39;precision_recall_curve&#39;: metrics.precision_recall_curve, &#39;roc_curve&#39;: metrics.roc_curve}
+
+
+def get_feature_importance(model, model_type, X_val, Y_val):
+    if &#39;Calibrated&#39; in str(type(model)):
+        perm = eli5.sklearn.permutation_importance.PermutationImportance(model).fit(X_val, Y_val)
+        imps = perm.feature_importances_
+    elif model_type in [&#39;dt&#39;]:
+        imps = model.feature_importances_
+    elif model_type in [&#39;rf&#39;, &#39;irf&#39;]:
+        #         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
+        imps = model.feature_importances_
+    elif model_type == &#39;logistic&#39;:
+        imps = model.coef_
+    else:
+        perm = eli5.sklearn.permutation_importance.PermutationImportance(model).fit(X_val, Y_val)
+        imps = perm.feature_importances_
+    return imps.squeeze()
+
+
+def balance(X, y, balancing=&#39;ros&#39;, balancing_ratio=1):
+    &#39;&#39;&#39;Balance classes in y using strategy specified by balancing
+    Params
+    -----
+    balancing_ratio: float
+        ratio of pos: neg samples
+    &#39;&#39;&#39;
+    class0 = np.sum(y == 0)
+    class1 = np.sum(y == 1)
+    class_max = max(class0, class1)
+
+    if balancing_ratio &gt;= 1:
+        sample_nums = {0: int(class_max), 1: int(class_max * balancing_ratio)}
+    else:
+        sample_nums = {0: int(class_max / balancing_ratio), 1: int(class_max)}
+
+    if balancing == &#39;none&#39;:
+        return X, y
+
+    if balancing == &#39;ros&#39;:
+        sampler = RandomOverSampler(sampling_strategy=sample_nums, random_state=42)
+
+    elif balancing == &#39;smote&#39;:
+        sampler = SMOTE(sampling_strategy=sample_nums, random_state=42)
+
+    X_r, Y_r = sampler.fit_resample(X, y)
+    return X_r, Y_r
+
+
+def train(df, feat_names,
+          cell_nums_feature_selection, cell_nums_train,
+          model_type=&#39;rf&#39;, outcome_def=&#39;y_thresh&#39;,
+          balancing=&#39;ros&#39;, balancing_ratio=1, out_name=&#39;results/classify/test.pkl&#39;,
+          calibrated=False, feature_selection=None,
+          feature_selection_num=3, hyperparam=0, seed=42):
+    &#39;&#39;&#39;Run training and fit models
+    This will balance the data
+    This will normalize the features before fitting
+    
+    Params
+    ------
+    normalize: bool
+        if True, will normalize features before fitting
+    cell_nums_feature_selection: list[str]
+        cell names to use for feature selection
+    
+    &#39;&#39;&#39;
+    np.random.seed(seed)
+    X = df[feat_names]
+    X = (X - X.mean()) / X.std()  # normalize the data
+    y = df[outcome_def].values
+
+    if model_type == &#39;rf&#39;:
+        m = RandomForestClassifier(n_estimators=100)
+    elif model_type == &#39;dt&#39;:
+        m = DecisionTreeClassifier()
+    elif model_type == &#39;logistic&#39;:
+        m = LogisticRegression(solver=&#39;lbfgs&#39;)
+    elif model_type == &#39;svm&#39;:
+        h = {
+            -1: 0.5,
+            0: 1,
+            1: 5
+        }[hyperparam]
+        m = SVC(C=h, gamma=&#39;scale&#39;)
+    elif model_type == &#39;mlp2&#39;:
+        h = {
+            -1: (50,),
+            0: (100,),
+            1: (50, 50,)
+        }[hyperparam]
+        m = MLPClassifier(hidden_layer_sizes=h)
+    elif model_type == &#39;gb&#39;:
+        m = GradientBoostingClassifier()
+    elif model_type == &#39;qda&#39;:
+        m = QDA()
+    elif model_type == &#39;KNN&#39;:
+        m = KNN()
+    elif model_type == &#39;irf&#39;:
+        import irf
+        m = irf.ensemble.wrf()
+    elif model_type == &#39;voting_mlp+svm+rf&#39;:
+        models_list = [(&#39;mlp&#39;, MLPClassifier()),
+                       (&#39;svm&#39;, SVC(gamma=&#39;scale&#39;)),
+                       (&#39;rf&#39;, RandomForestClassifier(n_estimators=100))]
+        m = VotingClassifier(estimators=models_list, voting=&#39;hard&#39;)
+    if calibrated:
+        m = CalibratedClassifierCV(m)
+
+    scores_cv = {s: [] for s in scorers.keys()}
+    imps = {&#39;model&#39;: [], &#39;imps&#39;: []}
+
+    kf = KFold(n_splits=len(cell_nums_train))
+
+    # feature selection on cell num 1    
+    feature_selector = None
+    if feature_selection is not None:
+        if feature_selection == &#39;select_lasso&#39;:
+            feature_selector_model = Lasso()
+        elif feature_selection == &#39;select_rf&#39;:
+            feature_selector_model = RandomForestClassifier()
+        # select only feature_selection_num features
+        feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf,
+                                           max_features=feature_selection_num)
+        idxs = df.cell_num.isin(cell_nums_feature_selection)
+        feature_selector.fit(X[idxs], y[idxs])
+        X = feature_selector.transform(X)
+        support = np.array(feature_selector.get_support())
+    else:
+        support = np.ones(len(feat_names)).astype(np.bool)
+
+    num_pts_by_fold_cv = []
+    # loops over cv, where validation set order is cell_nums_train[0], ..., cell_nums_train[-1]
+    for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+        # get sample indices
+        idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
+        idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
+        X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
+        X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+        num_pts_by_fold_cv.append(X_val_cv.shape[0])
+
+        # resample training data
+        X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing, balancing_ratio)
+
+        # fit
+        m.fit(X_train_r_cv, Y_train_r_cv)
+
+        # get preds
+        preds = m.predict(X_val_cv)
+        if &#39;svm&#39; in model_type:
+            preds_proba = preds
+        else:
+            preds_proba = m.predict_proba(X_val_cv)[:, 1]
+
+        # add scores
+        for s in scorers.keys():
+            scorer = scorers[s]
+            if &#39;roc&#39; in s or &#39;curve&#39; in s:
+                scores_cv[s].append(scorer(Y_val_cv, preds_proba))
+            else:
+                scores_cv[s].append(scorer(Y_val_cv, preds))
+
+        imps[&#39;model&#39;].append(deepcopy(m))
+        imps[&#39;imps&#39;].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
+
+    # save results
+    # os.makedirs(out_dir, exist_ok=True)
+    results = {&#39;metrics&#39;: list(scorers.keys()),
+               &#39;num_pts_by_fold_cv&#39;: np.array(num_pts_by_fold_cv),
+               &#39;cv&#39;: scores_cv,
+               &#39;imps&#39;: imps,  # note this contains the model
+               &#39;feat_names&#39;: feat_names,
+               &#39;feature_selector&#39;: feature_selector,
+               &#39;feature_selection_num&#39;: feature_selection_num,
+               &#39;model_type&#39;: model_type,
+               &#39;balancing&#39;: balancing,
+               &#39;feat_names_selected&#39;: np.array(feat_names)[support],
+               &#39;calibrated&#39;: calibrated
+               }
+    pkl.dump(results, open(out_name, &#39;wb&#39;))</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.train.balance"><code class="name flex">
+<span>def <span class="ident">balance</span></span>(<span>X, y, balancing='ros', balancing_ratio=1)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Balance classes in y using strategy specified by balancing
+Params</p>
+<hr>
+<dl>
+<dt><strong><code>balancing_ratio</code></strong> :&ensp;<code>float</code></dt>
+<dd>ratio of pos: neg samples</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def balance(X, y, balancing=&#39;ros&#39;, balancing_ratio=1):
+    &#39;&#39;&#39;Balance classes in y using strategy specified by balancing
+    Params
+    -----
+    balancing_ratio: float
+        ratio of pos: neg samples
+    &#39;&#39;&#39;
+    class0 = np.sum(y == 0)
+    class1 = np.sum(y == 1)
+    class_max = max(class0, class1)
+
+    if balancing_ratio &gt;= 1:
+        sample_nums = {0: int(class_max), 1: int(class_max * balancing_ratio)}
+    else:
+        sample_nums = {0: int(class_max / balancing_ratio), 1: int(class_max)}
+
+    if balancing == &#39;none&#39;:
+        return X, y
+
+    if balancing == &#39;ros&#39;:
+        sampler = RandomOverSampler(sampling_strategy=sample_nums, random_state=42)
+
+    elif balancing == &#39;smote&#39;:
+        sampler = SMOTE(sampling_strategy=sample_nums, random_state=42)
+
+    X_r, Y_r = sampler.fit_resample(X, y)
+    return X_r, Y_r</code></pre>
+</details>
+</dd>
+<dt id="src.train.get_feature_importance"><code class="name flex">
+<span>def <span class="ident">get_feature_importance</span></span>(<span>model, model_type, X_val, Y_val)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_feature_importance(model, model_type, X_val, Y_val):
+    if &#39;Calibrated&#39; in str(type(model)):
+        perm = eli5.sklearn.permutation_importance.PermutationImportance(model).fit(X_val, Y_val)
+        imps = perm.feature_importances_
+    elif model_type in [&#39;dt&#39;]:
+        imps = model.feature_importances_
+    elif model_type in [&#39;rf&#39;, &#39;irf&#39;]:
+        #         imps, _ = feature_importance(model, np.array(X_val), np.transpose(np.vstack((Y_val, 1-Y_val))))
+        imps = model.feature_importances_
+    elif model_type == &#39;logistic&#39;:
+        imps = model.coef_
+    else:
+        perm = eli5.sklearn.permutation_importance.PermutationImportance(model).fit(X_val, Y_val)
+        imps = perm.feature_importances_
+    return imps.squeeze()</code></pre>
+</details>
+</dd>
+<dt id="src.train.train"><code class="name flex">
+<span>def <span class="ident">train</span></span>(<span>df, feat_names, cell_nums_feature_selection, cell_nums_train, model_type='rf', outcome_def='y_thresh', balancing='ros', balancing_ratio=1, out_name='results/classify/test.pkl', calibrated=False, feature_selection=None, feature_selection_num=3, hyperparam=0, seed=42)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Run training and fit models
+This will balance the data
+This will normalize the features before fitting</p>
+<h2 id="params">Params</h2>
+<dl>
+<dt><strong><code>normalize</code></strong> :&ensp;<code>bool</code></dt>
+<dd>if True, will normalize features before fitting</dd>
+<dt><strong><code>cell_nums_feature_selection</code></strong> :&ensp;<code>list</code>[<code>str</code>]</dt>
+<dd>cell names to use for feature selection</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def train(df, feat_names,
+          cell_nums_feature_selection, cell_nums_train,
+          model_type=&#39;rf&#39;, outcome_def=&#39;y_thresh&#39;,
+          balancing=&#39;ros&#39;, balancing_ratio=1, out_name=&#39;results/classify/test.pkl&#39;,
+          calibrated=False, feature_selection=None,
+          feature_selection_num=3, hyperparam=0, seed=42):
+    &#39;&#39;&#39;Run training and fit models
+    This will balance the data
+    This will normalize the features before fitting
+    
+    Params
+    ------
+    normalize: bool
+        if True, will normalize features before fitting
+    cell_nums_feature_selection: list[str]
+        cell names to use for feature selection
+    
+    &#39;&#39;&#39;
+    np.random.seed(seed)
+    X = df[feat_names]
+    X = (X - X.mean()) / X.std()  # normalize the data
+    y = df[outcome_def].values
+
+    if model_type == &#39;rf&#39;:
+        m = RandomForestClassifier(n_estimators=100)
+    elif model_type == &#39;dt&#39;:
+        m = DecisionTreeClassifier()
+    elif model_type == &#39;logistic&#39;:
+        m = LogisticRegression(solver=&#39;lbfgs&#39;)
+    elif model_type == &#39;svm&#39;:
+        h = {
+            -1: 0.5,
+            0: 1,
+            1: 5
+        }[hyperparam]
+        m = SVC(C=h, gamma=&#39;scale&#39;)
+    elif model_type == &#39;mlp2&#39;:
+        h = {
+            -1: (50,),
+            0: (100,),
+            1: (50, 50,)
+        }[hyperparam]
+        m = MLPClassifier(hidden_layer_sizes=h)
+    elif model_type == &#39;gb&#39;:
+        m = GradientBoostingClassifier()
+    elif model_type == &#39;qda&#39;:
+        m = QDA()
+    elif model_type == &#39;KNN&#39;:
+        m = KNN()
+    elif model_type == &#39;irf&#39;:
+        import irf
+        m = irf.ensemble.wrf()
+    elif model_type == &#39;voting_mlp+svm+rf&#39;:
+        models_list = [(&#39;mlp&#39;, MLPClassifier()),
+                       (&#39;svm&#39;, SVC(gamma=&#39;scale&#39;)),
+                       (&#39;rf&#39;, RandomForestClassifier(n_estimators=100))]
+        m = VotingClassifier(estimators=models_list, voting=&#39;hard&#39;)
+    if calibrated:
+        m = CalibratedClassifierCV(m)
+
+    scores_cv = {s: [] for s in scorers.keys()}
+    imps = {&#39;model&#39;: [], &#39;imps&#39;: []}
+
+    kf = KFold(n_splits=len(cell_nums_train))
+
+    # feature selection on cell num 1    
+    feature_selector = None
+    if feature_selection is not None:
+        if feature_selection == &#39;select_lasso&#39;:
+            feature_selector_model = Lasso()
+        elif feature_selection == &#39;select_rf&#39;:
+            feature_selector_model = RandomForestClassifier()
+        # select only feature_selection_num features
+        feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf,
+                                           max_features=feature_selection_num)
+        idxs = df.cell_num.isin(cell_nums_feature_selection)
+        feature_selector.fit(X[idxs], y[idxs])
+        X = feature_selector.transform(X)
+        support = np.array(feature_selector.get_support())
+    else:
+        support = np.ones(len(feat_names)).astype(np.bool)
+
+    num_pts_by_fold_cv = []
+    # loops over cv, where validation set order is cell_nums_train[0], ..., cell_nums_train[-1]
+    for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+        # get sample indices
+        idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
+        idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
+        X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
+        X_val_cv, Y_val_cv = X[idxs_val_cv], y[idxs_val_cv]
+        num_pts_by_fold_cv.append(X_val_cv.shape[0])
+
+        # resample training data
+        X_train_r_cv, Y_train_r_cv = balance(X_train_cv, Y_train_cv, balancing, balancing_ratio)
+
+        # fit
+        m.fit(X_train_r_cv, Y_train_r_cv)
+
+        # get preds
+        preds = m.predict(X_val_cv)
+        if &#39;svm&#39; in model_type:
+            preds_proba = preds
+        else:
+            preds_proba = m.predict_proba(X_val_cv)[:, 1]
+
+        # add scores
+        for s in scorers.keys():
+            scorer = scorers[s]
+            if &#39;roc&#39; in s or &#39;curve&#39; in s:
+                scores_cv[s].append(scorer(Y_val_cv, preds_proba))
+            else:
+                scores_cv[s].append(scorer(Y_val_cv, preds))
+
+        imps[&#39;model&#39;].append(deepcopy(m))
+        imps[&#39;imps&#39;].append(get_feature_importance(m, model_type, X_val_cv, Y_val_cv))
+
+    # save results
+    # os.makedirs(out_dir, exist_ok=True)
+    results = {&#39;metrics&#39;: list(scorers.keys()),
+               &#39;num_pts_by_fold_cv&#39;: np.array(num_pts_by_fold_cv),
+               &#39;cv&#39;: scores_cv,
+               &#39;imps&#39;: imps,  # note this contains the model
+               &#39;feat_names&#39;: feat_names,
+               &#39;feature_selector&#39;: feature_selector,
+               &#39;feature_selection_num&#39;: feature_selection_num,
+               &#39;model_type&#39;: model_type,
+               &#39;balancing&#39;: balancing,
+               &#39;feat_names_selected&#39;: np.array(feat_names)[support],
+               &#39;calibrated&#39;: calibrated
+               }
+    pkl.dump(results, open(out_name, &#39;wb&#39;))</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src" href="index.html">src</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.train.balance" href="#src.train.balance">balance</a></code></li>
+<li><code><a title="src.train.get_feature_importance" href="#src.train.get_feature_importance">get_feature_importance</a></code></li>
+<li><code><a title="src.train.train" href="#src.train.train">train</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>
