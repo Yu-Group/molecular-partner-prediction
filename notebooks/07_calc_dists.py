@@ -1,4 +1,6 @@
-
+import sys
+sys.path.append('..')
+import config
 import numpy as np
 from matplotlib import pyplot as plt
 
@@ -23,5 +25,5 @@ for i in tqdm(range(n)):
         x1 = np.array(df['X'].iloc[j])
         distance, path = fastdtw(x0, x1, dist=euclidean)
         dists[i, j] = distance
-    with open('dists_dtw.npy', 'wb') as f:
+    with open(oj(config.DIR_INTERIM, 'dists_dtw.npy'), 'wb') as f:
         np.save(f, dists)

@@ -19,8 +19,10 @@ import features
 import outcomes
 
 
-def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='processed/df.pkl',
-             metadata_file='processed/metadata.pkl', use_processed_dicts=True,
+def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
+             processed_file=oj(config.DIR_PROCESSED, 'df.pkl'),
+             metadata_file=oj(config.DIR_PROCESSED, 'metadata.pkl'),
+             use_processed_dicts=True,
              outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95,
              previous_meta_file=None):
     '''
@@ -112,7 +114,9 @@ def get_images(cell_dir: str):
     return X, Y
 
 
-def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file='processed/tracks.pkl', dset='orig'):
+def get_tracks(data_dir, split=None, all_data=False,
+               processed_tracks_file=oj(config.DIR_TRACKS, 'tracks.pkl'),
+               dset='orig'):
     '''Read out tracks from folders within data_dir, assuming tracking has been done
     '''
     processed_tracks_file = processed_tracks_file[:-4] + '_' + dset + '.pkl'
@@ -412,7 +416,7 @@ if __name__ == '__main__':
     for dset in config.DSETS.keys():
         # process new data (using lifetime thresholds from original data)
         df = get_data(dset=dset,
-                      previous_meta_file=f'processed/metadata_{dset_orig}.pkl')
+                      previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+',
               df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
               'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'ratio',

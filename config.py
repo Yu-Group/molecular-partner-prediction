@@ -4,6 +4,10 @@ import numpy as np
 
 
 # data paths
+DIR_REPO = os.path.dirname(os.path.realpath(__file__)) # directory of the config file
+DIR_TRACKS = oj(DIR_REPO, 'data', 'tracks')
+DIR_PROCESSED = oj(DIR_REPO, 'data', 'processed')
+DIR_INTERIM = oj(DIR_REPO, 'data', 'interim')
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'

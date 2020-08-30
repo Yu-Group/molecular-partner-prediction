@@ -1,6 +1,9 @@
 import pickle as pkl
-
+import sys
+sys.path.append('..')
+import config
 import data
+from os.path import join as oj
 import matplotlib.gridspec as grd
 import numpy as np
 import pandas as pd
@@ -287,7 +290,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None, metadata_file='processed/metadata_clath_aux+gak_a7d2.pkl'):
+def print_metadata(acc=None, metadata_file=oj(config.DIR_PROCESSED, 'metadata_clath_aux+gak_a7d2.pkl')):
     m = pkl.load(open(metadata_file, 'rb'))
 
     print(
