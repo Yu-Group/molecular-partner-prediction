@@ -11,6 +11,7 @@ DIR_INTERIM = oj(DIR_REPO, 'data', 'interim')
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'
+dynamin_folder = 'CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646'
 
 # data splitting
 s_orig = 'A7D2'
@@ -20,7 +21,6 @@ s_clath_aux = 'CLTA-TagRFP EGFP-Aux1-A7D2 EGFP-GAK-F6' # goes [1, 2] + [5-12] - 
 s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
 s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
-s_dynamin = 'CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646'
 DSETS = {
     'clath_aux+gak_a7d2': {  # this was the original data
         'data_dir': data_dir_orig,
@@ -41,10 +41,10 @@ DSETS = {
         'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
     },
     'clath_aux_dynamin': {
-        'data_dir': oj(d_new, s_dynamin),        
-        'feature_selection': np.array([f'{s_clath_aux}/1']),
-        'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
-        'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
+        'data_dir': oj(d_new, dynamin_folder),        
+        'feature_selection': None,
+        'train': None,
+        'test': None,
     },
     'clath_aux+gak_new': {
         'data_dir': oj(d_new, clath_aux_folder),

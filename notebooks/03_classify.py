@@ -13,7 +13,7 @@ import config
 if __name__ == '__main__':
     # some settings
     outcome_def = 'y_consec_thresh'
-    out_dir = oj('/scratch/users/vision/abc', 'aug19_binary1')
+    out_dir = oj('/scratch/users/vision/chandan/abc', 'aug19_binary1')
     DSET = config.DSETS['clath_aux+gak_a7d2']
     binarize=True
     
