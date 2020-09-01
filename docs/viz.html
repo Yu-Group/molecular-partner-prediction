@@ -25,8 +25,11 @@
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">import pickle as pkl
-
+import sys
+sys.path.append(&#39;..&#39;)
+import config
 import data
+from os.path import join as oj
 import matplotlib.gridspec as grd
 import numpy as np
 import pandas as pd
@@ -313,7 +316,7 @@ def plot_pcs(pca, X):
     plt.show()
 
 
-def print_metadata(acc=None, metadata_file=&#39;processed/metadata_clath_aux+gak_a7d2.pkl&#39;):
+def print_metadata(acc=None, metadata_file=oj(config.DIR_PROCESSED, &#39;metadata_clath_aux+gak_a7d2.pkl&#39;)):
     m = pkl.load(open(metadata_file, &#39;rb&#39;))
 
     print(
@@ -904,7 +907,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.print_metadata"><code class="name flex">
-<span>def <span class="ident">print_metadata</span></span>(<span>acc=None, metadata_file='processed/metadata_clath_aux+gak_a7d2.pkl')</span>
+<span>def <span class="ident">print_metadata</span></span>(<span>acc=None, metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/data/processed/metadata_clath_aux+gak_a7d2.pkl')</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
@@ -912,7 +915,7 @@ Params</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def print_metadata(acc=None, metadata_file=&#39;processed/metadata_clath_aux+gak_a7d2.pkl&#39;):
+<pre><code class="python">def print_metadata(acc=None, metadata_file=oj(config.DIR_PROCESSED, &#39;metadata_clath_aux+gak_a7d2.pkl&#39;)):
     m = pkl.load(open(metadata_file, &#39;rb&#39;))
 
     print(

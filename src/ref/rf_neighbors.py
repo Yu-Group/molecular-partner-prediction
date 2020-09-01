@@ -7,7 +7,6 @@ from sklearn.linear_model import Lasso
 from sklearn.model_selection import KFold
 
 sys.path.append('lib')
-from data_tracks import cell_nums_feature_selection, cell_nums_train, cell_nums_test
 import collections
 
 cell_nums_feature_selection = np.array([1])

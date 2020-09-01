@@ -43,10 +43,12 @@ import math
 import config
 import features
 import outcomes
+import load_tracking
 
-
-def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True, processed_file=&#39;processed/df.pkl&#39;,
-             metadata_file=&#39;processed/metadata.pkl&#39;, use_processed_dicts=True,
+def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True,
+             processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
+             metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
+             use_processed_dicts=True,
              outcome_def=&#39;y_consec_thresh&#39;, all_data=False, acc_thresh=0.95,
              previous_meta_file=None):
     &#39;&#39;&#39;
@@ -75,11 +77,14 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
         print(&#39;\tloading tracks...&#39;)
-        df = get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
+        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
                         dset=dset)  # note: different Xs can be different shapes
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
+#         print(&#39;num nans&#39;, df.isna().sum())
         df[&#39;pid&#39;] = np.arange(df.shape[0])  # assign each track a unique id
         df[&#39;valid&#39;] = True  # all tracks start as valid
-        df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
+        if DSET[&#39;test&#39;] is not None:
+            df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
 
         print(&#39;\tpreprocessing data...&#39;)
@@ -101,180 +106,17 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
         print(&#39;\tadding features...&#39;)
+#         df = df.replace([np.inf, -np.inf], np.nan)
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where some feats are NaN
+#         df = df.fillna(0) # this only does anything for the dynamin tracks, where some feats are NaN
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
-        df = features.add_pcs(df)
+        # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
         df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
             pkl.dump(metadata, open(metadata_file, &#39;wb&#39;))
             df.to_pickle(processed_file)
-    return df
-
-
-def get_images(cell_dir: str):
-    &#39;&#39;&#39;Loads in X and Y for one cell
-    
-    Params
-    ------
-    cell_dir
-        Path to directory for one cell
-    
-    Returns
-    -------
-    X : np.ndarray
-        has shape (W, H, num_images)
-    Y : np.ndarray
-        has shape (W, H, num_images)
-    &#39;&#39;&#39;
-    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname1 = name
-    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname2 = name
-    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
-    return X, Y
-
-
-def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file=&#39;processed/tracks.pkl&#39;, dset=&#39;orig&#39;):
-    &#39;&#39;&#39;Read out tracks from folders within data_dir, assuming tracking has been done
-    &#39;&#39;&#39;
-    processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
-    print(&#39;\t&#39;, processed_tracks_file, data_dir)
-
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
-    dfs = []
-
-    if split is not None:
-        flatten = lambda l: [item for sublist in l for item in sublist]
-        split = flatten(split.values())
-
-    # 2 directories of naming
-    for upper_dir in sorted(os.listdir(data_dir)):
-        if &#39;.&#39; in upper_dir or &#39;Icon&#39; in upper_dir:
-            continue
-        for cell_dir in sorted(os.listdir(oj(data_dir, upper_dir))):
-            if not &#39;Cell&#39; in cell_dir:
-                continue
-            cell_num = oj(upper_dir, cell_dir.replace(&#39;Cell&#39;, &#39;&#39;).replace(&#39;_1s&#39;, &#39;&#39;))
-            if split is not None:
-                if not cell_num in split:
-                    continue
-            full_dir = f&#39;{data_dir}/{upper_dir}/{cell_dir}&#39;
-            fname = full_dir + &#39;/TagRFP/Tracking/ProcessedTracks.mat&#39;
-            print(cell_num)
-            cla, aux = get_images(full_dir)
-            # fname_image = oj(data_dir, upper_dir, cell_dir)
-            mat = mat4py.loadmat(fname)
-            tracks = mat[&#39;tracks&#39;]
-            n = len(tracks[&#39;t&#39;])
-            totalDisplacement = []
-            msd = []  # mean squared displacement
-            for i in range(n):
-                try:
-                    totalDisplacement.append(tracks[&#39;MotionAnalysis&#39;][i][&#39;totalDisplacement&#39;])
-                except:
-                    totalDisplacement.append(0)
-                try:
-                    msd.append(np.nanmax(tracks[&#39;MotionAnalysis&#39;][i][&#39;MSD&#39;]))
-                except:
-                    msd.append(0)
-
-            CLATH = 0
-            AUX = 1
-
-            X = np.array([tracks[&#39;A&#39;][i][CLATH] for i in range(n)])
-            Y = np.array([tracks[&#39;A&#39;][i][AUX] for i in range(n)])
-            t = np.array([tracks[&#39;t&#39;][i] for i in range(n)])
-            x_pos_seq = np.array(
-                [tracks[&#39;x&#39;][i][CLATH] for i in range(n)])  # x-position for clathrin (auxilin is very similar)
-            y_pos_seq = np.array(
-                [tracks[&#39;y&#39;][i][CLATH] for i in range(n)])  # y-position for clathrin (auxilin is very similar)
-            X_pvals = np.array([tracks[&#39;pval_Ar&#39;][i][CLATH] for i in range(n)])
-            Y_pvals = np.array([tracks[&#39;pval_Ar&#39;][i][AUX] for i in range(n)])
-
-            # buffers
-            X_starts = []
-            Y_starts = []
-            for d in tracks[&#39;startBuffer&#39;]:
-                if len(d) == 0:
-                    X_starts.append([])
-                    Y_starts.append([])
-                else:
-                    X_starts.append(d[&#39;A&#39;][CLATH])
-                    Y_starts.append(d[&#39;A&#39;][AUX])
-            X_ends = []
-            Y_ends = []
-            for d in tracks[&#39;endBuffer&#39;]:
-                if len(d) == 0:
-                    X_ends.append([])
-                    Y_ends.append([])
-                else:
-                    X_ends.append(d[&#39;A&#39;][CLATH])
-                    Y_ends.append(d[&#39;A&#39;][AUX])
-            X_extended = [X_starts[i] + X[i] + X_ends[i] for i in range(n)]
-
-            # image feats
-            pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
-                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                              for i in range(n)])
-            pixel_up = np.array(
-                [[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                 for i in range(n)])
-            pixel_down = np.array([[cla[int(t[i][j]), max(int(y_pos_seq[i][j] - 1), 0), int(x_pos_seq[i][j])]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                                   for i in range(n)])
-            pixel_left = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), max(int(x_pos_seq[i][j] - 1), 0)]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                                   for i in range(n)])
-            pixel_right = np.array(
-                [[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j] + 1), cla.shape[2] - 1)]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                 for i in range(n)])
-
-            data = {
-                &#39;X&#39;: X,
-                &#39;X_extended&#39;: X_extended,
-                &#39;Y&#39;: Y,
-                &#39;X_starts&#39;: X_starts,
-                &#39;Y_starts&#39;: Y_starts,
-                &#39;X_ends&#39;: X_ends,
-                &#39;Y_ends&#39;: Y_ends,
-                &#39;X_pvals&#39;: X_pvals,
-                &#39;Y_pvals&#39;: Y_pvals,
-                &#39;catIdx&#39;: tracks[&#39;catIdx&#39;],
-                &#39;mean_total_displacement&#39;: [totalDisplacement[i] / tracks[&#39;lifetime_s&#39;][i] for i in range(n)],
-                &#39;mean_square_displacement&#39;: msd,
-                &#39;lifetime&#39;: tracks[&#39;lifetime_s&#39;],
-                &#39;lifetime_extended&#39;: [len(x) for x in X_extended],
-                &#39;x_pos&#39;: [sum(x) / len(x) for x in x_pos_seq],  # mean position in the image
-                &#39;y_pos&#39;: [sum(y) / len(y) for y in y_pos_seq],
-                &#39;cell_num&#39;: [cell_num] * n,
-                &#39;t&#39;: [t[i][0] for i in range(n)],
-                &#39;x_pos_seq&#39;: x_pos_seq,
-                &#39;y_pos_seq&#39;: y_pos_seq,
-            }
-            if all_data:
-                data[&#39;t&#39;] = [t[i][0] for i in range(n)]
-                data[&#39;pixel&#39;] = pixel
-                data[&#39;pixel_left&#39;] = pixel_left
-                data[&#39;pixel_right&#39;] = pixel_right
-                data[&#39;pixel_up&#39;] = pixel_up
-                data[&#39;pixel_down&#39;] = pixel_down
-                data[&#39;center_max&#39;] = [max(pixel[i]) for i in range(n)],
-                data[&#39;left_max&#39;] = [max(pixel_left[i]) for i in range(n)],
-                data[&#39;right_max&#39;] = [max(pixel_right[i]) for i in range(n)],
-                data[&#39;up_max&#39;] = [max(pixel_up[i]) for i in range(n)],
-                data[&#39;down_max&#39;] = [max(pixel_down[i]) for i in range(n)],
-            df = pd.DataFrame.from_dict(data)
-            dfs.append(deepcopy(df))
-    df = pd.concat(dfs)
-    os.makedirs(os.path.dirname(processed_tracks_file), exist_ok=True)
-    df.to_pickle(processed_tracks_file)
     return df
 
 
@@ -392,6 +234,7 @@ def get_feature_names(df):
         k for k in ks
         if not k.startswith(&#39;y&#39;)
            and not k.startswith(&#39;Y&#39;)
+           and not k.startswith(&#39;Z&#39;)
            and not k.startswith(&#39;pixel&#39;)
            #         and not k.startswith(&#39;pc_&#39;)
            and not k in [&#39;catIdx&#39;, &#39;cell_num&#39;, &#39;pid&#39;, &#39;valid&#39;,  # metadata
@@ -431,17 +274,20 @@ def select_final_feats(feat_names, binarize=False):
 
 
 if __name__ == &#39;__main__&#39;:
+    
     # process original data (and save out lifetime thresholds)
     dset_orig = &#39;clath_aux+gak_a7d2&#39;
     df = get_data(dset=dset_orig)  # save out orig
+    
+    # process new data (using lifetime thresholds from original data)
     outcome_def = &#39;y_consec_sig&#39;
-    for dset in config.DSETS.keys():
-        # process new data (using lifetime thresholds from original data)
+    for dset in [&#39;clath_aux_dynamin&#39;]:
+#     for dset in config.DSETS.keys():
         df = get_data(dset=dset,
-                      previous_meta_file=f&#39;processed/metadata_{dset_orig}.pkl&#39;)
+                      previous_meta_file=f&#39;{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl&#39;)
         print(dset, &#39;num cells&#39;, len(df[&#39;cell_num&#39;].unique()), &#39;num tracks&#39;, df.shape[0], &#39;num aux+&#39;,
-              df[outcome_def].sum(), &#39;ratio&#39;, (df[outcome_def].sum() / df.shape[0]).round(3),
-              &#39;valid&#39;, df.valid.sum(), &#39;valid aux+&#39;, df[df.valid][outcome_def].sum(), &#39;ratio&#39;,
+              df[outcome_def].sum(), &#39;aux+ fraction&#39;, (df[outcome_def].sum() / df.shape[0]).round(3),
+              &#39;valid&#39;, df.valid.sum(), &#39;valid aux+&#39;, df[df.valid][outcome_def].sum(), &#39;valid aux+ fraction&#39;,
               (df[df.valid][outcome_def].sum() / df.valid.sum()).round(3))</code></pre>
 </details>
 </section>
@@ -481,7 +327,7 @@ Width of matrix is length of longest lifetime</p></section>
 </details>
 </dd>
 <dt id="src.data.get_data"><code class="name flex">
-<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='processed/df.pkl', metadata_file='processed/metadata.pkl', use_processed_dicts=True, outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95, previous_meta_file=None)</span>
+<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='/accounts/projects/vision/chandan/auxilin-prediction/data/processed/df.pkl', metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/data/processed/metadata.pkl', use_processed_dicts=True, outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95, previous_meta_file=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><h2 id="params">Params</h2>
@@ -500,8 +346,10 @@ the thresholds for lifetime are taken from this file</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True, processed_file=&#39;processed/df.pkl&#39;,
-             metadata_file=&#39;processed/metadata.pkl&#39;, use_processed_dicts=True,
+<pre><code class="python">def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True,
+             processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
+             metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
+             use_processed_dicts=True,
              outcome_def=&#39;y_consec_thresh&#39;, all_data=False, acc_thresh=0.95,
              previous_meta_file=None):
     &#39;&#39;&#39;
@@ -530,11 +378,14 @@ the thresholds for lifetime are taken from this file</dd>
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
         print(&#39;\tloading tracks...&#39;)
-        df = get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
+        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
                         dset=dset)  # note: different Xs can be different shapes
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
+#         print(&#39;num nans&#39;, df.isna().sum())
         df[&#39;pid&#39;] = np.arange(df.shape[0])  # assign each track a unique id
         df[&#39;valid&#39;] = True  # all tracks start as valid
-        df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
+        if DSET[&#39;test&#39;] is not None:
+            df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
 
         print(&#39;\tpreprocessing data...&#39;)
@@ -556,9 +407,12 @@ the thresholds for lifetime are taken from this file</dd>
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
         print(&#39;\tadding features...&#39;)
+#         df = df.replace([np.inf, -np.inf], np.nan)
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where some feats are NaN
+#         df = df.fillna(0) # this only does anything for the dynamin tracks, where some feats are NaN
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
-        df = features.add_pcs(df)
+        # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
         df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
@@ -586,6 +440,7 @@ Removes metadata + time-series columns + outcomes</p></section>
         k for k in ks
         if not k.startswith(&#39;y&#39;)
            and not k.startswith(&#39;Y&#39;)
+           and not k.startswith(&#39;Z&#39;)
            and not k.startswith(&#39;pixel&#39;)
            #         and not k.startswith(&#39;pc_&#39;)
            and not k in [&#39;catIdx&#39;, &#39;cell_num&#39;, &#39;pid&#39;, &#39;valid&#39;,  # metadata
@@ -598,202 +453,6 @@ Removes metadata + time-series columns + outcomes</p></section>
                          ]
     ]
     return feat_names</code></pre>
-</details>
-</dd>
-<dt id="src.data.get_images"><code class="name flex">
-<span>def <span class="ident">get_images</span></span>(<span>cell_dir)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Loads in X and Y for one cell</p>
-<h2 id="params">Params</h2>
-<dl>
-<dt><strong><code>cell_dir</code></strong></dt>
-<dd>Path to directory for one cell</dd>
-</dl>
-<h2 id="returns">Returns</h2>
-<dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>has shape (W, H, num_images)</dd>
-<dt><strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>has shape (W, H, num_images)</dd>
-</dl></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_images(cell_dir: str):
-    &#39;&#39;&#39;Loads in X and Y for one cell
-    
-    Params
-    ------
-    cell_dir
-        Path to directory for one cell
-    
-    Returns
-    -------
-    X : np.ndarray
-        has shape (W, H, num_images)
-    Y : np.ndarray
-        has shape (W, H, num_images)
-    &#39;&#39;&#39;
-    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname1 = name
-    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname2 = name
-    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
-    return X, Y</code></pre>
-</details>
-</dd>
-<dt id="src.data.get_tracks"><code class="name flex">
-<span>def <span class="ident">get_tracks</span></span>(<span>data_dir, split=None, all_data=False, processed_tracks_file='processed/tracks.pkl', dset='orig')</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Read out tracks from folders within data_dir, assuming tracking has been done</p></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_tracks(data_dir, split=None, all_data=False, processed_tracks_file=&#39;processed/tracks.pkl&#39;, dset=&#39;orig&#39;):
-    &#39;&#39;&#39;Read out tracks from folders within data_dir, assuming tracking has been done
-    &#39;&#39;&#39;
-    processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
-    print(&#39;\t&#39;, processed_tracks_file, data_dir)
-
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
-    dfs = []
-
-    if split is not None:
-        flatten = lambda l: [item for sublist in l for item in sublist]
-        split = flatten(split.values())
-
-    # 2 directories of naming
-    for upper_dir in sorted(os.listdir(data_dir)):
-        if &#39;.&#39; in upper_dir or &#39;Icon&#39; in upper_dir:
-            continue
-        for cell_dir in sorted(os.listdir(oj(data_dir, upper_dir))):
-            if not &#39;Cell&#39; in cell_dir:
-                continue
-            cell_num = oj(upper_dir, cell_dir.replace(&#39;Cell&#39;, &#39;&#39;).replace(&#39;_1s&#39;, &#39;&#39;))
-            if split is not None:
-                if not cell_num in split:
-                    continue
-            full_dir = f&#39;{data_dir}/{upper_dir}/{cell_dir}&#39;
-            fname = full_dir + &#39;/TagRFP/Tracking/ProcessedTracks.mat&#39;
-            print(cell_num)
-            cla, aux = get_images(full_dir)
-            # fname_image = oj(data_dir, upper_dir, cell_dir)
-            mat = mat4py.loadmat(fname)
-            tracks = mat[&#39;tracks&#39;]
-            n = len(tracks[&#39;t&#39;])
-            totalDisplacement = []
-            msd = []  # mean squared displacement
-            for i in range(n):
-                try:
-                    totalDisplacement.append(tracks[&#39;MotionAnalysis&#39;][i][&#39;totalDisplacement&#39;])
-                except:
-                    totalDisplacement.append(0)
-                try:
-                    msd.append(np.nanmax(tracks[&#39;MotionAnalysis&#39;][i][&#39;MSD&#39;]))
-                except:
-                    msd.append(0)
-
-            CLATH = 0
-            AUX = 1
-
-            X = np.array([tracks[&#39;A&#39;][i][CLATH] for i in range(n)])
-            Y = np.array([tracks[&#39;A&#39;][i][AUX] for i in range(n)])
-            t = np.array([tracks[&#39;t&#39;][i] for i in range(n)])
-            x_pos_seq = np.array(
-                [tracks[&#39;x&#39;][i][CLATH] for i in range(n)])  # x-position for clathrin (auxilin is very similar)
-            y_pos_seq = np.array(
-                [tracks[&#39;y&#39;][i][CLATH] for i in range(n)])  # y-position for clathrin (auxilin is very similar)
-            X_pvals = np.array([tracks[&#39;pval_Ar&#39;][i][CLATH] for i in range(n)])
-            Y_pvals = np.array([tracks[&#39;pval_Ar&#39;][i][AUX] for i in range(n)])
-
-            # buffers
-            X_starts = []
-            Y_starts = []
-            for d in tracks[&#39;startBuffer&#39;]:
-                if len(d) == 0:
-                    X_starts.append([])
-                    Y_starts.append([])
-                else:
-                    X_starts.append(d[&#39;A&#39;][CLATH])
-                    Y_starts.append(d[&#39;A&#39;][AUX])
-            X_ends = []
-            Y_ends = []
-            for d in tracks[&#39;endBuffer&#39;]:
-                if len(d) == 0:
-                    X_ends.append([])
-                    Y_ends.append([])
-                else:
-                    X_ends.append(d[&#39;A&#39;][CLATH])
-                    Y_ends.append(d[&#39;A&#39;][AUX])
-            X_extended = [X_starts[i] + X[i] + X_ends[i] for i in range(n)]
-
-            # image feats
-            pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
-                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                              for i in range(n)])
-            pixel_up = np.array(
-                [[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                 for i in range(n)])
-            pixel_down = np.array([[cla[int(t[i][j]), max(int(y_pos_seq[i][j] - 1), 0), int(x_pos_seq[i][j])]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                                   for i in range(n)])
-            pixel_left = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), max(int(x_pos_seq[i][j] - 1), 0)]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                                   for i in range(n)])
-            pixel_right = np.array(
-                [[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j] + 1), cla.shape[2] - 1)]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
-                 for i in range(n)])
-
-            data = {
-                &#39;X&#39;: X,
-                &#39;X_extended&#39;: X_extended,
-                &#39;Y&#39;: Y,
-                &#39;X_starts&#39;: X_starts,
-                &#39;Y_starts&#39;: Y_starts,
-                &#39;X_ends&#39;: X_ends,
-                &#39;Y_ends&#39;: Y_ends,
-                &#39;X_pvals&#39;: X_pvals,
-                &#39;Y_pvals&#39;: Y_pvals,
-                &#39;catIdx&#39;: tracks[&#39;catIdx&#39;],
-                &#39;mean_total_displacement&#39;: [totalDisplacement[i] / tracks[&#39;lifetime_s&#39;][i] for i in range(n)],
-                &#39;mean_square_displacement&#39;: msd,
-                &#39;lifetime&#39;: tracks[&#39;lifetime_s&#39;],
-                &#39;lifetime_extended&#39;: [len(x) for x in X_extended],
-                &#39;x_pos&#39;: [sum(x) / len(x) for x in x_pos_seq],  # mean position in the image
-                &#39;y_pos&#39;: [sum(y) / len(y) for y in y_pos_seq],
-                &#39;cell_num&#39;: [cell_num] * n,
-                &#39;t&#39;: [t[i][0] for i in range(n)],
-                &#39;x_pos_seq&#39;: x_pos_seq,
-                &#39;y_pos_seq&#39;: y_pos_seq,
-            }
-            if all_data:
-                data[&#39;t&#39;] = [t[i][0] for i in range(n)]
-                data[&#39;pixel&#39;] = pixel
-                data[&#39;pixel_left&#39;] = pixel_left
-                data[&#39;pixel_right&#39;] = pixel_right
-                data[&#39;pixel_up&#39;] = pixel_up
-                data[&#39;pixel_down&#39;] = pixel_down
-                data[&#39;center_max&#39;] = [max(pixel[i]) for i in range(n)],
-                data[&#39;left_max&#39;] = [max(pixel_left[i]) for i in range(n)],
-                data[&#39;right_max&#39;] = [max(pixel_right[i]) for i in range(n)],
-                data[&#39;up_max&#39;] = [max(pixel_up[i]) for i in range(n)],
-                data[&#39;down_max&#39;] = [max(pixel_down[i]) for i in range(n)],
-            df = pd.DataFrame.from_dict(data)
-            dfs.append(deepcopy(df))
-    df = pd.concat(dfs)
-    os.makedirs(os.path.dirname(processed_tracks_file), exist_ok=True)
-    df.to_pickle(processed_tracks_file)
-    return df</code></pre>
 </details>
 </dd>
 <dt id="src.data.process_tracks_by_lifetime"><code class="name flex">
@@ -964,8 +623,6 @@ cat_idx (idx 1 and 2)
 <li><code><a title="src.data.extract_X_mat" href="#src.data.extract_X_mat">extract_X_mat</a></code></li>
 <li><code><a title="src.data.get_data" href="#src.data.get_data">get_data</a></code></li>
 <li><code><a title="src.data.get_feature_names" href="#src.data.get_feature_names">get_feature_names</a></code></li>
-<li><code><a title="src.data.get_images" href="#src.data.get_images">get_images</a></code></li>
-<li><code><a title="src.data.get_tracks" href="#src.data.get_tracks">get_tracks</a></code></li>
 <li><code><a title="src.data.process_tracks_by_lifetime" href="#src.data.process_tracks_by_lifetime">process_tracks_by_lifetime</a></code></li>
 <li><code><a title="src.data.remove_invalid_tracks" href="#src.data.remove_invalid_tracks">remove_invalid_tracks</a></code></li>
 <li><code><a title="src.data.select_final_feats" href="#src.data.select_final_feats">select_final_feats</a></code></li>

@@ -1,0 +1,583 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.ref.tracks_common API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.ref.tracks_common</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">import collections
+import math
+from os.path import join as oj
+
+import mat4py
+
+
+# auxilin_dir = &#39;/accounts/grad/xsli/auxilin_data&#39;
+# auxilin_dir = &#39;/scratch/users/vision/data/abc_data/auxilin_data/&#39;
+
+class signal(object):
+    
+    &#34;&#34;&#34;
+    class of detected signals
+    
+    Attributes:
+        x: int
+            x coordinate of signal
+        y: int
+            y coordinate of signal
+        amplitude: float
+            amplitude of fitted Gaussian
+        frame: int
+            index of frame that the signal belongs to
+        track_id: int
+            index of track (among all tracks) that the signal belongs to
+        index_in_track: int
+            frame - (index of first frame of corrsponding track)
+        neighbors: dict
+            key: float
+            value: list of signal objects: signals whose distance to the current signal is smaller than key
+            
+    please feel free to add other stuff
+    &#34;&#34;&#34;
+    
+    def __init__(self, x, y, amplitude, frame, track_id, index_in_track):
+        self.x = x
+        self.y = y
+        self.amplitude = amplitude
+        self.frame = frame
+        self.track_id = track_id
+        self.index_in_track = index_in_track
+        self.neighbors = collections.defaultdict(list)
+        
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)
+
+class clathrinSignal(signal):
+    
+    &#34;&#34;&#34;
+    class of clathrin signals
+    &#34;&#34;&#34;
+    
+    def get_neighbors(self, dist):
+        if dist in self.neighbors:
+            return self.neighbors[dist]
+
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)
+
+class auxilinSignal(signal):
+        
+    def get_neighbors(self, dist):
+        if dist in self.neighbors:
+            return self.neighbors[dist]        
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)
+        
+class track(object):
+    
+    &#34;&#34;&#34;
+    class of detected tracks
+    
+    Attributes:
+        clathrin_signals: list
+            list of clathrinSignal objects
+        auxilin_signals: list
+            list of auxilinSignal
+        lifetime: int
+            lifetime of track
+            
+    please feel free to add other stuff
+    &#34;&#34;&#34;
+    
+    def __init__(self, clathrin_signals, auxilin_signals, lifetime):
+        
+        self.clathrin_signals = clathrin_signals
+        self.auxilin_signals = auxilin_signals
+        self.lifetime = lifetime
+        
+    def add_signal(self, cla_signal, aux_signal):
+        
+        self.clathrin_signals.append(cla_signal)
+        self.auxilin_signals.append(aux_signal)
+        self.lifetime += 1
+
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)
+        
+def read_tracks(auxilin_dir, cell_name):
+    
+    &#34;&#34;&#34;
+    function to read .mat tracks into python objects
+    
+    Input:
+        auxilin_dir, cell_name: str
+        
+    Output:
+        tracks: list of track objects
+            each element in the list corresponding to one track
+        tracks_raw: dict
+            mat[&#39;tracks&#39;]: dict with everything
+        tracks_by_frame: dict
+            key: int (#frame)
+            value: list of dict {&#39;cla&#39;:clathrinSignal, &#39;aux&#39;: auxilinSignal&#34;}
+                all signals in the corresponding frame, use key=&#39;cla&#39; to access clathrin signal
+    &#34;&#34;&#34;
+    
+    tracks_fname = oj(auxilin_dir, &#39;A7D2&#39;, cell_name, &#39;TagRFP/Tracking/ProcessedTracks.mat&#39;)
+    mat = mat4py.loadmat(tracks_fname)
+    tracks_raw = mat[&#39;tracks&#39;]
+    t, x, y, A, n_tracks = tracks_raw[&#39;t&#39;], tracks_raw[&#39;x&#39;], tracks_raw[&#39;y&#39;], tracks_raw[&#39;A&#39;], len(tracks_raw[&#39;t&#39;])
+    tracks, tracks_by_frame = [], collections.defaultdict(list)
+    for tr in range(n_tracks):
+        tracks.append(track(clathrin_signals=[], auxilin_signals=[], lifetime=0))
+        for i in range(len(t[tr])):
+            if not math.isnan(x[tr][0][i]) and not math.isnan(y[tr][0][i]):
+                new_cla_signal = clathrinSignal(x=int(x[tr][0][i]),
+                                                y=int(y[tr][0][i]),
+                                                amplitude=A[tr][0][i],
+                                                frame=t[tr][i],
+                                                track_id=tr,
+                                                index_in_track=i
+                                               )
+                new_aux_signal = auxilinSignal(x=int(x[tr][1][i]),
+                                               y=int(y[tr][1][i]),
+                                               amplitude=A[tr][1][i],
+                                               frame=t[tr][i],
+                                               track_id=tr,
+                                               index_in_track=i
+                                               )
+                tracks_by_frame[t[tr][i]].append({&#39;cla&#39;:new_cla_signal, &#39;aux&#39;:new_aux_signal})
+                tracks[-1].add_signal(new_cla_signal, new_aux_signal)
+                
+    return tracks, tracks_raw, tracks_by_frame
+    
+
+#def get_neighbors():
+    </code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.ref.tracks_common.read_tracks"><code class="name flex">
+<span>def <span class="ident">read_tracks</span></span>(<span>auxilin_dir, cell_name)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>function to read .mat tracks into python objects</p>
+<h2 id="input">Input</h2>
+<dl>
+<dt><strong><code>auxilin_dir</code></strong>, <strong><code>cell_name</code></strong> :&ensp;<code>str</code></dt>
+<dd>&nbsp;</dd>
+</dl>
+<h2 id="output">Output</h2>
+<dl>
+<dt><strong><code>tracks</code></strong></dt>
+<dd>list of track objects
+each element in the list corresponding to one track</dd>
+<dt><strong><code>tracks_raw</code></strong></dt>
+<dd>dict
+mat['tracks']: dict with everything</dd>
+<dt><strong><code>tracks_by_frame</code></strong></dt>
+<dd>dict
+key: int (#frame)
+value: list of dict {'cla':clathrinSignal, 'aux': auxilinSignal"}
+all signals in the corresponding frame, use key='cla' to access clathrin signal</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def read_tracks(auxilin_dir, cell_name):
+    
+    &#34;&#34;&#34;
+    function to read .mat tracks into python objects
+    
+    Input:
+        auxilin_dir, cell_name: str
+        
+    Output:
+        tracks: list of track objects
+            each element in the list corresponding to one track
+        tracks_raw: dict
+            mat[&#39;tracks&#39;]: dict with everything
+        tracks_by_frame: dict
+            key: int (#frame)
+            value: list of dict {&#39;cla&#39;:clathrinSignal, &#39;aux&#39;: auxilinSignal&#34;}
+                all signals in the corresponding frame, use key=&#39;cla&#39; to access clathrin signal
+    &#34;&#34;&#34;
+    
+    tracks_fname = oj(auxilin_dir, &#39;A7D2&#39;, cell_name, &#39;TagRFP/Tracking/ProcessedTracks.mat&#39;)
+    mat = mat4py.loadmat(tracks_fname)
+    tracks_raw = mat[&#39;tracks&#39;]
+    t, x, y, A, n_tracks = tracks_raw[&#39;t&#39;], tracks_raw[&#39;x&#39;], tracks_raw[&#39;y&#39;], tracks_raw[&#39;A&#39;], len(tracks_raw[&#39;t&#39;])
+    tracks, tracks_by_frame = [], collections.defaultdict(list)
+    for tr in range(n_tracks):
+        tracks.append(track(clathrin_signals=[], auxilin_signals=[], lifetime=0))
+        for i in range(len(t[tr])):
+            if not math.isnan(x[tr][0][i]) and not math.isnan(y[tr][0][i]):
+                new_cla_signal = clathrinSignal(x=int(x[tr][0][i]),
+                                                y=int(y[tr][0][i]),
+                                                amplitude=A[tr][0][i],
+                                                frame=t[tr][i],
+                                                track_id=tr,
+                                                index_in_track=i
+                                               )
+                new_aux_signal = auxilinSignal(x=int(x[tr][1][i]),
+                                               y=int(y[tr][1][i]),
+                                               amplitude=A[tr][1][i],
+                                               frame=t[tr][i],
+                                               track_id=tr,
+                                               index_in_track=i
+                                               )
+                tracks_by_frame[t[tr][i]].append({&#39;cla&#39;:new_cla_signal, &#39;aux&#39;:new_aux_signal})
+                tracks[-1].add_signal(new_cla_signal, new_aux_signal)
+                
+    return tracks, tracks_raw, tracks_by_frame</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+<h2 class="section-title" id="header-classes">Classes</h2>
+<dl>
+<dt id="src.ref.tracks_common.auxilinSignal"><code class="flex name class">
+<span>class <span class="ident">auxilinSignal</span></span>
+<span>(</span><span>x, y, amplitude, frame, track_id, index_in_track)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>class of detected signals</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>x</code></strong></dt>
+<dd>int
+x coordinate of signal</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>int
+y coordinate of signal</dd>
+<dt><strong><code>amplitude</code></strong></dt>
+<dd>float
+amplitude of fitted Gaussian</dd>
+<dt><strong><code>frame</code></strong></dt>
+<dd>int
+index of frame that the signal belongs to</dd>
+<dt><strong><code>track_id</code></strong></dt>
+<dd>int
+index of track (among all tracks) that the signal belongs to</dd>
+<dt><strong><code>index_in_track</code></strong></dt>
+<dd>int
+frame - (index of first frame of corrsponding track)</dd>
+<dt><strong><code>neighbors</code></strong></dt>
+<dd>dict
+key: float
+value: list of signal objects: signals whose distance to the current signal is smaller than key</dd>
+</dl>
+<p>please feel free to add other stuff</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class auxilinSignal(signal):
+        
+    def get_neighbors(self, dist):
+        if dist in self.neighbors:
+            return self.neighbors[dist]        
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="src.ref.tracks_common.signal" href="#src.ref.tracks_common.signal">signal</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.ref.tracks_common.auxilinSignal.get_neighbors"><code class="name flex">
+<span>def <span class="ident">get_neighbors</span></span>(<span>self, dist)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_neighbors(self, dist):
+    if dist in self.neighbors:
+        return self.neighbors[dist]        </code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.ref.tracks_common.clathrinSignal"><code class="flex name class">
+<span>class <span class="ident">clathrinSignal</span></span>
+<span>(</span><span>x, y, amplitude, frame, track_id, index_in_track)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>class of clathrin signals</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class clathrinSignal(signal):
+    
+    &#34;&#34;&#34;
+    class of clathrin signals
+    &#34;&#34;&#34;
+    
+    def get_neighbors(self, dist):
+        if dist in self.neighbors:
+            return self.neighbors[dist]
+
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li><a title="src.ref.tracks_common.signal" href="#src.ref.tracks_common.signal">signal</a></li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.ref.tracks_common.clathrinSignal.get_neighbors"><code class="name flex">
+<span>def <span class="ident">get_neighbors</span></span>(<span>self, dist)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_neighbors(self, dist):
+    if dist in self.neighbors:
+        return self.neighbors[dist]</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.ref.tracks_common.signal"><code class="flex name class">
+<span>class <span class="ident">signal</span></span>
+<span>(</span><span>x, y, amplitude, frame, track_id, index_in_track)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>class of detected signals</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>x</code></strong></dt>
+<dd>int
+x coordinate of signal</dd>
+<dt><strong><code>y</code></strong></dt>
+<dd>int
+y coordinate of signal</dd>
+<dt><strong><code>amplitude</code></strong></dt>
+<dd>float
+amplitude of fitted Gaussian</dd>
+<dt><strong><code>frame</code></strong></dt>
+<dd>int
+index of frame that the signal belongs to</dd>
+<dt><strong><code>track_id</code></strong></dt>
+<dd>int
+index of track (among all tracks) that the signal belongs to</dd>
+<dt><strong><code>index_in_track</code></strong></dt>
+<dd>int
+frame - (index of first frame of corrsponding track)</dd>
+<dt><strong><code>neighbors</code></strong></dt>
+<dd>dict
+key: float
+value: list of signal objects: signals whose distance to the current signal is smaller than key</dd>
+</dl>
+<p>please feel free to add other stuff</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class signal(object):
+    
+    &#34;&#34;&#34;
+    class of detected signals
+    
+    Attributes:
+        x: int
+            x coordinate of signal
+        y: int
+            y coordinate of signal
+        amplitude: float
+            amplitude of fitted Gaussian
+        frame: int
+            index of frame that the signal belongs to
+        track_id: int
+            index of track (among all tracks) that the signal belongs to
+        index_in_track: int
+            frame - (index of first frame of corrsponding track)
+        neighbors: dict
+            key: float
+            value: list of signal objects: signals whose distance to the current signal is smaller than key
+            
+    please feel free to add other stuff
+    &#34;&#34;&#34;
+    
+    def __init__(self, x, y, amplitude, frame, track_id, index_in_track):
+        self.x = x
+        self.y = y
+        self.amplitude = amplitude
+        self.frame = frame
+        self.track_id = track_id
+        self.index_in_track = index_in_track
+        self.neighbors = collections.defaultdict(list)
+        
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)</code></pre>
+</details>
+<h3>Subclasses</h3>
+<ul class="hlist">
+<li><a title="src.ref.tracks_common.clathrinSignal" href="#src.ref.tracks_common.clathrinSignal">clathrinSignal</a></li>
+<li><a title="src.ref.tracks_common.auxilinSignal" href="#src.ref.tracks_common.auxilinSignal">auxilinSignal</a></li>
+</ul>
+</dd>
+<dt id="src.ref.tracks_common.track"><code class="flex name class">
+<span>class <span class="ident">track</span></span>
+<span>(</span><span>clathrin_signals, auxilin_signals, lifetime)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>class of detected tracks</p>
+<h2 id="attributes">Attributes</h2>
+<dl>
+<dt><strong><code>clathrin_signals</code></strong></dt>
+<dd>list
+list of clathrinSignal objects</dd>
+<dt><strong><code>auxilin_signals</code></strong></dt>
+<dd>list
+list of auxilinSignal</dd>
+<dt><strong><code>lifetime</code></strong></dt>
+<dd>int
+lifetime of track</dd>
+</dl>
+<p>please feel free to add other stuff</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class track(object):
+    
+    &#34;&#34;&#34;
+    class of detected tracks
+    
+    Attributes:
+        clathrin_signals: list
+            list of clathrinSignal objects
+        auxilin_signals: list
+            list of auxilinSignal
+        lifetime: int
+            lifetime of track
+            
+    please feel free to add other stuff
+    &#34;&#34;&#34;
+    
+    def __init__(self, clathrin_signals, auxilin_signals, lifetime):
+        
+        self.clathrin_signals = clathrin_signals
+        self.auxilin_signals = auxilin_signals
+        self.lifetime = lifetime
+        
+    def add_signal(self, cla_signal, aux_signal):
+        
+        self.clathrin_signals.append(cla_signal)
+        self.auxilin_signals.append(aux_signal)
+        self.lifetime += 1
+
+    def __str__(self):
+        return str(self.__class__) + &#34;: &#34; + str(self.__dict__)</code></pre>
+</details>
+<h3>Methods</h3>
+<dl>
+<dt id="src.ref.tracks_common.track.add_signal"><code class="name flex">
+<span>def <span class="ident">add_signal</span></span>(<span>self, cla_signal, aux_signal)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_signal(self, cla_signal, aux_signal):
+    
+    self.clathrin_signals.append(cla_signal)
+    self.auxilin_signals.append(aux_signal)
+    self.lifetime += 1</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+</dl>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src.ref" href="index.html">src.ref</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.ref.tracks_common.read_tracks" href="#src.ref.tracks_common.read_tracks">read_tracks</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-classes">Classes</a></h3>
+<ul>
+<li>
+<h4><code><a title="src.ref.tracks_common.auxilinSignal" href="#src.ref.tracks_common.auxilinSignal">auxilinSignal</a></code></h4>
+<ul class="">
+<li><code><a title="src.ref.tracks_common.auxilinSignal.get_neighbors" href="#src.ref.tracks_common.auxilinSignal.get_neighbors">get_neighbors</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.ref.tracks_common.clathrinSignal" href="#src.ref.tracks_common.clathrinSignal">clathrinSignal</a></code></h4>
+<ul class="">
+<li><code><a title="src.ref.tracks_common.clathrinSignal.get_neighbors" href="#src.ref.tracks_common.clathrinSignal.get_neighbors">get_neighbors</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.ref.tracks_common.signal" href="#src.ref.tracks_common.signal">signal</a></code></h4>
+</li>
+<li>
+<h4><code><a title="src.ref.tracks_common.track" href="#src.ref.tracks_common.track">track</a></code></h4>
+<ul class="">
+<li><code><a title="src.ref.tracks_common.track.add_signal" href="#src.ref.tracks_common.track.add_signal">add_signal</a></code></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

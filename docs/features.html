@@ -260,11 +260,11 @@ def add_basic_features(df):
     # imputed feats
     d = df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;, &#39;fall&#39;]]
     d = d[df[&#39;X_peak_time_frac&#39;] &lt;= 0.8]
-    m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
-    fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
-    fall_imp = df[&#39;fall&#39;]
-    fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
-    df[&#39;fall_imp&#39;] = fall_imp
+#     m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
+#     fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
+#     fall_imp = df[&#39;fall&#39;]
+#     fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
+#     df[&#39;fall_imp&#39;] = fall_imp
 
     return df
 
@@ -396,11 +396,11 @@ def add_binary_features(df, outcome_def):
     # imputed feats
     d = df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;, &#39;fall&#39;]]
     d = d[df[&#39;X_peak_time_frac&#39;] &lt;= 0.8]
-    m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
-    fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
-    fall_imp = df[&#39;fall&#39;]
-    fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
-    df[&#39;fall_imp&#39;] = fall_imp
+#     m = RidgeCV().fit(d[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]], d[&#39;fall&#39;])
+#     fall_pred = m.predict(df[[&#39;X_max&#39;, &#39;X_mean&#39;, &#39;lifetime&#39;, &#39;rise&#39;]])
+#     fall_imp = df[&#39;fall&#39;]
+#     fall_imp[df[&#39;X_peak_time_frac&#39;] &gt; 0.8] = fall_pred[df[&#39;X_peak_time_frac&#39;] &gt; 0.8]
+#     df[&#39;fall_imp&#39;] = fall_imp
 
     return df</code></pre>
 </details>

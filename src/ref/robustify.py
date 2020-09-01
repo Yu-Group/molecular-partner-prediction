@@ -1,8 +1,4 @@
 import numpy as np
-from matplotlib import pyplot as plt
-
-plt.style.use('dark_background')
-from style import *
 
 
 def robust_measure(df, func):

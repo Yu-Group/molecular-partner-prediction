@@ -1,0 +1,365 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
+<meta name="generator" content="pdoc 0.7.2" />
+<title>src.ref.analysis_raw_images.data_raw_images API documentation</title>
+<meta name="description" content="" />
+<link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
+<link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
+<style>.flex{display:flex !important}body{line-height:1.5em}#content{padding:20px}#sidebar{padding:30px;overflow:hidden}.http-server-breadcrumbs{font-size:130%;margin:0 0 15px 0}#footer{font-size:.75em;padding:5px 30px;border-top:1px solid #ddd;text-align:right}#footer p{margin:0 0 0 1em;display:inline-block}#footer p:last-child{margin-right:30px}h1,h2,h3,h4,h5{font-weight:300}h1{font-size:2.5em;line-height:1.1em}h2{font-size:1.75em;margin:1em 0 .50em 0}h3{font-size:1.4em;margin:25px 0 10px 0}h4{margin:0;font-size:105%}a{color:#058;text-decoration:none;transition:color .3s ease-in-out}a:hover{color:#e82}.title code{font-weight:bold}h2[id^="header-"]{margin-top:2em}.ident{color:#900}pre code{background:#f8f8f8;font-size:.8em;line-height:1.4em}code{background:#f2f2f1;padding:1px 4px;overflow-wrap:break-word}h1 code{background:transparent}pre{background:#f8f8f8;border:0;border-top:1px solid #ccc;border-bottom:1px solid #ccc;margin:1em 0;padding:1ex}#http-server-module-list{display:flex;flex-flow:column}#http-server-module-list div{display:flex}#http-server-module-list dt{min-width:10%}#http-server-module-list p{margin-top:0}.toc ul,#index{list-style-type:none;margin:0;padding:0}#index code{background:transparent}#index h3{border-bottom:1px solid #ddd}#index ul{padding:0}#index h4{font-weight:bold}#index h4 + ul{margin-bottom:.6em}@media (min-width:200ex){#index .two-column{column-count:2}}@media (min-width:300ex){#index .two-column{column-count:3}}dl{margin-bottom:2em}dl dl:last-child{margin-bottom:4em}dd{margin:0 0 1em 3em}#header-classes + dl > dd{margin-bottom:3em}dd dd{margin-left:2em}dd p{margin:10px 0}.name{background:#eee;font-weight:bold;font-size:.85em;padding:5px 10px;display:inline-block;min-width:40%}.name:hover{background:#e0e0e0}.name > span:first-child{white-space:nowrap}.name.class > span:nth-child(2){margin-left:.4em}.inherited{color:#999;border-left:5px solid #eee;padding-left:1em}.inheritance em{font-style:normal;font-weight:bold}.desc h2{font-weight:400;font-size:1.25em}.desc h3{font-size:1em}.desc dt code{background:inherit}.source summary,.git-link-div{color:#666;text-align:right;font-weight:400;font-size:.8em;text-transform:uppercase}.source summary > *{white-space:nowrap;cursor:pointer}.git-link{color:inherit;margin-left:1em}.source pre{max-height:500px;overflow:auto;margin:0}.source pre code{font-size:12px;overflow:visible}.hlist{list-style:none}.hlist li{display:inline}.hlist li:after{content:',\2002'}.hlist li:last-child:after{content:none}.hlist .hlist{display:inline;padding-left:1em}img{max-width:100%}.admonition{padding:.1em .5em;margin-bottom:1em}.admonition-title{font-weight:bold}.admonition.note,.admonition.info,.admonition.important{background:#aef}.admonition.todo,.admonition.versionadded,.admonition.tip,.admonition.hint{background:#dfd}.admonition.warning,.admonition.versionchanged,.admonition.deprecated{background:#fd4}.admonition.error,.admonition.danger,.admonition.caution{background:lightpink}</style>
+<style media="screen and (min-width: 700px)">@media screen and (min-width:700px){#sidebar{width:30%}#content{width:70%;max-width:100ch;padding:3em 4em;border-left:1px solid #ddd}pre code{font-size:1em}.item .name{font-size:1em}main{display:flex;flex-direction:row-reverse;justify-content:flex-end}.toc ul ul,#index ul{padding-left:1.5em}.toc > ul > li{margin-top:.5em}}</style>
+<style media="print">@media print{#sidebar h1{page-break-before:always}.source{display:none}}@media print{*{background:transparent !important;color:#000 !important;box-shadow:none !important;text-shadow:none !important}a[href]:after{content:" (" attr(href) ")";font-size:90%}a[href][title]:after{content:none}abbr[title]:after{content:" (" attr(title) ")"}.ir a:after,a[href^="javascript:"]:after,a[href^="#"]:after{content:""}pre,blockquote{border:1px solid #999;page-break-inside:avoid}thead{display:table-header-group}tr,img{page-break-inside:avoid}img{max-width:100% !important}@page{margin:0.5cm}p,h2,h3{orphans:3;widows:3}h1,h2,h3,h4,h5,h6{page-break-after:avoid}}</style>
+</head>
+<body>
+<main>
+<article id="content">
+<header>
+<h1 class="title">Module <code>src.ref.analysis_raw_images.data_raw_images</code></h1>
+</header>
+<section id="section-intro">
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">from matplotlib import pyplot as plt
+import numpy as np
+from skimage.external.tifffile import imread
+from skimage import io
+import os
+from os.path import join as oj
+from sklearn.feature_extraction.image import extract_patches_2d
+from sklearn.linear_model import LinearRegression, LogisticRegression
+from sklearn.neural_network import MLPRegressor
+from sklearn.model_selection import cross_validate, train_test_split
+from scipy import ndimage
+
+
+auxilin_dir = &#39;/accounts/grad/xsli/auxilin_data&#39;
+# auxilin_dir = &#39;/scratch/users/vision/data/abc_data/auxilin_data/&#39;
+
+def get_data(cell_name, auxilin_dir=auxilin_dir, normalize=True):
+    &#39;&#39;&#39;Loads in X and Y for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    &#39;&#39;&#39;
+    cell_name = &#39;Cell1_1s&#39;
+    data_dir = oj(auxilin_dir, &#39;A7D2&#39;, cell_name) # &#39;A7D2&#39;, &#39;EGFB-GAK-F6&#39;
+    fname1 = os.listdir(oj(data_dir, &#39;TagRFP&#39;))[0]
+    fname2 = os.listdir(oj(data_dir, &#39;EGFP&#39;))[0]
+    X = imread(oj(data_dir, &#39;TagRFP&#39;, fname1)) #.astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, &#39;EGFP&#39;, fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    if normalize:
+        X = (X - np.mean(X)) / np.std(X)
+        Y = (Y - np.mean(Y)) / np.std(Y)
+    
+    return X, Y
+
+def extract_single_pixel_features(X, Y, normalize=True):
+    &#39;&#39;&#39;Extract time-series for single pixels as features
+    &#39;&#39;&#39;
+    X_feat = X.transpose() # W x H x num_images
+    X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
+    X_feat = X_feat.reshape(-1, 1)
+    y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
+    y_max = (y_max - np.mean(y_max)) / np.std(y_max)
+    return X_feat, y_max
+
+def extract_single_pixel_max_features(X, Y):
+    &#39;&#39;&#39;Take max over X (after some preprocessing) and use it to predict max over Y
+    &#39;&#39;&#39;
+    X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
+    X_max_log = X_log.max(axis=0)
+    X_max_log = X_max_log.flatten()
+    Y_max = np.expand_dims(Y.max(axis=0).flatten(), 1)
+    #plt.hist(Y_max)
+    return X_max_log, Y_max
+
+def extract_patch_features(X, Y, patch_size=9):
+    &#39;&#39;&#39;Extract time-series for patches as features
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (num_patches, patch_size, patch_size, num_images)
+    Y : np.ndarray
+        has shape (num_images)
+    &#39;&#39;&#39;
+    X_feat = X.transpose() # W x H x num_images
+    X_patches = extract_patches_2d(X_feat, patch_size=(patch_size, patch_size), max_patches=None).astype(np.float32) # num_patches x patch_size x patch_size x num_images
+#     X_patches_flat = X_patches.reshape(X_patches.shape[0], -1)
+    
+    
+    # take only the center of the y matches
+    Y_max = np.max(Y, axis=0) # H x W
+    Y_patches = extract_patches_2d(Y_max.transpose(), patch_size=(patch_size, patch_size), max_patches=None) # num_patches x patch_size x patch_size x num_images
+    patch_center = patch_size // 2
+    Y_centers = Y_patches[:, patch_center, patch_center].astype(np.float32)
+    
+    return X_patches, Y_centers
+
+def extract_next_frame_prediction_data(X, Y, window_length=10, test_size=0.33, LoG_var=10):
+    
+    &#39;&#39;&#39;
+     extract training and test samples for next frame prediction
+     
+     Input:
+          X, Y: np.ndarray
+              clathrin and auxilin movies
+          window_length: int
+              num of previous images used for prediction
+          test_size: float (between 0 and 1)
+              % of images used as test data
+          LoG_var: float
+              var of log filter
+              
+     Output:
+          X_train, Y_train, X_test, Y_test: np.array
+              train and test data, by default, the movies are partitioned into n = (len(X) - window_length) / window_length
+              non-overlapping segments; the last n*test_size segments are used for testing
+    &#39;&#39;&#39;
+    
+    X_log = ndimage.gaussian_laplace(X, sigma=10)
+    n = int((len(X) - window_length) / window_length)
+    n_train = int(n * (1 - test_size))
+    X_train, Y_train, X_test, Y_test = [], [], [], []
+    for im in range(n_train):
+        Y_train += list(Y[im*window_length + window_length].flatten())
+        X_train += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    for im in range(n_train, n):
+        Y_test += list(Y[im*window_length + window_length].flatten())
+        X_test += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)</code></pre>
+</details>
+</section>
+<section>
+</section>
+<section>
+</section>
+<section>
+<h2 class="section-title" id="header-functions">Functions</h2>
+<dl>
+<dt id="src.ref.analysis_raw_images.data_raw_images.extract_next_frame_prediction_data"><code class="name flex">
+<span>def <span class="ident">extract_next_frame_prediction_data</span></span>(<span>X, Y, window_length=10, test_size=0.33, LoG_var=10)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>extract training and test samples for next frame prediction</p>
+<h2 id="input">Input</h2>
+<dl>
+<dt><strong><code>X</code></strong>, <strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>clathrin and auxilin movies</dd>
+<dt><strong><code>window_length</code></strong></dt>
+<dd>int
+num of previous images used for prediction</dd>
+<dt><strong><code>test_size</code></strong></dt>
+<dd>float (between 0 and 1)
+% of images used as test data</dd>
+<dt><strong><code>LoG_var</code></strong></dt>
+<dd>float
+var of log filter</dd>
+</dl>
+<h2 id="output">Output</h2>
+<dl>
+<dt><strong><code>X_train</code></strong>, <strong><code>Y_train</code></strong>, <strong><code>X_test</code></strong>, <strong><code>Y_test</code></strong> :&ensp;<code>np.array</code></dt>
+<dd>train and test data, by default, the movies are partitioned into n = (len(X) - window_length) / window_length
+non-overlapping segments; the last n*test_size segments are used for testing</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_next_frame_prediction_data(X, Y, window_length=10, test_size=0.33, LoG_var=10):
+    
+    &#39;&#39;&#39;
+     extract training and test samples for next frame prediction
+     
+     Input:
+          X, Y: np.ndarray
+              clathrin and auxilin movies
+          window_length: int
+              num of previous images used for prediction
+          test_size: float (between 0 and 1)
+              % of images used as test data
+          LoG_var: float
+              var of log filter
+              
+     Output:
+          X_train, Y_train, X_test, Y_test: np.array
+              train and test data, by default, the movies are partitioned into n = (len(X) - window_length) / window_length
+              non-overlapping segments; the last n*test_size segments are used for testing
+    &#39;&#39;&#39;
+    
+    X_log = ndimage.gaussian_laplace(X, sigma=10)
+    n = int((len(X) - window_length) / window_length)
+    n_train = int(n * (1 - test_size))
+    X_train, Y_train, X_test, Y_test = [], [], [], []
+    for im in range(n_train):
+        Y_train += list(Y[im*window_length + window_length].flatten())
+        X_train += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    for im in range(n_train, n):
+        Y_test += list(Y[im*window_length + window_length].flatten())
+        X_test += list(np.transpose([X_log[im*window_length + i].flatten() for i in range(window_length)]))
+    return np.array(X_train), np.array(Y_train), np.array(X_test), np.array(Y_test)</code></pre>
+</details>
+</dd>
+<dt id="src.ref.analysis_raw_images.data_raw_images.extract_patch_features"><code class="name flex">
+<span>def <span class="ident">extract_patch_features</span></span>(<span>X, Y, patch_size=9)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Extract time-series for patches as features</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (num_patches, patch_size, patch_size, num_images)</dd>
+<dt><strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (num_images)</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_patch_features(X, Y, patch_size=9):
+    &#39;&#39;&#39;Extract time-series for patches as features
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (num_patches, patch_size, patch_size, num_images)
+    Y : np.ndarray
+        has shape (num_images)
+    &#39;&#39;&#39;
+    X_feat = X.transpose() # W x H x num_images
+    X_patches = extract_patches_2d(X_feat, patch_size=(patch_size, patch_size), max_patches=None).astype(np.float32) # num_patches x patch_size x patch_size x num_images
+#     X_patches_flat = X_patches.reshape(X_patches.shape[0], -1)
+    
+    
+    # take only the center of the y matches
+    Y_max = np.max(Y, axis=0) # H x W
+    Y_patches = extract_patches_2d(Y_max.transpose(), patch_size=(patch_size, patch_size), max_patches=None) # num_patches x patch_size x patch_size x num_images
+    patch_center = patch_size // 2
+    Y_centers = Y_patches[:, patch_center, patch_center].astype(np.float32)
+    
+    return X_patches, Y_centers</code></pre>
+</details>
+</dd>
+<dt id="src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_features"><code class="name flex">
+<span>def <span class="ident">extract_single_pixel_features</span></span>(<span>X, Y, normalize=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Extract time-series for single pixels as features</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_single_pixel_features(X, Y, normalize=True):
+    &#39;&#39;&#39;Extract time-series for single pixels as features
+    &#39;&#39;&#39;
+    X_feat = X.transpose() # W x H x num_images
+    X_feat = X_feat.reshape(X_feat.shape[0] * X_feat.shape[1], -1) # num_pixels x num_images
+    X_feat = X_feat.reshape(-1, 1)
+    y_max = np.expand_dims(Y.sum(axis=0).flatten(), 1) # num_pixels x 1
+    y_max = (y_max - np.mean(y_max)) / np.std(y_max)
+    return X_feat, y_max</code></pre>
+</details>
+</dd>
+<dt id="src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_max_features"><code class="name flex">
+<span>def <span class="ident">extract_single_pixel_max_features</span></span>(<span>X, Y)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Take max over X (after some preprocessing) and use it to predict max over Y</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_single_pixel_max_features(X, Y):
+    &#39;&#39;&#39;Take max over X (after some preprocessing) and use it to predict max over Y
+    &#39;&#39;&#39;
+    X_log = ndimage.gaussian_laplace(X, sigma=10) #Laplacian-of-Gaussian filter
+    X_max_log = X_log.max(axis=0)
+    X_max_log = X_max_log.flatten()
+    Y_max = np.expand_dims(Y.max(axis=0).flatten(), 1)
+    #plt.hist(Y_max)
+    return X_max_log, Y_max</code></pre>
+</details>
+</dd>
+<dt id="src.ref.analysis_raw_images.data_raw_images.get_data"><code class="name flex">
+<span>def <span class="ident">get_data</span></span>(<span>cell_name, auxilin_dir='/accounts/grad/xsli/auxilin_data', normalize=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Loads in X and Y for one cell</p>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (W, H, num_images)</dd>
+<dt><strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (W, H, num_images)</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_data(cell_name, auxilin_dir=auxilin_dir, normalize=True):
+    &#39;&#39;&#39;Loads in X and Y for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    &#39;&#39;&#39;
+    cell_name = &#39;Cell1_1s&#39;
+    data_dir = oj(auxilin_dir, &#39;A7D2&#39;, cell_name) # &#39;A7D2&#39;, &#39;EGFB-GAK-F6&#39;
+    fname1 = os.listdir(oj(data_dir, &#39;TagRFP&#39;))[0]
+    fname2 = os.listdir(oj(data_dir, &#39;EGFP&#39;))[0]
+    X = imread(oj(data_dir, &#39;TagRFP&#39;, fname1)) #.astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(data_dir, &#39;EGFP&#39;, fname2)) #.astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    if normalize:
+        X = (X - np.mean(X)) / np.std(X)
+        Y = (Y - np.mean(Y)) / np.std(Y)
+    
+    return X, Y</code></pre>
+</details>
+</dd>
+</dl>
+</section>
+<section>
+</section>
+</article>
+<nav id="sidebar">
+<h1>Index</h1>
+<div class="toc">
+<ul></ul>
+</div>
+<ul id="index">
+<li><h3>Super-module</h3>
+<ul>
+<li><code><a title="src.ref.analysis_raw_images" href="index.html">src.ref.analysis_raw_images</a></code></li>
+</ul>
+</li>
+<li><h3><a href="#header-functions">Functions</a></h3>
+<ul class="">
+<li><code><a title="src.ref.analysis_raw_images.data_raw_images.extract_next_frame_prediction_data" href="#src.ref.analysis_raw_images.data_raw_images.extract_next_frame_prediction_data">extract_next_frame_prediction_data</a></code></li>
+<li><code><a title="src.ref.analysis_raw_images.data_raw_images.extract_patch_features" href="#src.ref.analysis_raw_images.data_raw_images.extract_patch_features">extract_patch_features</a></code></li>
+<li><code><a title="src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_features" href="#src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_features">extract_single_pixel_features</a></code></li>
+<li><code><a title="src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_max_features" href="#src.ref.analysis_raw_images.data_raw_images.extract_single_pixel_max_features">extract_single_pixel_max_features</a></code></li>
+<li><code><a title="src.ref.analysis_raw_images.data_raw_images.get_data" href="#src.ref.analysis_raw_images.data_raw_images.get_data">get_data</a></code></li>
+</ul>
+</li>
+</ul>
+</nav>
+</main>
+<footer id="footer">
+<p>Generated by <a href="https://pdoc3.github.io/pdoc"><cite>pdoc</cite> 0.7.2</a>.</p>
+</footer>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+</body>
+</html>

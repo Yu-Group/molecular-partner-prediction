@@ -140,7 +140,8 @@ class MaxConvLinear(nn.Module):
 <section class="desc"><p>Takes flattened input and predicts it using many conv unit
 X: batch_size x 1 x num_timepoints
 OR
-X: list of size (num_timepoints,)</p></section>
+X: list of size (num_timepoints,)</p>
+<p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -238,7 +239,8 @@ registered hooks while the latter silently ignores them.</p>
 </code></dt>
 <dd>
 <section class="desc"><p>Takes input patch, uses linear filter to convert it to time series, then runs temporal conv, then takes max
-X: batch_size x H_patch x W_patch x time</p></section>
+X: batch_size x H_patch x W_patch x time</p>
+<p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
@@ -328,7 +330,8 @@ registered hooks while the latter silently ignores them.</p>
 </code></dt>
 <dd>
 <section class="desc"><p>Takes flattened input and predicts it using many linear units
-X: batch_size x num_timepoints</p></section>
+X: batch_size x num_timepoints</p>
+<p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
