@@ -137,6 +137,7 @@ def get_tracks(data_dir, split=None, all_data=False,
         for cell_dir in sorted(os.listdir(oj(data_dir, upper_dir))):
             if not 'Cell' in cell_dir:
                 continue
+                
             cell_num = oj(upper_dir, cell_dir.replace('Cell', '').replace('_1s', ''))
             if split is not None:
                 if not cell_num in split:
@@ -144,11 +145,24 @@ def get_tracks(data_dir, split=None, all_data=False,
             full_dir = f'{data_dir}/{upper_dir}/{cell_dir}'
             fname = full_dir + '/TagRFP/Tracking/ProcessedTracks.mat'
             print(cell_num)
-            cla, aux = get_images(full_dir)
+            
             # fname_image = oj(data_dir, upper_dir, cell_dir)
             mat = mat4py.loadmat(fname)
             tracks = mat['tracks']
             n = len(tracks['t'])
+            
+            
+            # basic features
+            t = np.array([tracks['t'][i] for i in range(n)])
+            data = {
+                'lifetime': tracks['lifetime_s'],                
+                'cell_num': [cell_num] * n,                
+                'catIdx': tracks['catIdx'],
+                't': [t[i][0] for i in range(n)],
+            }
+            
+            
+            # displacement features
             totalDisplacement = []
             msd = []  # mean squared displacement
             for i in range(n):
@@ -160,94 +174,75 @@ def get_tracks(data_dir, split=None, all_data=False,
                     msd.append(np.nanmax(tracks['MotionAnalysis'][i]['MSD']))
                 except:
                     msd.append(0)
-
-            CLATH = 0
-            AUX = 1
-
-            X = np.array([tracks['A'][i][CLATH] for i in range(n)])
-            Y = np.array([tracks['A'][i][AUX] for i in range(n)])
-            t = np.array([tracks['t'][i] for i in range(n)])
+            data['mean_total_displacement'] = [totalDisplacement[i] / tracks['lifetime_s'][i] for i in range(n)]
+            data['mean_square_displacement'] =  msd
+            
+            # position features
             x_pos_seq = np.array(
-                [tracks['x'][i][CLATH] for i in range(n)])  # x-position for clathrin (auxilin is very similar)
+                [tracks['x'][i][0] for i in range(n)])  # x-position for clathrin (auxilin is very similar)
             y_pos_seq = np.array(
-                [tracks['y'][i][CLATH] for i in range(n)])  # y-position for clathrin (auxilin is very similar)
-            X_pvals = np.array([tracks['pval_Ar'][i][CLATH] for i in range(n)])
-            Y_pvals = np.array([tracks['pval_Ar'][i][AUX] for i in range(n)])
+                [tracks['y'][i][0] for i in range(n)])  # y-position for clathrin (auxilin is very similar)
+            data['x_pos_seq'] = x_pos_seq
+            data['y_pos_seq'] = y_pos_seq
+            data['x_pos'] = [sum(x) / len(x) for x in x_pos_seq]  # mean position in the image
+            data['y_pos'] = [sum(y) / len(y) for y in y_pos_seq]
+            
+            # track features
+            num_channels = len(tracks['A'][0])
+            for idx_channel, prefix in zip(range(num_channels),
+                                           ['X', 'Y', 'Z'][:num_channels]):
+                track = np.array([tracks['A'][i][idx_channel] for i in range(n)])
+                data[prefix + '_pvals'] = np.array([tracks['pval_Ar'][i][idx_channel] for i in range(n)])
+                starts = []
+                for d in tracks['startBuffer']:
+                    if len(d) == 0:
+                        starts.append([])
+                    else:
+                        starts.append(d['A'][idx_channel])
+                ends = []
+                for d in tracks['endBuffer']:
+                    if len(d) == 0:
+                        ends.append([])
+                    else:
+                        ends.append(d['A'][idx_channel])
+                if prefix == 'X':
+                    data[prefix + '_extended'] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                data[prefix] = track
+                data[prefix + '_starts'] = starts
+                data[prefix + '_ends'] = ends 
+            data['lifetime_extended'] = [len(x) for x in data['X_extended']]
 
-            # buffers
-            X_starts = []
-            Y_starts = []
-            for d in tracks['startBuffer']:
-                if len(d) == 0:
-                    X_starts.append([])
-                    Y_starts.append([])
-                else:
-                    X_starts.append(d['A'][CLATH])
-                    Y_starts.append(d['A'][AUX])
-            X_ends = []
-            Y_ends = []
-            for d in tracks['endBuffer']:
-                if len(d) == 0:
-                    X_ends.append([])
-                    Y_ends.append([])
-                else:
-                    X_ends.append(d['A'][CLATH])
-                    Y_ends.append(d['A'][AUX])
-            X_extended = [X_starts[i] + X[i] + X_ends[i] for i in range(n)]
-
-            # image feats
-            pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
-                               if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
-                              for i in range(n)])
-            pixel_up = np.array(
-                [[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
-                 for i in range(n)])
-            pixel_down = np.array([[cla[int(t[i][j]), max(int(y_pos_seq[i][j] - 1), 0), int(x_pos_seq[i][j])]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
-                                   for i in range(n)])
-            pixel_left = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), max(int(x_pos_seq[i][j] - 1), 0)]
-                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
-                                   for i in range(n)])
-            pixel_right = np.array(
-                [[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j] + 1), cla.shape[2] - 1)]
-                  if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
-                 for i in range(n)])
-
-            data = {
-                'X': X,
-                'X_extended': X_extended,
-                'Y': Y,
-                'X_starts': X_starts,
-                'Y_starts': Y_starts,
-                'X_ends': X_ends,
-                'Y_ends': Y_ends,
-                'X_pvals': X_pvals,
-                'Y_pvals': Y_pvals,
-                'catIdx': tracks['catIdx'],
-                'mean_total_displacement': [totalDisplacement[i] / tracks['lifetime_s'][i] for i in range(n)],
-                'mean_square_displacement': msd,
-                'lifetime': tracks['lifetime_s'],
-                'lifetime_extended': [len(x) for x in X_extended],
-                'x_pos': [sum(x) / len(x) for x in x_pos_seq],  # mean position in the image
-                'y_pos': [sum(y) / len(y) for y in y_pos_seq],
-                'cell_num': [cell_num] * n,
-                't': [t[i][0] for i in range(n)],
-                'x_pos_seq': x_pos_seq,
-                'y_pos_seq': y_pos_seq,
-            }
+            # pixel features
             if all_data:
-                data['t'] = [t[i][0] for i in range(n)]
+                cla, aux = get_images(full_dir)
+                pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
+                                   if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                                  for i in range(n)])
+                pixel_up = np.array(
+                    [[cla[int(t[i][j]), min(int(y_pos_seq[i][j] + 1), cla.shape[1] - 1), int(x_pos_seq[i][j])]
+                      if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                     for i in range(n)])
+                pixel_down = np.array([[cla[int(t[i][j]), max(int(y_pos_seq[i][j] - 1), 0), int(x_pos_seq[i][j])]
+                                        if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                                       for i in range(n)])
+                pixel_left = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), max(int(x_pos_seq[i][j] - 1), 0)]
+                                        if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                                       for i in range(n)])
+                pixel_right = np.array(
+                    [[cla[int(t[i][j]), int(y_pos_seq[i][j]), min(int(x_pos_seq[i][j] + 1), cla.shape[2] - 1)]
+                      if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
+                     for i in range(n)])
                 data['pixel'] = pixel
                 data['pixel_left'] = pixel_left
                 data['pixel_right'] = pixel_right
                 data['pixel_up'] = pixel_up
                 data['pixel_down'] = pixel_down
-                data['center_max'] = [max(pixel[i]) for i in range(n)],
-                data['left_max'] = [max(pixel_left[i]) for i in range(n)],
-                data['right_max'] = [max(pixel_right[i]) for i in range(n)],
-                data['up_max'] = [max(pixel_up[i]) for i in range(n)],
-                data['down_max'] = [max(pixel_down[i]) for i in range(n)],
+                data['center_max'] = [max(pixel[i]) for i in range(n)]
+                data['left_max'] = [max(pixel_left[i]) for i in range(n)]
+                data['right_max'] = [max(pixel_right[i]) for i in range(n)]
+                data['up_max'] = [max(pixel_up[i]) for i in range(n)]
+                data['down_max'] = [max(pixel_down[i]) for i in range(n)]
+            
             df = pd.DataFrame.from_dict(data)
             dfs.append(deepcopy(df))
     df = pd.concat(dfs)
@@ -409,15 +404,17 @@ def select_final_feats(feat_names, binarize=False):
 
 
 if __name__ == '__main__':
+    
     # process original data (and save out lifetime thresholds)
     dset_orig = 'clath_aux+gak_a7d2'
     df = get_data(dset=dset_orig)  # save out orig
+    
+    # process new data (using lifetime thresholds from original data)
     outcome_def = 'y_consec_sig'
     for dset in config.DSETS.keys():
-        # process new data (using lifetime thresholds from original data)
         df = get_data(dset=dset,
                       previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+',
-              df[outcome_def].sum(), 'ratio', (df[outcome_def].sum() / df.shape[0]).round(3),
-              'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'ratio',
+              df[outcome_def].sum(), 'aux+ fraction', (df[outcome_def].sum() / df.shape[0]).round(3),
+              'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'valid aux+ fraction',
               (df[df.valid][outcome_def].sum() / df.valid.sum()).round(3))
