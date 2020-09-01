@@ -53,6 +53,8 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         print('\tloading tracks...')
         df = load_tracking.get_tracks(data_dir=DSET['data_dir'], split=DSET, all_data=all_data,
                         dset=dset)  # note: different Xs can be different shapes
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
+#         print('num nans', df.isna().sum())
         df['pid'] = np.arange(df.shape[0])  # assign each track a unique id
         df['valid'] = True  # all tracks start as valid
         if DSET['test'] is not None:
@@ -78,9 +80,12 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         metadata['num_aux_pos_hard'] = int(df[df.valid == 1][outcome_def].sum())
 
         print('\tadding features...')
+#         df = df.replace([np.inf, -np.inf], np.nan)
+#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where some feats are NaN
+#         df = df.fillna(0) # this only does anything for the dynamin tracks, where some feats are NaN
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
-        df = features.add_pcs(df)
+        # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
         df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
@@ -203,6 +208,7 @@ def get_feature_names(df):
         k for k in ks
         if not k.startswith('y')
            and not k.startswith('Y')
+           and not k.startswith('Z')
            and not k.startswith('pixel')
            #         and not k.startswith('pc_')
            and not k in ['catIdx', 'cell_num', 'pid', 'valid',  # metadata

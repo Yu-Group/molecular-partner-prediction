@@ -234,11 +234,11 @@ def add_basic_features(df):
     # imputed feats
     d = df[['X_max', 'X_mean', 'lifetime', 'rise', 'fall']]
     d = d[df['X_peak_time_frac'] <= 0.8]
-    m = RidgeCV().fit(d[['X_max', 'X_mean', 'lifetime', 'rise']], d['fall'])
-    fall_pred = m.predict(df[['X_max', 'X_mean', 'lifetime', 'rise']])
-    fall_imp = df['fall']
-    fall_imp[df['X_peak_time_frac'] > 0.8] = fall_pred[df['X_peak_time_frac'] > 0.8]
-    df['fall_imp'] = fall_imp
+#     m = RidgeCV().fit(d[['X_max', 'X_mean', 'lifetime', 'rise']], d['fall'])
+#     fall_pred = m.predict(df[['X_max', 'X_mean', 'lifetime', 'rise']])
+#     fall_imp = df['fall']
+#     fall_imp[df['X_peak_time_frac'] > 0.8] = fall_pred[df['X_peak_time_frac'] > 0.8]
+#     df['fall_imp'] = fall_imp
 
     return df
 
