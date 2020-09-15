@@ -19,6 +19,7 @@ s_orig_gak = 'EGFP-GAK F6'
 s_clath_aux_no_a7d2 = 'CLTA-TagRFP EGFP-Aux1 EGFP-GAK F6' # goes [1-11]
 s_clath_aux = 'CLTA-TagRFP EGFP-Aux1-A7D2 EGFP-GAK-F6' # goes [1, 2] + [5-12] - 13 is there but missing some tifs
 s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
+s_dynamin = '488-1.5mW 561-1.5mW 647-1.5mW Exp100ms Int1.5s'
 s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
 DSETS = {
@@ -43,8 +44,9 @@ DSETS = {
     'clath_aux_dynamin': {
         'data_dir': oj(d_new, dynamin_folder),        
         'feature_selection': None,
-        'train': None,
-        'test': None,
+        'train': np.array([f'{s_dynamin}_{i}/1_1.5s' for i in [4, 5, 6]] + 
+                          [f'{s_dynamin}_4_Pos{i}/1_1.5s' for i in np.arange(13) if i != 9]),
+        'test': np.array([f'{s_dynamin}_7_Pos{i}/1_1.5s' for i in np.arange(6)]),
     },
     'clath_aux+gak_new': {
         'data_dir': oj(d_new, clath_aux_folder),

@@ -13,8 +13,8 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from statsmodels import robust
 
-cell_nums_train = np.array([1, 2, 3, 4, 5])
-cell_nums_test = np.array([6])
+#cell_nums_train = np.array([1, 2, 3, 4, 5])
+#cell_nums_test = np.array([6])
 
 
 def add_robust_features(df):
@@ -24,6 +24,8 @@ def add_robust_features(df):
 
 
 def log_transforms(df):
+    
+    df = add_robust_features(df)
     df['X_max_log'] = np.log(df['X_max'])
     df['X_95_quantile_log'] = np.log(df['X_95_quantile'] + 1)
     df['Y_max_log'] = np.log(df['Y_max'])
@@ -64,6 +66,22 @@ def log_transforms(df):
                                        axis=1)
     return df
 
+def add_sig_mean(df, resp_tracks=['Y', 'Z']):
+    """
+    add response of regression problem: mean auxilin strength among significant observations
+    """
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f'{track}_pvals']) < 0.05
+            if sum(sigs)>0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f'{track}_sig_mean'] = sig_mean
+    return df
+
 
 def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
               out_name='results/regression/test.pkl', seed=42):
@@ -102,12 +120,13 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
     # scores_test = {s: [] for s in scorers.keys()}
     imps = {'model': [], 'imps': []}
 
+    cell_nums_train = np.array(list(set(df.cell_num.values)))
     kf = KFold(n_splits=len(cell_nums_train))
 
     # split testing data based on cell num
-    idxs_test = df.cell_num.isin(cell_nums_test)
-    idxs_train = df.cell_num.isin(cell_nums_train)
-    X_test, Y_test = X[idxs_test], y[idxs_test]
+    #idxs_test = df.cell_num.isin(cell_nums_test)
+    #idxs_train = df.cell_num.isin(cell_nums_train)
+    #X_test, Y_test = X[idxs_test], y[idxs_test]
     num_pts_by_fold_cv = []
     y_preds = {}
     cv_score = []
@@ -135,14 +154,15 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
             cv_score.append(m.score(X_val_cv, Y_val_cv))
 
     # cv_score = cv_score/len(cell_nums_train)
-    m.fit(X[idxs_train], y[idxs_train])
-    print(cv_score)
-    test_preds = m.predict(X_test)
+    m.fit(X, y)
+    #print(cv_score)
+    #test_preds = m.predict(X_test)
     results = {'y_preds': y_preds,
-               'y': y[idxs_train],
-               'test_preds': test_preds,
+               'y': y,
+               #'test_preds': test_preds,
                'cv': {'r2': cv_score},
                'model_type': model_type,
+               'model': m,
                'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
                }
     # save results
