@@ -3,7 +3,6 @@ import sys
 from copy import deepcopy
 from os.path import join as oj
 
-sys.path.append('..')
 import mat4py
 import numpy as np
 import pandas as pd

@@ -1,3 +1,6 @@
+'''Set configurations for all the raw and processed datasets
+Takes in path to raw data, tracks, processed df, and then later interim data
+'''
 import os
 from os.path import join as oj
 import numpy as np
@@ -5,9 +8,12 @@ import numpy as np
 
 # data paths
 DIR_REPO = os.path.dirname(os.path.realpath(__file__)) # directory of the config file
-DIR_TRACKS = oj(DIR_REPO, 'data', 'tracks')
-DIR_PROCESSED = oj(DIR_REPO, 'data', 'processed')
-DIR_INTERIM = oj(DIR_REPO, 'data', 'interim')
+DIR_TRACKS = oj(DIR_REPO, '..', 'data', 'tracks')
+DIR_PROCESSED = oj(DIR_REPO, '..', 'data', 'processed')
+DIR_INTERIM = oj(DIR_REPO, '..', 'data', 'interim')
+
+
+# raw data ################################################################################
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'
@@ -22,6 +28,7 @@ s_a8 = 'CLTA-TagRFP EGFP-GAK A8'
 s_dynamin = '488-1.5mW 561-1.5mW 647-1.5mW Exp100ms Int1.5s'
 s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
+
 DSETS = {
     'clath_aux+gak_a7d2': {  # this was the original data
         'data_dir': data_dir_orig,
@@ -75,8 +82,8 @@ DSETS = {
 }
 
 
+# gt labels for original data (by pid) ################################################################################
 
-# gt labels (by pid)
 '''Note these labels constitute corrections to the y_consec_thresh defn (as of 02/09/2020)
 '''
 LABELS_ORIG = {

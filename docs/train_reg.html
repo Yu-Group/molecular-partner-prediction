@@ -39,8 +39,8 @@ from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from statsmodels import robust
 
-cell_nums_train = np.array([1, 2, 3, 4, 5])
-cell_nums_test = np.array([6])
+#cell_nums_train = np.array([1, 2, 3, 4, 5])
+#cell_nums_test = np.array([6])
 
 
 def add_robust_features(df):
@@ -50,6 +50,8 @@ def add_robust_features(df):
 
 
 def log_transforms(df):
+    
+    df = add_robust_features(df)
     df[&#39;X_max_log&#39;] = np.log(df[&#39;X_max&#39;])
     df[&#39;X_95_quantile_log&#39;] = np.log(df[&#39;X_95_quantile&#39;] + 1)
     df[&#39;Y_max_log&#39;] = np.log(df[&#39;Y_max&#39;])
@@ -90,6 +92,22 @@ def log_transforms(df):
                                        axis=1)
     return df
 
+def add_sig_mean(df, resp_tracks=[&#39;Y&#39;, &#39;Z&#39;]):
+    &#34;&#34;&#34;
+    add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
+            if sum(sigs)&gt;0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f&#39;{track}_sig_mean&#39;] = sig_mean
+    return df
+
 
 def train_reg(df, feat_names, model_type=&#39;rf&#39;, outcome_def=&#39;Y_max_log&#39;,
               out_name=&#39;results/regression/test.pkl&#39;, seed=42):
@@ -128,12 +146,13 @@ def train_reg(df, feat_names, model_type=&#39;rf&#39;, outcome_def=&#39;Y_max_lo
     # scores_test = {s: [] for s in scorers.keys()}
     imps = {&#39;model&#39;: [], &#39;imps&#39;: []}
 
+    cell_nums_train = np.array(list(set(df.cell_num.values)))
     kf = KFold(n_splits=len(cell_nums_train))
 
     # split testing data based on cell num
-    idxs_test = df.cell_num.isin(cell_nums_test)
-    idxs_train = df.cell_num.isin(cell_nums_train)
-    X_test, Y_test = X[idxs_test], y[idxs_test]
+    #idxs_test = df.cell_num.isin(cell_nums_test)
+    #idxs_train = df.cell_num.isin(cell_nums_train)
+    #X_test, Y_test = X[idxs_test], y[idxs_test]
     num_pts_by_fold_cv = []
     y_preds = {}
     cv_score = []
@@ -161,14 +180,15 @@ def train_reg(df, feat_names, model_type=&#39;rf&#39;, outcome_def=&#39;Y_max_lo
             cv_score.append(m.score(X_val_cv, Y_val_cv))
 
     # cv_score = cv_score/len(cell_nums_train)
-    m.fit(X[idxs_train], y[idxs_train])
-    print(cv_score)
-    test_preds = m.predict(X_test)
+    m.fit(X, y)
+    #print(cv_score)
+    #test_preds = m.predict(X_test)
     results = {&#39;y_preds&#39;: y_preds,
-               &#39;y&#39;: y[idxs_train],
-               &#39;test_preds&#39;: test_preds,
+               &#39;y&#39;: y,
+               #&#39;test_preds&#39;: test_preds,
                &#39;cv&#39;: {&#39;r2&#39;: cv_score},
                &#39;model_type&#39;: model_type,
+               &#39;model&#39;: m,
                &#39;num_pts_by_fold_cv&#39;: np.array(num_pts_by_fold_cv),
                }
     # save results
@@ -226,6 +246,32 @@ def load_results(out_dir, by_cell=True):
     return df</code></pre>
 </details>
 </dd>
+<dt id="src.train_reg.add_sig_mean"><code class="name flex">
+<span>def <span class="ident">add_sig_mean</span></span>(<span>df, resp_tracks=['Y', 'Z'])</span>
+</code></dt>
+<dd>
+<section class="desc"><p>add response of regression problem: mean auxilin strength among significant observations</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_sig_mean(df, resp_tracks=[&#39;Y&#39;, &#39;Z&#39;]):
+    &#34;&#34;&#34;
+    add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
+            if sum(sigs)&gt;0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f&#39;{track}_sig_mean&#39;] = sig_mean
+    return df</code></pre>
+</details>
+</dd>
 <dt id="src.train_reg.load_results"><code class="name flex">
 <span>def <span class="ident">load_results</span></span>(<span>out_dir, by_cell=True)</span>
 </code></dt>
@@ -272,6 +318,8 @@ def load_results(out_dir, by_cell=True):
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def log_transforms(df):
+    
+    df = add_robust_features(df)
     df[&#39;X_max_log&#39;] = np.log(df[&#39;X_max&#39;])
     df[&#39;X_95_quantile_log&#39;] = np.log(df[&#39;X_95_quantile&#39;] + 1)
     df[&#39;Y_max_log&#39;] = np.log(df[&#39;Y_max&#39;])
@@ -366,12 +414,13 @@ This will normalize the features before fitting</p>
     # scores_test = {s: [] for s in scorers.keys()}
     imps = {&#39;model&#39;: [], &#39;imps&#39;: []}
 
+    cell_nums_train = np.array(list(set(df.cell_num.values)))
     kf = KFold(n_splits=len(cell_nums_train))
 
     # split testing data based on cell num
-    idxs_test = df.cell_num.isin(cell_nums_test)
-    idxs_train = df.cell_num.isin(cell_nums_train)
-    X_test, Y_test = X[idxs_test], y[idxs_test]
+    #idxs_test = df.cell_num.isin(cell_nums_test)
+    #idxs_train = df.cell_num.isin(cell_nums_train)
+    #X_test, Y_test = X[idxs_test], y[idxs_test]
     num_pts_by_fold_cv = []
     y_preds = {}
     cv_score = []
@@ -399,14 +448,15 @@ This will normalize the features before fitting</p>
             cv_score.append(m.score(X_val_cv, Y_val_cv))
 
     # cv_score = cv_score/len(cell_nums_train)
-    m.fit(X[idxs_train], y[idxs_train])
-    print(cv_score)
-    test_preds = m.predict(X_test)
+    m.fit(X, y)
+    #print(cv_score)
+    #test_preds = m.predict(X_test)
     results = {&#39;y_preds&#39;: y_preds,
-               &#39;y&#39;: y[idxs_train],
-               &#39;test_preds&#39;: test_preds,
+               &#39;y&#39;: y,
+               #&#39;test_preds&#39;: test_preds,
                &#39;cv&#39;: {&#39;r2&#39;: cv_score},
                &#39;model_type&#39;: model_type,
+               &#39;model&#39;: m,
                &#39;num_pts_by_fold_cv&#39;: np.array(num_pts_by_fold_cv),
                }
     # save results
@@ -434,6 +484,7 @@ This will normalize the features before fitting</p>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
 <li><code><a title="src.train_reg.add_robust_features" href="#src.train_reg.add_robust_features">add_robust_features</a></code></li>
+<li><code><a title="src.train_reg.add_sig_mean" href="#src.train_reg.add_sig_mean">add_sig_mean</a></code></li>
 <li><code><a title="src.train_reg.load_results" href="#src.train_reg.load_results">load_results</a></code></li>
 <li><code><a title="src.train_reg.log_transforms" href="#src.train_reg.log_transforms">log_transforms</a></code></li>
 <li><code><a title="src.train_reg.train_reg" href="#src.train_reg.train_reg">train_reg</a></code></li>
