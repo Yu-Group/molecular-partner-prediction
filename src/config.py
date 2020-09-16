@@ -11,6 +11,7 @@ DIR_REPO = os.path.dirname(os.path.realpath(__file__)) # directory of the config
 DIR_TRACKS = oj(DIR_REPO, '..', 'data', 'tracks')
 DIR_PROCESSED = oj(DIR_REPO, '..', 'data', 'processed')
 DIR_INTERIM = oj(DIR_REPO, '..', 'data', 'interim')
+DIR_RESULTS = '/scratch/users/vision/chandan/abc'
 
 
 # raw data ################################################################################
