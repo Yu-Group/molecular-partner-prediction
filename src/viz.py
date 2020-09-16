@@ -96,7 +96,7 @@ def highlight_max(data, color='#0e5c99'):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642):
+                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -106,15 +106,18 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     '''
-
+    
+    # deal with idxs
+    if idxs is not None:
+        Y_test = Y_test[idxs]
+        preds = preds[idxs]
+        preds_proba = preds_proba[idxs]
+        df = df.iloc[idxs_cv][idxs]
+    
     # get args to sort by
-    Y_test = Y_test[idxs]
-    preds = preds[idxs]
-    preds_proba = preds_proba[idxs]
     residuals = np.abs(Y_test - preds_proba)
     args = np.argsort(residuals)[::-1]
-
-    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    dft = df.iloc[args]
     lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
@@ -132,9 +135,12 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                         transform=ax.transAxes)
                 plt.axis('off')
                 plt.plot(dft["X_extended"].iloc[i], color=cr)
-                plt.plot(dft["Y"].iloc[i], color='green')
+                plt.plot(dft["Y"].iloc[i], color=cb)
+                if plot_z:
+                    plt.plot(dft["Z"].iloc[i], color=cp)
                 i += 1
-                plt.xlim([-1, lifetime_max])
+                if xlim_constant:
+                    plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color='gray', alpha=0.5)
 
     plt.tight_layout()
