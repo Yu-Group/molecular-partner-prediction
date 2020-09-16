@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, minimum-scale=1" />
 <meta name="generator" content="pdoc 0.7.2" />
 <title>src.config API documentation</title>
-<meta name="description" content="" />
+<meta name="description" content="Set configurations for all the raw and processed datasets
+Takes in path to raw data, tracks, processed df, and then later interim data" />
 <link href='https://cdnjs.cloudflare.com/ajax/libs/normalize/8.0.0/normalize.min.css' rel='stylesheet'>
 <link href='https://cdnjs.cloudflare.com/ajax/libs/10up-sanitize.css/8.0.0/sanitize.min.css' rel='stylesheet'>
 <link href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/9.12.0/styles/github.min.css" rel="stylesheet">
@@ -20,11 +21,16 @@
 <h1 class="title">Module <code>src.config</code></h1>
 </header>
 <section id="section-intro">
+<p>Set configurations for all the raw and processed datasets
+Takes in path to raw data, tracks, processed df, and then later interim data</p>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">import os
+<pre><code class="python">&#39;&#39;&#39;Set configurations for all the raw and processed datasets
+Takes in path to raw data, tracks, processed df, and then later interim data
+&#39;&#39;&#39;
+import os
 from os.path import join as oj
 import numpy as np
 
@@ -34,6 +40,9 @@ DIR_REPO = os.path.dirname(os.path.realpath(__file__)) # directory of the config
 DIR_TRACKS = oj(DIR_REPO, &#39;..&#39;, &#39;data&#39;, &#39;tracks&#39;)
 DIR_PROCESSED = oj(DIR_REPO, &#39;..&#39;, &#39;data&#39;, &#39;processed&#39;)
 DIR_INTERIM = oj(DIR_REPO, &#39;..&#39;, &#39;data&#39;, &#39;interim&#39;)
+
+
+# raw data ################################################################################
 data_dir_orig = &#39;/scratch/users/vision/data/abc_data/auxilin_data_tracked&#39;
 d_new = &#39;/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction&#39;
 clath_aux_folder = &#39;CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data&#39;
@@ -48,6 +57,7 @@ s_a8 = &#39;CLTA-TagRFP EGFP-GAK A8&#39;
 s_dynamin = &#39;488-1.5mW 561-1.5mW 647-1.5mW Exp100ms Int1.5s&#39;
 s_clath_pi4p = &#39;cme&#39;
 s_ap2_pi4p = &#39;cme&#39;
+
 DSETS = {
     &#39;clath_aux+gak_a7d2&#39;: {  # this was the original data
         &#39;data_dir&#39;: data_dir_orig,
@@ -101,8 +111,8 @@ DSETS = {
 }
 
 
+# gt labels for original data (by pid) ################################################################################
 
-# gt labels (by pid)
 &#39;&#39;&#39;Note these labels constitute corrections to the y_consec_thresh defn (as of 02/09/2020)
 &#39;&#39;&#39;
 LABELS_ORIG = {

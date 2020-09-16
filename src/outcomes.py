@@ -18,7 +18,10 @@ def add_rule_based_label(df):
         arr_around = df['X'].iloc[i][max(0, pt - left_bf): min(pt + right_bf, lt)]
         arr_after = df['X'].iloc[i][min(pt + right_bf, lt - 1):]
         X_max_around_Y_peak.append(max(arr_around))
-        X_max_after_Y_peak.append(max(arr_after))
+        if len(arr_after) > 0:
+            X_max_after_Y_peak.append(max(arr_after))
+        else:
+            X_max_after_Y_peak.append(max(arr_around))
     df['X_max_around_Y_peak'] = X_max_around_Y_peak
     df['X_max_after_Y_peak'] = X_max_after_Y_peak
     df['X_max_diff'] = df['X_max_around_Y_peak'] - df['X_max_after_Y_peak']

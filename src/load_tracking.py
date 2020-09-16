@@ -72,7 +72,7 @@ def get_tracks(data_dir, split=None, all_data=False,
             
             # displacement features
             totalDisplacement = []
-            msd = []  # mean squared displacement
+            msd = []    # mean squared displacement
             for i in range(n):
                 try:
                     totalDisplacement.append(tracks['MotionAnalysis'][i]['totalDisplacement'])
