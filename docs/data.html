@@ -48,8 +48,10 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
              processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
              metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
              use_processed_dicts=True,
-             outcome_def=&#39;y_consec_thresh&#39;, all_data=False, acc_thresh=0.95,
-             previous_meta_file=None):
+             outcome_def=&#39;y_consec_thresh&#39;,
+             all_data: bool=False,
+             acc_thresh=0.95,
+             previous_meta_file: str=None):
     &#39;&#39;&#39;
     Params
     ------
@@ -76,18 +78,23 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
         print(&#39;\tloading tracks...&#39;)
-        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
-                        dset=dset)  # note: different Xs can be different shapes
+        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;],
+                                      split=DSET, all_data=all_data,
+                                      dset=dset)  # note: different Xs can be different shapes
 #         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
 #         print(&#39;num nans&#39;, df.isna().sum())
         df[&#39;pid&#39;] = np.arange(df.shape[0])  # assign each track a unique id
         df[&#39;valid&#39;] = True  # all tracks start as valid
+        
+        # set testing tracks to not valid
         if DSET[&#39;test&#39;] is not None:
             df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
+        # print(&#39;traininng&#39;, df.valid.sum())
 
         print(&#39;\tpreprocessing data...&#39;)
         df = remove_invalid_tracks(df)  # use catIdx
+        # print(&#39;valid&#39;, df.valid.sum())
         df = features.add_basic_features(df)
         df = outcomes.add_outcomes(df, LABELS=LABELS)
 
@@ -105,33 +112,28 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
         print(&#39;\tadding features...&#39;)
-#         df = df.replace([np.inf, -np.inf], np.nan)
-#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where some feats are NaN
-#         df = df.fillna(0) # this only does anything for the dynamin tracks, where some feats are NaN
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
-        df = features.add_binary_features(df, outcome_def=outcome_def)
+        # df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
+            print(&#39;\tsaving...&#39;)
             pkl.dump(metadata, open(metadata_file, &#39;wb&#39;))
             df.to_pickle(processed_file)
     return df
 
 
 def remove_invalid_tracks(df, keep=[1, 2]):
-    &#39;&#39;&#39;Remove certain types of tracks based on cat_idx
-    cat_idx (idx 1 and 2)
-        1-4 (non-complex trajectory - no merges and splits)
-            1 - valid
-            2 - signal occasionally drops out
-            3 - cut  - starts / ends
-            4 - multiple - at the same place (continues throughout)
-        5-8 (there is merging or splitting)
+    &#39;&#39;&#39;Remove certain types of tracks based on cat_idx.
+    Only keep cat_idx  = 1 and 2
+    1-4 (non-complex trajectory - no merges and splits)
+        1 - valid
+        2 - signal occasionally drops out
+        3 - cut  - starts / ends
+        4 - multiple - at the same place (continues throughout)
+    5-8 (there is merging or splitting)
     &#39;&#39;&#39;
-    df[&#39;lifetime_ref&#39;] = [len(x) for x in df[&#39;X&#39;]]
-    no_nan = df[&#39;lifetime&#39;] == df[&#39;lifetime_ref&#39;]
-    df = df[no_nan]
     return df[df.catIdx.isin(keep)]
 
 
@@ -349,8 +351,10 @@ the thresholds for lifetime are taken from this file</dd>
              processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
              metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
              use_processed_dicts=True,
-             outcome_def=&#39;y_consec_thresh&#39;, all_data=False, acc_thresh=0.95,
-             previous_meta_file=None):
+             outcome_def=&#39;y_consec_thresh&#39;,
+             all_data: bool=False,
+             acc_thresh=0.95,
+             previous_meta_file: str=None):
     &#39;&#39;&#39;
     Params
     ------
@@ -377,18 +381,23 @@ the thresholds for lifetime are taken from this file</dd>
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
         print(&#39;\tloading tracks...&#39;)
-        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;], split=DSET, all_data=all_data,
-                        dset=dset)  # note: different Xs can be different shapes
+        df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;],
+                                      split=DSET, all_data=all_data,
+                                      dset=dset)  # note: different Xs can be different shapes
 #         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
 #         print(&#39;num nans&#39;, df.isna().sum())
         df[&#39;pid&#39;] = np.arange(df.shape[0])  # assign each track a unique id
         df[&#39;valid&#39;] = True  # all tracks start as valid
+        
+        # set testing tracks to not valid
         if DSET[&#39;test&#39;] is not None:
             df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
+        # print(&#39;traininng&#39;, df.valid.sum())
 
         print(&#39;\tpreprocessing data...&#39;)
         df = remove_invalid_tracks(df)  # use catIdx
+        # print(&#39;valid&#39;, df.valid.sum())
         df = features.add_basic_features(df)
         df = outcomes.add_outcomes(df, LABELS=LABELS)
 
@@ -406,15 +415,13 @@ the thresholds for lifetime are taken from this file</dd>
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
         print(&#39;\tadding features...&#39;)
-#         df = df.replace([np.inf, -np.inf], np.nan)
-#         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where some feats are NaN
-#         df = df.fillna(0) # this only does anything for the dynamin tracks, where some feats are NaN
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
-        df = features.add_binary_features(df, outcome_def=outcome_def)
+        # df = features.add_binary_features(df, outcome_def=outcome_def)
         if save_processed:
+            print(&#39;\tsaving...&#39;)
             pkl.dump(metadata, open(metadata_file, &#39;wb&#39;))
             df.to_pickle(processed_file)
     return df</code></pre>
@@ -539,8 +546,9 @@ as a func of lifetime and return points within proper lifetime (only looks at tr
 <span>def <span class="ident">remove_invalid_tracks</span></span>(<span>df, keep=[1, 2])</span>
 </code></dt>
 <dd>
-<section class="desc"><p>Remove certain types of tracks based on cat_idx
-cat_idx (idx 1 and 2)
+<section class="desc"><p>Remove certain types of tracks based on cat_idx.
+Only keep cat_idx
+= 1 and 2
 1-4 (non-complex trajectory - no merges and splits)
 1 - valid
 2 - signal occasionally drops out
@@ -553,18 +561,15 @@ cat_idx (idx 1 and 2)
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def remove_invalid_tracks(df, keep=[1, 2]):
-    &#39;&#39;&#39;Remove certain types of tracks based on cat_idx
-    cat_idx (idx 1 and 2)
-        1-4 (non-complex trajectory - no merges and splits)
-            1 - valid
-            2 - signal occasionally drops out
-            3 - cut  - starts / ends
-            4 - multiple - at the same place (continues throughout)
-        5-8 (there is merging or splitting)
+    &#39;&#39;&#39;Remove certain types of tracks based on cat_idx.
+    Only keep cat_idx  = 1 and 2
+    1-4 (non-complex trajectory - no merges and splits)
+        1 - valid
+        2 - signal occasionally drops out
+        3 - cut  - starts / ends
+        4 - multiple - at the same place (continues throughout)
+    5-8 (there is merging or splitting)
     &#39;&#39;&#39;
-    df[&#39;lifetime_ref&#39;] = [len(x) for x in df[&#39;X&#39;]]
-    no_nan = df[&#39;lifetime&#39;] == df[&#39;lifetime_ref&#39;]
-    df = df[no_nan]
     return df[df.catIdx.isin(keep)]</code></pre>
 </details>
 </dd>

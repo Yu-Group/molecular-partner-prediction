@@ -231,7 +231,7 @@ def add_basic_features(df):
     df[&#39;fall_extended&#39;] = df.apply(lambda row: calc_fall(row[&#39;X_extended&#39;]), axis=1)
     df[&#39;fall_late_extended&#39;] = df.apply(lambda row: row[&#39;fall_extended&#39;] if row[&#39;X_peak_last_15&#39;] else row[&#39;fall&#39;],
                                         axis=1)
-    df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
+    # df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
 
     df[&#39;rise_slope&#39;] = df.apply(lambda row: calc_rise_slope(row[&#39;X&#39;]), axis=1)
     df[&#39;fall_slope&#39;] = df.apply(lambda row: calc_fall_slope(row[&#39;X&#39;]), axis=1)
@@ -367,7 +367,7 @@ def add_binary_features(df, outcome_def):
     df[&#39;fall_extended&#39;] = df.apply(lambda row: calc_fall(row[&#39;X_extended&#39;]), axis=1)
     df[&#39;fall_late_extended&#39;] = df.apply(lambda row: row[&#39;fall_extended&#39;] if row[&#39;X_peak_last_15&#39;] else row[&#39;fall&#39;],
                                         axis=1)
-    df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
+    # df[&#39;fall_final&#39;] = df.apply(lambda row: row[&#39;X&#39;][-3] - row[&#39;X&#39;][-1], axis=1)
 
     df[&#39;rise_slope&#39;] = df.apply(lambda row: calc_rise_slope(row[&#39;X&#39;]), axis=1)
     df[&#39;fall_slope&#39;] = df.apply(lambda row: calc_fall_slope(row[&#39;X&#39;]), axis=1)

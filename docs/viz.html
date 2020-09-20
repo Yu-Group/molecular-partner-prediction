@@ -122,7 +122,7 @@ def highlight_max(data, color=&#39;#0e5c99&#39;):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642):
+                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -132,15 +132,18 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     &#39;&#39;&#39;
-
+    
+    # deal with idxs
+    if idxs is not None:
+        Y_test = Y_test[idxs]
+        preds = preds[idxs]
+        preds_proba = preds_proba[idxs]
+        df = df.iloc[idxs_cv][idxs]
+    
     # get args to sort by
-    Y_test = Y_test[idxs]
-    preds = preds[idxs]
-    preds_proba = preds_proba[idxs]
     residuals = np.abs(Y_test - preds_proba)
     args = np.argsort(residuals)[::-1]
-
-    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    dft = df.iloc[args]
     lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
@@ -158,9 +161,12 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                         transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
                 plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=&#39;green&#39;)
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb)
+                if plot_z:
+                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp)
                 i += 1
-                plt.xlim([-1, lifetime_max])
+                if xlim_constant:
+                    plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
 
     plt.tight_layout()
@@ -211,11 +217,12 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39
     plt.show()
 
 
-def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True):
+def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
+                fig=None, ylim_constant=False, xlim_constant=True, legend=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     if fig is None:
-        plt.figure(figsize=(16, 10), dpi=200)
+        plt.figure(figsize=(16, 10), dpi=200, facecolor=&#39;white&#39;)
     lifetime_max = np.max(df.lifetime.values[:R * C])
     df = df.iloc[range(R * C)]
     for i in range(R * C):
@@ -229,7 +236,8 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constan
                 plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
-            plt.xlim([-1, lifetime_max + 1])
+            if xlim_constant:
+                plt.xlim([-1, lifetime_max + 1])
             if ylim_constant:
                 plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi(&#39;off&#39;)
@@ -759,7 +767,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.plot_curves"><code class="name flex">
-<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True)</span>
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Plot time-series curves from df</p></section>
@@ -767,11 +775,12 @@ Params</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_curves(df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, legend=True):
+<pre><code class="python">def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
+                fig=None, ylim_constant=False, xlim_constant=True, legend=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     if fig is None:
-        plt.figure(figsize=(16, 10), dpi=200)
+        plt.figure(figsize=(16, 10), dpi=200, facecolor=&#39;white&#39;)
     lifetime_max = np.max(df.lifetime.values[:R * C])
     df = df.iloc[range(R * C)]
     for i in range(R * C):
@@ -785,7 +794,8 @@ Params</p>
                 plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
-            plt.xlim([-1, lifetime_max + 1])
+            if xlim_constant:
+                plt.xlim([-1, lifetime_max + 1])
             if ylim_constant:
                 plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
     #     plt.axi(&#39;off&#39;)
@@ -938,7 +948,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -955,7 +965,7 @@ Params</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642):
+                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -965,15 +975,18 @@ Params</p>
         subset of points to plot
     
     &#39;&#39;&#39;
-
+    
+    # deal with idxs
+    if idxs is not None:
+        Y_test = Y_test[idxs]
+        preds = preds[idxs]
+        preds_proba = preds_proba[idxs]
+        df = df.iloc[idxs_cv][idxs]
+    
     # get args to sort by
-    Y_test = Y_test[idxs]
-    preds = preds[idxs]
-    preds_proba = preds_proba[idxs]
     residuals = np.abs(Y_test - preds_proba)
     args = np.argsort(residuals)[::-1]
-
-    dft = df.iloc[idxs_cv][idxs].iloc[args]
+    dft = df.iloc[args]
     lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
@@ -991,9 +1004,12 @@ Params</p>
                         transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
                 plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=&#39;green&#39;)
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb)
+                if plot_z:
+                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp)
                 i += 1
-                plt.xlim([-1, lifetime_max])
+                if xlim_constant:
+                    plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
 
     plt.tight_layout()

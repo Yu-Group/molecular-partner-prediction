@@ -1,6 +1,6 @@
 # predicting auxilin spikes in clathrin-mediated endocytosis
 
-![](reports/figs/fig_pipeline.jpg)
+![](https://yu-group.github.io/auxilin-prediction/reports/figs/fig_pipeline.jpg)
 
 ## quickstart
 - **download data**: download cached data after tracking from [this gdrive folder](https://drive.google.com/drive/folders/1mh2wn0KLtj90j_rfgPUGEJgMZAEl0Yi7?usp=sharing) - should be added to the folder `data/tracks`
