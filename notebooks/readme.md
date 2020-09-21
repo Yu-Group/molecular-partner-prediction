@@ -1,13 +1,13 @@
 This is an overview of the markdown contents of all the notebooks / scripts in this directory.
 
-# 00_eda_images.md
+# 00_eda_images
 
 
 #### TP/FP videos
 
 ## kymographs
 
-# 00_eda_tracks.md
+# 00_eda_tracks
 
 
 ## look at tracks themselves
@@ -35,15 +35,15 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ###### Random projections
 
-# 01_reg_amplitude.md
+# 01_reg_amplitude
 
 
 ###### Max strength prediction
 
-# 01_reg_timing.md
+# 01_reg_timing
 
 
-# 02_defn_y_manual.md
+# 02_defn_y_manual
 
 
 ## unsure tracks
@@ -63,17 +63,17 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## label checking
 
-# 02_defn_y_rules.md
+# 02_defn_y_rules
 
 
 ## unsure tracks
 
 ## rest of nb is finding rules to define outcome
 
-# 03_classify.md
+# 03_classify
 
 
-# 04_analyze_results.md
+# 04_analyze_results
 
 
 **baseline stats**
@@ -82,7 +82,7 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 **look at feat importances**
 
-# 05_posthoc_analysis.md
+# 05_posthoc_analysis
 
 
 ## look at single model
@@ -103,7 +103,7 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 **venn-diagram**
 
-# 06_transfer.md
+# 06_transfer
 
 
 ## accuracies on different test datasets
@@ -120,20 +120,20 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## viz biggest errs
 
-# 07_calc_dists.md
+# 07_calc_dists
 
 
-# 07_match_errs.md
+# 07_match_errs
 
 
 ## example
 
 ## look at closest pairs
 
-# 08_eda_limits.md
+# 08_eda_limits
 
 
-# 09_eda_dynamin.md
+# 09_eda_dynamin
 
 
 ## load dynamin tracks directly
