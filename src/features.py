@@ -252,3 +252,90 @@ def add_binary_features(df, outcome_def):
         thresh = threshes.loc[k]
         df[k + '_binary'] = df[k] >= thresh
     return df
+
+def add_dasc_features(df, bins=100, by_cell=True):
+    """
+    add DASC features from Wang et al. 2020 paper
+    
+    Parameters:
+        df: pd.DataFrame
+        
+        bins: int
+            number of bins 
+            default value is 100: the intensity level of clathrin is assigned to 100 equal-length bins
+            from vmin(min intensity across all tracks) to vmax(max intensity across all tracks)
+            
+        by_cell: Boolean
+            whether to do binning within each cell
+    """
+    x_dist = {}
+    n = len(df)
+    
+    # gather min and max clathrin intensity within each cell
+    if by_cell == True:
+        for cell in set(df['cell_num']):
+            x = []
+            cell_idx = np.where(df['cell_num'].values == cell)[0]
+            for i in cell_idx:
+                x += df['X'].values[i]
+            x_dist[cell] = (min(x), max(x))
+    else:
+        x = []
+        for i in range(n):
+            x += df['X'].values[i]
+        for cell in set(df['cell_num']):
+            x_dist[cell] = (min(x), max(x))
+    
+    # transform the clathrin intensity to a value between 0 to 100
+    X_quantiles = []
+    for i in range(n):
+        r = df.iloc[i]
+        cell = r['cell_num']
+        X_quantiles.append([np.int(1.0*bins*(x - x_dist[cell][0])/(x_dist[cell][1] - x_dist[cell][0])) if not np.isnan(x) else 0 for x in r['X']])
+    df['X_quantiles'] = X_quantiles
+    
+    # compute transition probability between different intensities, for different frames
+    trans_prob = {}
+    tmax = max([len(df['X_quantiles'].values[i]) for i in range(len(df))])
+    for t in range(tmax - 1):
+        int_pairs = []
+        for i in range(n):
+            if len(df['X_quantiles'].values[i]) > t + 1:
+                int_pairs.append([df['X_quantiles'].values[i][t], df['X_quantiles'].values[i][t + 1]])
+        int_pairs = np.array(int_pairs)
+        trans_prob_t = {}
+        for i in range(bins + 1):
+            x1 = np.where(int_pairs[:,0]== i)[0]
+            lower_states_num = np.zeros((i, 2))
+            for j in range(len(int_pairs)):
+                if int_pairs[j, 0] < i:
+                    lower_states_num[int_pairs[j, 0], 0] += 1
+                    if int_pairs[j, 1] == i:
+                        lower_states_num[int_pairs[j, 0], 1] += 1
+            lower_prob = [1.*lower_states_num[k, 1]/lower_states_num[k, 0] for k in range(i) if lower_states_num[k, 0] > 0]
+            trans_prob_t[i] = (np.nanmean(int_pairs[x1,1] < i), 
+                               #np.nanmean(int_pairs[x1,1] > i)
+                              sum(lower_prob)
+                              )  
+        trans_prob[t] = trans_prob_t
+        
+    # compute D sequence 
+    X_d = [[] for i in range(len(df))]
+    for i in range(len(df)):
+        for j, q in enumerate(df['X_quantiles'].values[i][:-1]):
+            probs = trans_prob[j][q]
+            if 0 < probs[0] and 0 < probs[1]:
+                X_d[i].append(np.log(probs[0]/probs[1]))
+            else:
+                X_d[i].append(0)
+                
+    # compute features
+    d1 = [np.mean(x) for x in X_d]
+    d2 = [np.log(max((np.max(x) - np.min(x))/len(x), 1e-4)) for x in X_d]
+    d3 = [skew(x) for x in X_d]
+    df['X_d1'] = d1
+    df['X_d2'] = d2
+    df['X_d3'] = d3
+    
+    return df
+
