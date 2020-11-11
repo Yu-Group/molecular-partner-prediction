@@ -96,7 +96,8 @@ def highlight_max(data, color='#0e5c99'):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
+                     num_to_plot=20, aux_thresh=642,
+                     plot_x=True, plot_z=False, xlim_constant=True):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -137,10 +138,11 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                         horizontalalignment='right',
                         transform=ax.transAxes)
                 plt.axis('off')
-                plt.plot(dft["X_extended"].iloc[i], color=cr)
-                plt.plot(dft["Y"].iloc[i], color=cb)
+                if plot_x:
+                    plt.plot(dft["X"].iloc[i], color=cr, label='clath') # could do X_extended
+                plt.plot(dft["Y"].iloc[i], color=cb, label='aux')
                 if plot_z:
-                    plt.plot(dft["Z"].iloc[i], color=cp)
+                    plt.plot(dft["Z"].iloc[i], color=cp, label='dyn')
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
@@ -195,7 +197,7 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
 
 
 def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True):
+                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     '''Plot time-series curves from df
     '''
     if fig is None:
@@ -206,7 +208,8 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            plt.plot(row.X, color=cr, label='clathrin')
+            if plot_x:
+                plt.plot(row.X, color=cr, label='clathrin')
             if extra_key is not None:
                 plt.plot(row[extra_key], color='gray', label=extra_key)
             else:
