@@ -51,6 +51,9 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
     else:
         print('loading + preprocessing data...')
         metadata = {}
+        
+        
+        # load tracks
         print('\tloading tracks...')
         df = load_tracking.get_tracks(data_dir=DSET['data_dir'],
                                       split=DSET, all_data=all_data,
@@ -64,8 +67,11 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         if DSET['test'] is not None:
             df['valid'][df.cell_num.isin(DSET['test'])] = False
         metadata['num_tracks'] = df.valid.sum()
-        # print('traininng', df.valid.sum())
+        # print('training', df.valid.sum())
 
+        
+        
+        # preprocess data
         print('\tpreprocessing data...')
         df = remove_invalid_tracks(df)  # use catIdx
         # print('valid', df.valid.sum())
@@ -85,6 +91,8 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         metadata['num_tracks_hard'] = df['valid'].sum()
         metadata['num_aux_pos_hard'] = int(df[df.valid == 1][outcome_def].sum())
 
+        
+        # add features
         print('\tadding features...')
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
@@ -256,10 +264,10 @@ if __name__ == '__main__':
     
     # process new data (using lifetime thresholds from original data)
     outcome_def = 'y_consec_sig'
-    for dset in ['clath_aux_dynamin']:
-#     for dset in config.DSETS.keys():
-        df = get_data(dset=dset,
-                      previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
+#     for dset in ['clath_aux_dynamin']:
+    for dset in config.DSETS.keys():
+        df = get_data(dset=dset, previous_meta_file=None)
+        # df = get_data(dset=dset, previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+',
               df[outcome_def].sum(), 'aux+ fraction', (df[outcome_def].sum() / df.shape[0]).round(3),
               'valid', df.valid.sum(), 'valid aux+', df[df.valid][outcome_def].sum(), 'valid aux+ fraction',

@@ -106,12 +106,15 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     '''
+
     
     # deal with idxs
     if idxs is not None:
         Y_test = Y_test[idxs]
         preds = preds[idxs]
         preds_proba = preds_proba[idxs]
+        if idxs_cv is None:
+            idxs_cv = np.arange(df.shape[0])
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by

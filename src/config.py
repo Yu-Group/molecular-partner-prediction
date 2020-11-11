@@ -49,7 +49,7 @@ DSETS = {
         'train': np.array([f'{s_clath_aux}/{i}' for i in [1, 2, 5, 6, 7, 8, 9, 10]]),
         'test': np.array([f'{s_clath_aux}/{i}' for i in [11, 12]])
     },
-    'clath_aux_dynamin': {
+    'clath_aux_dynamin': {  # this is 3-channel data
         'data_dir': oj(d_new, dynamin_folder),        
         'feature_selection': None,
         'train': np.array([f'{s_dynamin}_{i}/1_1.5s' for i in [4, 5, 6]] + 
