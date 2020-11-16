@@ -14,6 +14,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 import trend_filtering
 import data
+from scipy.stats import skew, pearsonr
+
 
 
 def add_pcs(df):
@@ -149,8 +151,8 @@ def add_basic_features(df):
     df['X_peak_idx'] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
     df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
     df['X_peak_time_frac'] = df['X_peak_idx'].values / df['lifetime'].values
-    df['slope_end'] = df.apply(lambda row: (row['X_max'] - row['X'][-1]) / (row['lifetime'] - row['X_peak_idx']),
-                               axis=1)
+#     df['slope_end'] = df.apply(lambda row: (row['X_max'] - row['X'][-1]) / (row['lifetime'] - row['X_peak_idx']),
+#                                axis=1)
     df['X_peak_last_15'] = df['X_peak_time_frac'] >= 0.85
     df['X_peak_last_5'] = df['X_peak_time_frac'] >= 0.95
 

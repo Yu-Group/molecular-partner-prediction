@@ -94,6 +94,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         
         # add features
         print('\tadding features...')
+        df = features.add_dasc_features(df)
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
@@ -234,8 +235,8 @@ def get_feature_names(df):
 
 def select_final_feats(feat_names, binarize=False):
     feat_names = [x for x in feat_names
-                  if not x.startswith('sc_')
-                  and not x.startswith('nmf_')
+                  if not x.startswith('sc_')  # sparse coding
+                  and not x.startswith('nmf_') # nmf
                   and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max',
                                 'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak']
                   and not x.startswith('pc_')
