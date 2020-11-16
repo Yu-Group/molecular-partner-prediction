@@ -165,7 +165,9 @@ def normalize(df, outcome_def):
     X_mean = X.mean()
     X_std = X.std()
     ks = list(X.keys())
-    norms = {ks[i]: {'mu': X_mean[i], 'std': X_std[i]} for i in range(len(ks))}
+    
+    norms = {ks[i]: {'mu': X_mean[i], 'std': X_std[i]}
+             for i in range(len(ks))}
     X = (X - X_mean) / X_std
     y = df[outcome_def].values
     return X, y, norms

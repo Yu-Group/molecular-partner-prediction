@@ -227,7 +227,8 @@ def get_feature_names(df):
                          'X_max_around_Y_peak', 'X_max_after_Y_peak',  # redudant with X_max / fall
                          'X_max_diff', 'X_peak_idx',  # unlikely to be useful
                          't', 'x_pos_seq', 'y_pos_seq',  # curves
-                         'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x'  # curves
+                         'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x',  # curves
+                         'X_quantiles',
                          ]
     ]
     return feat_names
@@ -241,14 +242,15 @@ def select_final_feats(feat_names, binarize=False):
                                 'X_max_around_Y_peak', 'X_max_after_Y_peak', 'X_max_diff_after_Y_peak']
                   and not x.startswith('pc_')
                   and not 'extended' in x
+                  and not x == 'slope_end'
+                  and not '_tf_smooth' in x
+                  and not 'local' in x
+                  and not 'last' in x
+                  and not x == 'X_quantiles'
                   #               and not 'X_peak' in x
                   #               and not 'slope' in x
                   #               and not x in ['fall_final', 'fall_slope', 'fall_imp', 'fall']
                   ]
-    feat_names = [x for x in feat_names if not '_tf_smooth' in x]
-    feat_names = [x for x in feat_names if not 'local' in x]
-    feat_names = [x for x in feat_names if not 'last' in x]
-    # feat_names = [x for x in feat_names if '_tf_smooth' in x]
 
     if binarize:
         feat_names = [x for x in feat_names if 'binary' in x]

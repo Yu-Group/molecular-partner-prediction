@@ -4,31 +4,34 @@ from matplotlib import pyplot as plt
 import os
 from os.path import join as oj
 plt.style.use('dark_background')
+import sys
+sys.path.append('../src')
 import data
 from tqdm import tqdm
-from util import train
-from util.style import *
+from src import train
+# from src.viz import *
 import config
 
 if __name__ == '__main__':
     # some settings
     outcome_def = 'y_consec_thresh'
-    out_dir = oj('/scratch/users/vision/chandan/abc', 'sep15')
-    DSET = config.DSETS['clath_aux+gak_a7d2']
+    out_dir = oj('/scratch/users/vision/chandan/abc', 'nov16')
+    dset_key = 'clath_aux+gak_a7d2'
+    dset = config.DSETS[dset_key]
     binarize = False # True
     
     
     # get data
-    df = data.get_data(use_processed=True)
+    df = data.get_data(dset=dset_key)
     df = df[df['valid']] # exclude test cells, short/long tracks, hotspots
     feat_names = data.get_feature_names(df)
     feat_names = data.select_final_feats(feat_names, binarize=binarize)
-    print(feat_names)
     print('num feats', len(feat_names))
-
+    print(feat_names)
+    
     # run
     os.makedirs(out_dir, exist_ok=True)
-    feature_selection_nums = [2, 3, 4, 5, 6, 7, 8, 9, 15, 100] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
+    feature_selection_nums = [2, 3, 4, 5, 6, 7, 8, 9, 15, len(feat_names)] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
     for calibrated in [True, False]:
         for feature_selection_num in feature_selection_nums:
             for feature_selection in ['select_lasso', 'select_rf']: # select_lasso, select_rf, None
@@ -43,8 +46,8 @@ if __name__ == '__main__':
                                     feats = feat_names[:num_feats]
                                     out_name = f'{model_type}_{num_feats}_{feature_selection}={feature_selection_num}_{balancing}={balancing_ratio}_h={hyperparam}_cal={calibrated}'
                                     train.train(df, feat_names=feats,
-                                                cell_nums_feature_selection=DSET['feature_selection'],
-                                                cell_nums_train=DSET['train'],
+                                                cell_nums_feature_selection=dset['feature_selection'],
+                                                cell_nums_train=dset['train'],
                                                 model_type=model_type, 
                                                 balancing=balancing, balancing_ratio=balancing_ratio,
                                                 outcome_def=outcome_def,
