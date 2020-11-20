@@ -10,4 +10,4 @@
 
 ## acknowledgements
 - this is a collaboration between the Berkeley [Yu-Group](https://www.stat.berkeley.edu/~yugroup/) and the [Berkeley Advanced Bioimaging Center](http://abc.berkeley.edu/)
-- uses code from several wonderful packages including [cmeAnalysis](https://github.com/DanuserLab/cmeAnalysis) (DanuserLab) and sklearn
+- uses code from several wonderful packages including [cmeAnalysis](https://github.com/DanuserLab/cmeAnalysis) (DanuserLab)

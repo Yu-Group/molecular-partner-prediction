@@ -13,7 +13,7 @@ from src import train
 import config
 
 if __name__ == '__main__':
-    # some settings
+    # some settings 
     outcome_def = 'y_consec_thresh'
     out_dir = oj('/scratch/users/vision/chandan/abc', 'nov16')
     dset_key = 'clath_aux+gak_a7d2'
@@ -31,7 +31,7 @@ if __name__ == '__main__':
     
     # run
     os.makedirs(out_dir, exist_ok=True)
-    feature_selection_nums = [2, 3, 4, 5, 6, 7, 8, 9, 15, len(feat_names)] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
+    feature_selection_nums = [2, 3, 4, 5, 6, 7, 8] #, 9, 15, len(feat_names)] #[3, 5, 7, 12, 16]: # number of feature to select [4, 9, 11, 23, 35, 39]
     for calibrated in [True, False]:
         for feature_selection_num in feature_selection_nums:
             for feature_selection in ['select_lasso', 'select_rf']: # select_lasso, select_rf, None
