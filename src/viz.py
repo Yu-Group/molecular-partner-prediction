@@ -17,6 +17,9 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
+import os
+DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
+DIR_FIGS = oj(DIR_FILE, '../reports/figs')
 
 cb2 = '#66ccff'
 cb = '#1f77b4'
@@ -24,6 +27,12 @@ cr = '#cc0000'
 cp = '#cc3399'
 cy = '#d8b365'
 cg = '#5ab4ac'
+
+def savefig(s: str):
+#     plt.tight_layout()
+    plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.pdf'))
+#     plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.png'), dpi=300)
+    
 
 
 def plot_confusion_matrix(y_true, y_pred, classes,
@@ -97,6 +106,7 @@ def highlight_max(data, color='#0e5c99'):
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642,
+                     show_track_num=True,
                      plot_x=True, plot_z=False, xlim_constant=True):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
@@ -134,9 +144,10 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         for c in range(C):
             if i < dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
-                ax.text(.5, .9, f'{dft.pid.iloc[i]}',
-                        horizontalalignment='right',
-                        transform=ax.transAxes)
+                if show_track_num:
+                    ax.text(.5, .9, f'{dft.pid.iloc[i]}',
+                            horizontalalignment='right',
+                            transform=ax.transAxes)
                 plt.axis('off')
                 if plot_x:
                     plt.plot(dft["X"].iloc[i], color=cr, label='clath') # could do X_extended
@@ -440,7 +451,8 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     accs = np.cumsum(accs) / np.arange(1, n + 1)
 
     plt.figure(dpi=500)
-    dv = df[(df.cell_num.isin(data.cell_nums_train)) & (~df.hotspots)]
+    TRAIN_CV_CELLS = config.DSETS['clath_aux+gak_a7d2']['train']
+    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) & (~df.hotspots)]
     ds = dv[dv.short]
     argss = np.argsort(ds.lifetime.values)
     accs_s = (1 - ds[outcome_def]).values[argss]
@@ -461,13 +473,13 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     nl = accs_l.size
     if plot_vert_line_for_high_lifetimes:
         plt.axvline(ns, lw=0.5, color='gray')
-    plt.axvline(ns + nl, lw=0.5)
+    plt.axvline(ns + nl, lw=2.5, color='black')
     nums = np.arange(1, accs.size + 1)
-    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label='pred aux-', color=cr)
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label='with model', color=cb)
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
+    plt.plot(nums[20:ns], np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color=cy)
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cg)
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=cy)
     plt.xlabel('Number of tracks included (sorted by uncertainty)')
-    plt.ylabel('Cumulative accuracy')
+    plt.ylabel('Accuracy')
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()

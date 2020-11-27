@@ -1,3 +1,5 @@
+figure.autolayout : True
+
 axes.titlesize : 20
 axes.spines.top:    False
 axes.spines.right:  False
