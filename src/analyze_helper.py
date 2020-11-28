@@ -9,6 +9,7 @@ from colorama import Fore
 import pickle as pkl
 import config
 import viz
+from config import *
 
 
 def load_results(out_dir):
@@ -172,6 +173,26 @@ def normalize(df, outcome_def):
     y = df[outcome_def].values
     return X, y, norms
 
+def normalize_and_predict(m0, feat_names_selected, dset_name, normalize_by_train, outcome_def='y_consec_thresh'):
+    df_new = data.get_data(dset=dset_name, use_processed=True,
+                           use_processed_dicts=True, outcome_def=outcome_def,
+                           previous_meta_file=oj(DIR_PROCESSED,
+                                                 'metadata_clath_aux+gak_a7d2.pkl'))
+    df_new = df_new[df_new['valid']] # exclude test cells, short/long tracks, hotspots
+    
+    # impute (only does anything for dynamin data)
+    df_new = df_new.fillna(df_new.median())
+    
+    X_new = df_new[data.get_feature_names(df_new)]
+    if normalize_by_train:
+        X_new = (X_new - X_mean_train) / X_std_train
+    else:
+        X_new = (X_new - X_new.mean()) / X_new.std()
+    y_new = df_new[outcome_def].values
+    preds_new = m0.predict(X_new[feat_names_selected]) 
+    preds_proba_new = m0.predict_proba(X_new[feat_names_selected])[:, 1]
+    Y_maxes = df_new['Y_max']
+    return df_new, y_new, preds_new, preds_proba_new, Y_maxes
 
 def calc_errs(preds, y_full_cv):
     tp = np.logical_and(preds == 1, y_full_cv == 1)

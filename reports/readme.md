@@ -1,1 +1,1 @@
-Figures are created mostly with this notebook and the posthoc_analysis notebook.
+These notebooks recreate most of the figures that appear in the paper.
