@@ -250,7 +250,7 @@ def add_binary_features(df, outcome_def):
     '''
     feat_names = data.get_feature_names(df)
     threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
-    for i, k in enumerate(feat_names):
+    for i, k in tqdm(enumerate(feat_names)):
         thresh = threshes.loc[k]
         df[k + '_binary'] = df[k] >= thresh
     return df

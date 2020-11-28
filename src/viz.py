@@ -483,6 +483,7 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()
+    print('total acc', (np.cumsum(accs)[ns:] / nums[ns:])[-1])
 
 
 def plot_example(ex):
