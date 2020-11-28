@@ -173,12 +173,14 @@ def normalize(df, outcome_def):
     y = df[outcome_def].values
     return X, y, norms
 
-def normalize_and_predict(m0, feat_names_selected, dset_name, normalize_by_train, outcome_def='y_consec_thresh'):
+def normalize_and_predict(m0, feat_names_selected, dset_name, normalize_by_train,
+                          exclude_easy_tracks=False, outcome_def='y_consec_thresh'):
     df_new = data.get_data(dset=dset_name, use_processed=True,
                            use_processed_dicts=True, outcome_def=outcome_def,
                            previous_meta_file=oj(DIR_PROCESSED,
                                                  'metadata_clath_aux+gak_a7d2.pkl'))
-    df_new = df_new[df_new['valid']] # exclude test cells, short/long tracks, hotspots
+    if exclude_easy_tracks:
+        df_new = df_new[df_new['valid']] # exclude test cells, short/long tracks, hotspots
     
     # impute (only does anything for dynamin data)
     df_new = df_new.fillna(df_new.median())
