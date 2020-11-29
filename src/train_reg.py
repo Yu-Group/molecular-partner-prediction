@@ -12,6 +12,11 @@ from sklearn.neural_network import MLPRegressor
 from sklearn.svm import SVR
 from sklearn.tree import DecisionTreeRegressor
 from statsmodels import robust
+import features
+import data
+import config
+from tqdm import tqdm
+from scipy.stats import pearsonr, kendalltau
 
 #cell_nums_train = np.array([1, 2, 3, 4, 5])
 #cell_nums_test = np.array([6])
@@ -80,6 +85,11 @@ def add_sig_mean(df, resp_tracks=['Y', 'Z']):
             else:
                 sig_mean.append(0)
         df[f'{track}_sig_mean'] = sig_mean
+        df[f'{track}_sig_mean_normalized'] = sig_mean
+        for cell in set(df['cell_num']):
+            cell_idx = np.where(df['cell_num'].values == cell)[0]
+            y = df[f'{track}_sig_mean_normalized'].values[cell_idx]
+            df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
 
@@ -196,3 +206,74 @@ def load_results(out_dir, by_cell=True):
     r = r.round(3)
     r = r.set_index('model_type')
     return r
+
+def load_and_train(dset, outcome_def, out_dir, feat_names=None, use_processed=True):
+    
+    df = pd.read_pickle(f'../data/tracks/tracks_{dset}.pkl')
+    if dset == 'clath_aux_dynamin':
+        df = df[df.catIdx.isin([1, 2])]
+        df = df[df.lifetime > 15]
+    else:
+        df = df[df['valid'] == 1] 
+    df = features.add_basic_features(df)
+    df = log_transforms(df)
+    df = add_sig_mean(df)
+    df_train = df[df.cell_num.isin(config.DSETS[dset]['train'])] 
+    df_test = df[df.cell_num.isin(config.DSETS[dset]['test'])] 
+    df_train = df_train.dropna()
+    
+    #outcome_def = 'Z_sig_mean'
+    #out_dir = 'results/regression/Sep15'
+    os.makedirs(out_dir, exist_ok=True)
+    if not feat_names:
+        feat_names = data.get_feature_names(df_train)
+        feat_names = [x for x in feat_names 
+                      if not x.startswith('sc_') 
+                      and not x.startswith('nmf_')
+                      and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max',
+                                   'X_max_around_Y_peak', 'X_max_after_Y_peak']
+                      and not x.startswith('pc_')
+                      and not 'log' in x
+                      and not 'binary' in x
+        #               and not 'slope' in x
+                     ]
+    for model_type in tqdm(['linear', 'gb', 'rf', 'svm', 'ridge']):
+        out_name = f'{model_type}'
+                        #print(out_name)
+        if use_processed and os.path.exists(f'{out_dir}/{out_name}.pkl'):
+            continue
+        train_reg(df_train, feat_names=feat_names, model_type=model_type, 
+                     outcome_def=outcome_def,
+                     out_name=f'{out_dir}/{out_name}.pkl')    
+        
+def test_reg(df, 
+             model, 
+             feat_names=None, 
+             outcome_def='Y_max_log',
+             out_name='results/regression/test.pkl', 
+             seed=42):
+
+    np.random.seed(seed)
+    if not feat_names:
+        feat_names = data.get_feature_names(df)
+        feat_names = [x for x in feat_names 
+                      if not x.startswith('sc_') 
+                      and not x.startswith('nmf_')
+                      and not x in ['center_max', 'left_max', 'right_max', 'up_max', 'down_max',
+                                   'X_max_around_Y_peak', 'X_max_after_Y_peak']
+                      and not x.startswith('pc_')
+                      and not 'log' in x
+                      and not 'binary' in x
+        #               and not 'slope' in x
+                     ]
+    X = df[feat_names]
+    # X = (X - X.mean()) / X.std() # normalize the data
+    test_preds = model.predict(X)
+    results = {'preds': test_preds}
+    if outcome_def in df.keys():
+        y = df[outcome_def].values
+        results['r2'] = r2_score(y, test_preds)
+        results['pearsonr'] = pearsonr(y, test_preds)
+        results['kendalltau'] = kendalltau(y, test_preds)
+        
+    return results
