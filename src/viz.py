@@ -220,11 +220,11 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
             if plot_x:
-                plt.plot(row.X, color=cr, label='clathrin')
+                plt.plot(row.X, color=cr, label='Clathrin')
             if extra_key is not None:
                 plt.plot(row[extra_key], color='gray', label=extra_key)
             else:
-                plt.plot(row.Y, color=cb, label='auxilin')
+                plt.plot(row.Y, color=cb, label='Auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             if xlim_constant:
