@@ -18,11 +18,14 @@ from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
 import os
+import matplotlib.ticker as mtick
+
 DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 DIR_FIGS = oj(DIR_FILE, '../reports/figs')
 
 cb2 = '#66ccff'
 cb = '#1f77b4'
+co = '#ff7f0e'
 cr = '#cc0000'
 cp = '#cc3399'
 cy = '#d8b365'
@@ -34,6 +37,8 @@ def savefig(s: str):
 #     plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.png'), dpi=300)
     
 
+def fix_feat_name(s):
+    return s.replace('_', ' ').replace('X', 'Clath').capitalize()
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -224,7 +229,7 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
             if extra_key is not None:
                 plt.plot(row[extra_key], color='gray', label=extra_key)
             else:
-                plt.plot(row.Y, color=cb, label='Auxilin')
+                plt.plot(row.Y, color=cg, label='Auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             if xlim_constant:
@@ -451,6 +456,7 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     accs = np.cumsum(accs) / np.arange(1, n + 1)
 
     plt.figure(dpi=500)
+    ax = plt.subplot(111)
     TRAIN_CV_CELLS = config.DSETS['clath_aux+gak_a7d2']['train']
     dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) & (~df.hotspots)]
     ds = dv[dv.short]
@@ -473,13 +479,18 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     nl = accs_l.size
     if plot_vert_line_for_high_lifetimes:
         plt.axvline(ns, lw=0.5, color='gray')
-    plt.axvline(ns + nl, lw=2.5, color='black')
-    nums = np.arange(1, accs.size + 1)
-    plt.plot(nums[20:ns], np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color=cy)
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cg)
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=cy)
-    plt.xlabel('Number of tracks included (sorted by uncertainty)')
+    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color='black')
+    nums = np.arange(1, accs.size + 1) 
+    nums = nums / nums.size * 100
+    plt.plot(nums[20:ns], np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color='gray')
+    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cb)
+    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color='gray')
+    plt.xlabel('Percentage of tracks included (sorted by uncertainty)')
     plt.ylabel('Accuracy')
+    fmt = '%.0f%%' # Format you want the ticks, e.g. '40%'
+    xticks = mtick.FormatStrFormatter(fmt)
+    ax.xaxis.set_major_formatter(xticks)
+
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()
