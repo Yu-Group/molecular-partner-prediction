@@ -159,11 +159,12 @@ def train_reg(df,
     y_preds = {}
     cv_score = []
     
+    print("Looping over cv...")
     # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
-    for cv_idx, cv_val_idx in kf.split(cell_nums_train):
+    for cv_idx, cv_val_idx in tqdm(kf.split(cell_nums_train)):
         # get sample indices
         
-        print("Cross validation, fold {cv_val_idx}")
+        
         idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
         idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
@@ -183,7 +184,8 @@ def train_reg(df,
         else:
             #print(r2_score(Y_val_cv, preds))
             cv_score.append(r2_score(Y_val_cv, preds))
-
+    
+    print("Training with full data...")
     # cv_score = cv_score/len(cell_nums_train)
     m.fit(X, y)
     #print(cv_score)
