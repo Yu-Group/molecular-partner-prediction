@@ -341,3 +341,31 @@ def add_dasc_features(df, bins=100, by_cell=True):
     
     return df
 
+def downsample(x, length):
+    
+    """
+    downsample (clathrin) track
+    
+    Parameters:
+    ==========================================================
+        x: list
+            original clathrin track (of different lengths)
+            
+        length: int
+            length of track after downsampling
+            
+    Returns:
+    ==========================================================
+        x_ds: list
+            downsampled track
+    """
+    
+    x = np.array(x)[np.where(np.isnan(x) == False)]
+    n = len(x)
+    if n >= length:   
+        # if length of original track is greater than targeted length, downsample     
+        x_ds = [x[np.int(1.0 * (n-1) * i/(length - 1))] for i in range(length)]
+    else:
+        # if length of original track is smaller than targeted length, fill the track with 0s
+        x_ds = list(x) + [0]*(length - len(x))
+    return x_ds

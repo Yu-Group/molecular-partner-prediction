@@ -17,6 +17,7 @@ import data
 import config
 from tqdm import tqdm
 from scipy.stats import pearsonr, kendalltau
+from neural_networks import fcnn_sklearn
 
 #cell_nums_train = np.array([1, 2, 3, 4, 5])
 #cell_nums_test = np.array([6])
@@ -71,7 +72,7 @@ def log_transforms(df):
                                        axis=1)
     return df
 
-def add_sig_mean(df, resp_tracks=['Y', 'Z']):
+def add_sig_mean(df, resp_tracks=['Y']):
     """
     add response of regression problem: mean auxilin strength among significant observations
     """
@@ -93,16 +94,17 @@ def add_sig_mean(df, resp_tracks=['Y', 'Z']):
     return df
 
 
-def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
-              out_name='results/regression/test.pkl', seed=42):
-    '''Run training and fit models
-    This will balance the data
-    This will normalize the features before fitting
+def train_reg(df, 
+              feat_names, 
+              model_type='rf', 
+              outcome_def='Y_max_log',
+              out_name='results/regression/test.pkl', 
+              seed=42,
+              **kwargs):
+    '''
+    train regression model
     
-    Params
-    ------
-    normalize: bool
-        if True, will normalize features before fitting
+    hyperparameters of model can be specified using **kwargs
     '''
     np.random.seed(seed)
     X = df[feat_names]
@@ -119,12 +121,28 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
         m = RidgeCV()
     elif model_type == 'svm':
         m = SVR(gamma='scale')
-    elif model_type == 'mlp2':
-        m = MLPRegressor(hidden_layer_sizes=(10,), max_iter=2000)
     elif model_type == 'gb':
         m = GradientBoostingRegressor()
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
+    elif model_type == 'fcnn':
+        
+        """
+        train fully connected neural network
+        """
+        
+        D_in = len(df['X_same_length'].iloc[0])
+        H = kwargs['fcnn_hidden_neurons'] if 'fcnn_hidden_neurons' in kwargs else 40
+        epochs = kwargs['fcnn_epochs'] if 'fcnn_epochs' in kwargs else 1000
+        batch_size = kwargs['fcnn_batch_size'] if 'fcnn_batch_size' in kwargs else 1000
+        track_name = kwargs['track_name'] if 'track_name' in kwargs else 'X_same_length'
+        
+        m = fcnn_sklearn(D_in=D_in, 
+                         H=H, 
+                         p=len(feat_names)-1,
+                         epochs=epochs,
+                         batch_size=batch_size,
+                         track_name=track_name)
 
     # scores_cv = {s: [] for s in scorers.keys()}
     # scores_test = {s: [] for s in scorers.keys()}
@@ -140,10 +158,12 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
     num_pts_by_fold_cv = []
     y_preds = {}
     cv_score = []
-
+    
     # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
     for cv_idx, cv_val_idx in kf.split(cell_nums_train):
         # get sample indices
+        
+        print("Cross validation, fold {cv_val_idx}")
         idxs_cv = df.cell_num.isin(cell_nums_train[np.array(cv_idx)])
         idxs_val_cv = df.cell_num.isin(cell_nums_train[np.array(cv_val_idx)])
         X_train_cv, Y_train_cv = X[idxs_cv], y[idxs_cv]
@@ -161,7 +181,8 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
         if 'log' in outcome_def:
             cv_score.append(r2_score(np.exp(Y_val_cv), np.exp(preds)))
         else:
-            cv_score.append(m.score(X_val_cv, Y_val_cv))
+            #print(r2_score(Y_val_cv, preds))
+            cv_score.append(r2_score(Y_val_cv, preds))
 
     # cv_score = cv_score/len(cell_nums_train)
     m.fit(X, y)
@@ -172,9 +193,11 @@ def train_reg(df, feat_names, model_type='rf', outcome_def='Y_max_log',
                #'test_preds': test_preds,
                'cv': {'r2': cv_score},
                'model_type': model_type,
-               'model': m,
+               #'model': m,
                'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
                }
+    if model_type in ['rf', 'linear', 'ridge', 'gb', 'svm', 'irf']:
+        results['model'] = m
     # save results
     # os.makedirs(out_dir, exist_ok=True)
 
