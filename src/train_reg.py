@@ -159,6 +159,7 @@ def train_reg(df,
     num_pts_by_fold_cv = []
     y_preds = {}
     cv_score = []
+    cv_pearsonr = []
     
     print("Looping over cv...")
     # loops over cv, where test set order is cell_nums_train[0], ..., cell_nums_train[-1]
@@ -182,9 +183,11 @@ def train_reg(df,
         y_preds[cell_nums_train[np.array(cv_val_idx)][0]] = preds
         if 'log' in outcome_def:
             cv_score.append(r2_score(np.exp(Y_val_cv), np.exp(preds)))
+            cv_pearsonr.append(pearsonr(np.exp(Y_val_cv), np.exp(preds))[0])
         else:
             #print(r2_score(Y_val_cv, preds))
             cv_score.append(r2_score(Y_val_cv, preds))
+            cv_pearsonr.append(pearsonr(Y_val_cv, preds)[0])
     
     print("Training with full data...")
     # cv_score = cv_score/len(cell_nums_train)
@@ -194,7 +197,7 @@ def train_reg(df,
     results = {'y_preds': y_preds,
                'y': y,
                #'test_preds': test_preds,
-               'cv': {'r2': cv_score},
+               'cv': {'r2': cv_score, 'pearsonr': cv_pearsonr},
                'model_type': model_type,
                #'model': m,
                'num_pts_by_fold_cv': np.array(num_pts_by_fold_cv),
@@ -213,12 +216,13 @@ def load_results(out_dir, by_cell=True):
         d = pkl.load(open(oj(out_dir, fname), 'rb'))
         metrics = {k: d['cv'][k] for k in d['cv'].keys() if not 'curve' in k}
         num_pts_by_fold_cv = d['num_pts_by_fold_cv']
+        print(metrics)
         out = {k: np.average(metrics[k], weights=num_pts_by_fold_cv) for k in metrics}
         if by_cell:
             out.update({'cv_accuracy_by_cell': metrics['r2']})
         out.update({k + '_std': np.std(metrics[k]) for k in metrics})
         out['model_type'] = fname.replace('.pkl', '')  # d['model_type']
-
+        print(d['cv'].keys())
         # imp_mat = np.array(d['imps']['imps'])
         # imp_mu = imp_mat.mean(axis=0)
         # imp_sd = imp_mat.std(axis=0)

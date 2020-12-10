@@ -3,6 +3,152 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
+class FCNN(nn.Module):
+    
+    """
+    customized (one hidden layer) fully connected neural network class
+    """
+
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(FCNN, self).__init__()
+        self.fc1 = nn.Linear(D_in, H)
+        #self.fc2 = nn.Linear(H, H)
+        self.bn1 = nn.BatchNorm1d(H)
+        self.fc2 = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        
+        z1 = self.fc1(x1)
+        z1 = self.bn1(z1)
+        h1 = F.relu(z1)
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        z2 = self.fc2(h1)
+        #h2 = F.relu(z2)
+        #z3 = self.fc3(h2)       
+        
+        return z2
+    
+    
+class LSTMNet(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(LSTMNet, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
+        outputs, (h1, c1) = self.lstm(x1) # get hidden vec
+        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc(h1)
+    
+class CNN(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(CNN, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=H, kernel_size=7)
+        self.maxpool1 = nn.MaxPool1d(kernel_size=2)
+        self.conv2 = nn.Conv1d(in_channels=H, out_channels=3, kernel_size=5)
+        self.maxpool2 = nn.MaxPool1d(kernel_size=2)
+        self.fc = nn.Linear(18 + p, 1) # this is hard-coded
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(1) # add channel dim
+        x1 = self.conv1(x1)
+        x1 = self.maxpool1(x1)
+        x1 = self.conv2(x1)
+        x1 = self.maxpool2(x1)
+        x1 = x1.reshape(x1.shape[0], -1) # flatten channel dim
+        
+        if x2 is not None:
+            x1 = torch.cat((x1, x2), 1)
+        return self.fc(x1)
+    
+class AttentionNet(nn.Module):
+    
+    """
+    customized (one hidden layer) fully connected neural network class
+    """
+
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(AttentionNet, self).__init__()
+        self.att1 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln1 = nn.LayerNorm(D_in)
+        self.fc1 = nn.Linear(D_in, 1) 
+        self.relu1 = nn.ReLU()
+        self.att2 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln2 = nn.LayerNorm(D_in)
+        self.fc2 = nn.Linear(D_in + p, 1) 
+    
+    def forward(self, x1, x2):
+        print(x1.shape)
+        x1 = self.att1(x1, x1)
+        x1 = self.ln1(x1)
+        x1 = self.fc1(x1)
+        x1 = self.relu1(x1)
+        x1 = self.att2(x1, x1)
+        x1 = self.ln2(x1)
+        
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc2(h1)
 
 class MaxLinear(nn.Module):
     '''Takes flattened input and predicts it using many linear units

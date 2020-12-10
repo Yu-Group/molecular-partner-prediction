@@ -5,7 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import torch.utils.data as data_utils
 from features import downsample
-
+import models
    
 class neural_net_sklearn():
     
@@ -43,10 +43,14 @@ class neural_net_sklearn():
         
         # initialize model
         if arch == 'fcnn':
-            self.model = FCNN(self.D_in, self.H, self.p)
-        elif arch == 'nn_lstm':
-            self.model = LSTMNet(self.D_in, self.H, self.p)
-            
+            self.model = models.FCNN(self.D_in, self.H, self.p)
+        elif 'lstm' in arch:
+            self.model = models.LSTMNet(self.D_in, self.H, self.p)
+        elif 'cnn' in arch:
+            self.model = models.CNN(self.D_in, self.H, self.p)
+        elif 'attention' in arch:
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)
+
     def fit(self, X, y):
         
         """
@@ -99,7 +103,7 @@ class neural_net_sklearn():
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
-            if epoch % 100 == 99:
+            if epoch % (self.epochs // 10) == 99:
                 print(f'Epoch: {epoch}, Average loss: {train_loss/len(X_track)}')
             
     def predict(self, X_new):
@@ -128,76 +132,3 @@ class neural_net_sklearn():
         return preds.data.numpy().reshape(1, -1)[0]
         
         
-class FCNN(nn.Module):
-    
-    """
-    customized (one hidden layer) fully connected neural network class
-    """
-
-    def __init__(self, D_in, H, p):
-        
-        """
-        Parameters:        
-        ==========================================================
-            D_in: int
-                dimension of input track
-                
-            H: int
-                hidden layer size
-                
-            p: int
-                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
-        """
-
-        super(FCNN, self).__init__()
-        self.fc1 = nn.Linear(D_in, H)
-        #self.fc2 = nn.Linear(H, H)
-        self.bn1 = nn.BatchNorm1d(H)
-        self.fc2 = nn.Linear(H + p, 1) 
-    
-    def forward(self, x1, x2):
-        
-        z1 = self.fc1(x1)
-        z1 = self.bn1(z1)
-        h1 = F.relu(z1)
-        if x2 is not None:
-            h1 = torch.cat((h1, x2), 1)
-        z2 = self.fc2(h1)
-        #h2 = F.relu(z2)
-        #z3 = self.fc3(h2)       
-        
-        return z2
-    
-    
-class LSTMNet(nn.Module):
-    
-    """
-    customized (one hidden layer) fully connected neural network class
-    """
-
-    def __init__(self, D_in, H, p):
-        
-        """
-        Parameters:        
-        ==========================================================
-            D_in: int
-                dimension of input track
-                
-            H: int
-                hidden layer size (ignored, can be variable)
-                
-            p: int
-                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
-        """
-
-        super(LSTMNet, self).__init__()
-        self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
-        self.fc = nn.Linear(H + p, 1) 
-    
-    def forward(self, x1, x2):
-        x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
-        outputs, (h1, c1) = self.lstm(x1) # get hidden vec
-        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
-        if x2 is not None:
-            h1 = torch.cat((h1, x2), 1)
-        return self.fc(h1)
