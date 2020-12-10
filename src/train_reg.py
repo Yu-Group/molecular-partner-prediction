@@ -17,7 +17,7 @@ import data
 import config
 from tqdm import tqdm
 from scipy.stats import pearsonr, kendalltau
-from neural_networks import fcnn_sklearn
+from neural_networks import neural_net_sklearn
 
 #cell_nums_train = np.array([1, 2, 3, 4, 5])
 #cell_nums_test = np.array([6])
@@ -125,7 +125,7 @@ def train_reg(df,
         m = GradientBoostingRegressor()
     elif model_type == 'irf':
         m = irf.ensemble.wrf()
-    elif model_type == 'fcnn':
+    elif 'nn' in model_type: # neural nets
         
         """
         train fully connected neural network
@@ -137,12 +137,13 @@ def train_reg(df,
         batch_size = kwargs['fcnn_batch_size'] if 'fcnn_batch_size' in kwargs else 1000
         track_name = kwargs['track_name'] if 'track_name' in kwargs else 'X_same_length'
         
-        m = fcnn_sklearn(D_in=D_in, 
-                         H=H, 
-                         p=len(feat_names)-1,
-                         epochs=epochs,
-                         batch_size=batch_size,
-                         track_name=track_name)
+        m = neural_net_sklearn(D_in=D_in, 
+                             H=H, 
+                             p=len(feat_names)-1,
+                             epochs=epochs,
+                             batch_size=batch_size,
+                             track_name=track_name,
+                             arch=model_type)
 
     # scores_cv = {s: [] for s in scorers.keys()}
     # scores_test = {s: [] for s in scorers.keys()}

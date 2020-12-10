@@ -481,10 +481,9 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
         plt.axvline(ns, lw=0.5, color='gray')
     plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color='black')
     nums = np.arange(1, accs.size + 1) 
-    nums = nums / nums.size * 100
-    plt.plot(nums[20:ns], np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color='gray')
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cb)
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color='gray')
+    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color='gray')
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cb)
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color='gray')
     plt.xlabel('Percentage of tracks included (sorted by uncertainty)')
     plt.ylabel('Accuracy')
     fmt = '%.0f%%' # Format you want the ticks, e.g. '40%'

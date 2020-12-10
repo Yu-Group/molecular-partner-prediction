@@ -6,60 +6,20 @@ from tqdm import tqdm
 import torch.utils.data as data_utils
 from features import downsample
 
-
-class fcnn(nn.Module):
+   
+class neural_net_sklearn():
     
     """
-    customized (one hidden layer) fully connected neural network class
-    """
-
-    def __init__(self, D_in, H, p):
-        
-        """
-        Parameters:        
-        ==========================================================
-            D_in: int
-                dimension of input track
-                
-            H: int
-                hidden layer size
-                
-            p: int
-                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
-        """
-
-        super(fcnn, self).__init__()
-        self.fc1 = nn.Linear(D_in, H)
-        #self.fc2 = nn.Linear(H, H)
-        self.bn1 = nn.BatchNorm1d(H)
-        self.fc2 = nn.Linear(H + p, 1) 
-    
-    def forward(self, x1, x2):
-        
-        z1 = self.fc1(x1)
-        z1 = self.bn1(z1)
-        h1 = F.relu(z1)
-        if x2 is not None:
-            h1 = torch.cat((h1, x2), 1)
-        z2 = self.fc2(h1)
-        #h2 = F.relu(z2)
-        #z3 = self.fc3(h2)       
-        
-        return F.relu(z2)
-    
-class fcnn_sklearn():
-    
-    """
-    sklearn wrapper for the customized fcnn class
+    sklearn wrapper for training a neural net
     """
     
-    def __init__(self, D_in, H, p, epochs, batch_size, track_name, torch_seed=2):
+    def __init__(self, D_in, H, p, epochs, batch_size, track_name, arch='fcnn', torch_seed=2):
         
         """
         Parameters:
         ==========================================================
             D_in, H, p: int
-                same as input to fcnn
+                same as input to FCNN
                 
             epochs: int
                 number of epochs
@@ -79,8 +39,14 @@ class fcnn_sklearn():
         self.batch_size = batch_size
         self.track_name = track_name
         self.torch_seed = torch_seed
-        self.model = fcnn(D_in, H, p)
+        self.arch = arch
         
+        # initialize model
+        if arch == 'fcnn':
+            self.model = FCNN(self.D_in, self.H, self.p)
+        elif arch == 'nn_lstm':
+            self.model = LSTMNet(self.D_in, self.H, self.p)
+            
     def fit(self, X, y):
         
         """
@@ -96,9 +62,6 @@ class fcnn_sklearn():
         """        
         
         torch.manual_seed(self.torch_seed)
-        
-        # initialize model
-        self.model = fcnn(self.D_in, self.H, self.p)
         
         # convert input dataframe to tensors
         X_track = X[self.track_name] # track
@@ -124,10 +87,12 @@ class fcnn_sklearn():
         #train_loader = [(X1, X2, y)]
         
         # train fcnn
-        for epoch in range(self.epochs):
+        print('fitting dnn...')
+        for epoch in tqdm(range(self.epochs)):
             train_loss = 0
             for batch_idx, data in enumerate(train_loader):
                 optimizer.zero_grad()
+#                 print('shapes input', data[0].shape, data[1].shape)
                 preds = self.model(data[0], data[1])
                 loss_fn = torch.nn.MSELoss()
                 loss = loss_fn(preds, data[2])
@@ -163,3 +128,76 @@ class fcnn_sklearn():
         return preds.data.numpy().reshape(1, -1)[0]
         
         
+class FCNN(nn.Module):
+    
+    """
+    customized (one hidden layer) fully connected neural network class
+    """
+
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(FCNN, self).__init__()
+        self.fc1 = nn.Linear(D_in, H)
+        #self.fc2 = nn.Linear(H, H)
+        self.bn1 = nn.BatchNorm1d(H)
+        self.fc2 = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        
+        z1 = self.fc1(x1)
+        z1 = self.bn1(z1)
+        h1 = F.relu(z1)
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        z2 = self.fc2(h1)
+        #h2 = F.relu(z2)
+        #z3 = self.fc3(h2)       
+        
+        return z2
+    
+    
+class LSTMNet(nn.Module):
+    
+    """
+    customized (one hidden layer) fully connected neural network class
+    """
+
+    def __init__(self, D_in, H, p):
+        
+        """
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track
+                
+            H: int
+                hidden layer size (ignored, can be variable)
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        """
+
+        super(LSTMNet, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
+        outputs, (h1, c1) = self.lstm(x1) # get hidden vec
+        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc(h1)
