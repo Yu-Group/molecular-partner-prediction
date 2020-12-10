@@ -43,14 +43,28 @@ from sklearn.ensemble import IsolationForest
 from sklearn.neighbors import LocalOutlierFactor
 from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
+import os
+import matplotlib.ticker as mtick
+
+DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
+DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
 
 cb2 = &#39;#66ccff&#39;
 cb = &#39;#1f77b4&#39;
+co = &#39;#ff7f0e&#39;
 cr = &#39;#cc0000&#39;
 cp = &#39;#cc3399&#39;
 cy = &#39;#d8b365&#39;
 cg = &#39;#5ab4ac&#39;
 
+def savefig(s: str):
+#     plt.tight_layout()
+    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))
+#     plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)
+    
+
+def fix_feat_name(s):
+    return s.replace(&#39;_&#39;, &#39; &#39;).replace(&#39;X&#39;, &#39;Clath&#39;).capitalize()
 
 def plot_confusion_matrix(y_true, y_pred, classes,
                           normalize=False,
@@ -122,7 +136,9 @@ def highlight_max(data, color=&#39;#0e5c99&#39;):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
+                     num_to_plot=20, aux_thresh=642,
+                     show_track_num=True,
+                     plot_x=True, plot_z=False, xlim_constant=True):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -132,12 +148,15 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     &#39;&#39;&#39;
+
     
     # deal with idxs
     if idxs is not None:
         Y_test = Y_test[idxs]
         preds = preds[idxs]
         preds_proba = preds_proba[idxs]
+        if idxs_cv is None:
+            idxs_cv = np.arange(df.shape[0])
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by
@@ -156,14 +175,16 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         for c in range(C):
             if i &lt; dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
-                ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
-                        horizontalalignment=&#39;right&#39;,
-                        transform=ax.transAxes)
+                if show_track_num:
+                    ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
-                plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb)
+                if plot_x:
+                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;) # could do X_extended
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb, label=&#39;aux&#39;)
                 if plot_z:
-                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp)
+                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
@@ -218,7 +239,7 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39
 
 
 def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True):
+                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     if fig is None:
@@ -229,11 +250,12 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
         if i &lt; df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            plt.plot(row.X, color=cr, label=&#39;clathrin&#39;)
+            if plot_x:
+                plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
             if extra_key is not None:
                 plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
             else:
-                plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
+                plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
             if xlim_constant:
@@ -460,7 +482,9 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     accs = np.cumsum(accs) / np.arange(1, n + 1)
 
     plt.figure(dpi=500)
-    dv = df[(df.cell_num.isin(data.cell_nums_train)) &amp; (~df.hotspots)]
+    ax = plt.subplot(111)
+    TRAIN_CV_CELLS = config.DSETS[&#39;clath_aux+gak_a7d2&#39;][&#39;train&#39;]
+    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) &amp; (~df.hotspots)]
     ds = dv[dv.short]
     argss = np.argsort(ds.lifetime.values)
     accs_s = (1 - ds[outcome_def]).values[argss]
@@ -481,16 +505,21 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     nl = accs_l.size
     if plot_vert_line_for_high_lifetimes:
         plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
-    plt.axvline(ns + nl, lw=0.5)
-    nums = np.arange(1, accs.size + 1)
-    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label=&#39;pred aux-&#39;, color=cr)
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label=&#39;with model&#39;, color=cb)
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
-    plt.xlabel(&#39;Number of tracks included (sorted by uncertainty)&#39;)
-    plt.ylabel(&#39;Cumulative accuracy&#39;)
+    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color=&#39;black&#39;)
+    nums = np.arange(1, accs.size + 1) 
+    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label=&#39;No model&#39;, color=&#39;gray&#39;)
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label=&#39;With model&#39;, color=cb)
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=&#39;gray&#39;)
+    plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
+    plt.ylabel(&#39;Accuracy&#39;)
+    fmt = &#39;%.0f%%&#39; # Format you want the ticks, e.g. &#39;40%&#39;
+    xticks = mtick.FormatStrFormatter(fmt)
+    ax.xaxis.set_major_formatter(xticks)
+
     plt.legend()
     plt.grid(alpha=0.2)
     plt.tight_layout()
+    print(&#39;total acc&#39;, (np.cumsum(accs)[ns:] / nums[ns:])[-1])
 
 
 def plot_example(ex):
@@ -528,7 +557,9 @@ def plot_example(ex):
     accs = np.cumsum(accs) / np.arange(1, n + 1)
 
     plt.figure(dpi=500)
-    dv = df[(df.cell_num.isin(data.cell_nums_train)) &amp; (~df.hotspots)]
+    ax = plt.subplot(111)
+    TRAIN_CV_CELLS = config.DSETS[&#39;clath_aux+gak_a7d2&#39;][&#39;train&#39;]
+    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) &amp; (~df.hotspots)]
     ds = dv[dv.short]
     argss = np.argsort(ds.lifetime.values)
     accs_s = (1 - ds[outcome_def]).values[argss]
@@ -549,16 +580,21 @@ def plot_example(ex):
     nl = accs_l.size
     if plot_vert_line_for_high_lifetimes:
         plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
-    plt.axvline(ns + nl, lw=0.5)
-    nums = np.arange(1, accs.size + 1)
-    plt.plot(nums[:ns], np.cumsum(accs)[:ns] / nums[:ns], lw=1, label=&#39;pred aux-&#39;, color=cr)
-    plt.plot(nums[ns:], np.cumsum(accs)[ns:] / nums[ns:], lw=1, label=&#39;with model&#39;, color=cb)
-    plt.plot(nums[ns:], np.cumsum(accs2)[ns:] / nums[ns:], lw=1, color=cr)
-    plt.xlabel(&#39;Number of tracks included (sorted by uncertainty)&#39;)
-    plt.ylabel(&#39;Cumulative accuracy&#39;)
+    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color=&#39;black&#39;)
+    nums = np.arange(1, accs.size + 1) 
+    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label=&#39;No model&#39;, color=&#39;gray&#39;)
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label=&#39;With model&#39;, color=cb)
+    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=&#39;gray&#39;)
+    plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
+    plt.ylabel(&#39;Accuracy&#39;)
+    fmt = &#39;%.0f%%&#39; # Format you want the ticks, e.g. &#39;40%&#39;
+    xticks = mtick.FormatStrFormatter(fmt)
+    ax.xaxis.set_major_formatter(xticks)
+
     plt.legend()
     plt.grid(alpha=0.2)
-    plt.tight_layout()</code></pre>
+    plt.tight_layout()
+    print(&#39;total acc&#39;, (np.cumsum(accs)[ns:] / nums[ns:])[-1])</code></pre>
 </details>
 </dd>
 <dt id="src.viz.cumulative_acc_plot_hard"><code class="name flex">
@@ -584,6 +620,19 @@ def plot_example(ex):
     plt.grid(alpha=0.2)
     plt.legend()
     plt.show()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.fix_feat_name"><code class="name flex">
+<span>def <span class="ident">fix_feat_name</span></span>(<span>s)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def fix_feat_name(s):
+    return s.replace(&#39;_&#39;, &#39; &#39;).replace(&#39;X&#39;, &#39;Clath&#39;).capitalize()</code></pre>
 </details>
 </dd>
 <dt id="src.viz.highlight_max"><code class="name flex">
@@ -767,7 +816,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.plot_curves"><code class="name flex">
-<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True)</span>
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Plot time-series curves from df</p></section>
@@ -776,7 +825,7 @@ Params</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True):
+                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     if fig is None:
@@ -787,11 +836,12 @@ Params</p>
         if i &lt; df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            plt.plot(row.X, color=cr, label=&#39;clathrin&#39;)
+            if plot_x:
+                plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
             if extra_key is not None:
                 plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
             else:
-                plt.plot(row.Y, color=cb, label=&#39;auxilin&#39;)
+                plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
             if xlim_constant:
@@ -947,8 +997,22 @@ Params</p>
     print(&#39;\nlifetime threshes&#39;, m[&#39;thresh_short&#39;], m[&#39;thresh_long&#39;])</code></pre>
 </details>
 </dd>
+<dt id="src.viz.savefig"><code class="name flex">
+<span>def <span class="ident">savefig</span></span>(<span>s)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def savefig(s: str):
+#     plt.tight_layout()
+    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))</code></pre>
+</details>
+</dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, plot_x=True, plot_z=False, xlim_constant=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -965,7 +1029,9 @@ Params</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642, plot_z=False, xlim_constant=True):
+                     num_to_plot=20, aux_thresh=642,
+                     show_track_num=True,
+                     plot_x=True, plot_z=False, xlim_constant=True):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -975,12 +1041,15 @@ Params</p>
         subset of points to plot
     
     &#39;&#39;&#39;
+
     
     # deal with idxs
     if idxs is not None:
         Y_test = Y_test[idxs]
         preds = preds[idxs]
         preds_proba = preds_proba[idxs]
+        if idxs_cv is None:
+            idxs_cv = np.arange(df.shape[0])
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by
@@ -999,14 +1068,16 @@ Params</p>
         for c in range(C):
             if i &lt; dft.shape[0]:
                 ax = plt.subplot(R, C, i + 1)
-                ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
-                        horizontalalignment=&#39;right&#39;,
-                        transform=ax.transAxes)
+                if show_track_num:
+                    ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
-                plt.plot(dft[&#34;X_extended&#34;].iloc[i], color=cr)
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb)
+                if plot_x:
+                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;) # could do X_extended
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb, label=&#39;aux&#39;)
                 if plot_z:
-                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp)
+                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
@@ -1140,6 +1211,7 @@ Params</p>
 <ul class="">
 <li><code><a title="src.viz.cumulative_acc_plot_all" href="#src.viz.cumulative_acc_plot_all">cumulative_acc_plot_all</a></code></li>
 <li><code><a title="src.viz.cumulative_acc_plot_hard" href="#src.viz.cumulative_acc_plot_hard">cumulative_acc_plot_hard</a></code></li>
+<li><code><a title="src.viz.fix_feat_name" href="#src.viz.fix_feat_name">fix_feat_name</a></code></li>
 <li><code><a title="src.viz.highlight_max" href="#src.viz.highlight_max">highlight_max</a></code></li>
 <li><code><a title="src.viz.jointplot_grouped" href="#src.viz.jointplot_grouped">jointplot_grouped</a></code></li>
 <li><code><a title="src.viz.plot_confusion_matrix" href="#src.viz.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
@@ -1148,6 +1220,7 @@ Params</p>
 <li><code><a title="src.viz.plot_example" href="#src.viz.plot_example">plot_example</a></code></li>
 <li><code><a title="src.viz.plot_pcs" href="#src.viz.plot_pcs">plot_pcs</a></code></li>
 <li><code><a title="src.viz.print_metadata" href="#src.viz.print_metadata">print_metadata</a></code></li>
+<li><code><a title="src.viz.savefig" href="#src.viz.savefig">savefig</a></code></li>
 <li><code><a title="src.viz.viz_biggest_errs" href="#src.viz.viz_biggest_errs">viz_biggest_errs</a></code></li>
 <li><code><a title="src.viz.viz_errs_1d" href="#src.viz.viz_errs_1d">viz_errs_1d</a></code></li>
 <li><code><a title="src.viz.viz_errs_2d" href="#src.viz.viz_errs_2d">viz_errs_2d</a></code></li>

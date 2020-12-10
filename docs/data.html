@@ -77,6 +77,9 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
     else:
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
+        
+        
+        # load tracks
         print(&#39;\tloading tracks...&#39;)
         df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;],
                                       split=DSET, all_data=all_data,
@@ -90,8 +93,11 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         if DSET[&#39;test&#39;] is not None:
             df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
-        # print(&#39;traininng&#39;, df.valid.sum())
+        # print(&#39;training&#39;, df.valid.sum())
 
+        
+        
+        # preprocess data
         print(&#39;\tpreprocessing data...&#39;)
         df = remove_invalid_tracks(df)  # use catIdx
         # print(&#39;valid&#39;, df.valid.sum())
@@ -111,7 +117,10 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         metadata[&#39;num_tracks_hard&#39;] = df[&#39;valid&#39;].sum()
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
+        
+        # add features
         print(&#39;\tadding features...&#39;)
+        df = features.add_dasc_features(df)
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
@@ -244,7 +253,8 @@ def get_feature_names(df):
                          &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;,  # redudant with X_max / fall
                          &#39;X_max_diff&#39;, &#39;X_peak_idx&#39;,  # unlikely to be useful
                          &#39;t&#39;, &#39;x_pos_seq&#39;, &#39;y_pos_seq&#39;,  # curves
-                         &#39;X_smooth_spl&#39;, &#39;X_smooth_spl_dx&#39;, &#39;X_smooth_spl_d2x&#39;  # curves
+                         &#39;X_smooth_spl&#39;, &#39;X_smooth_spl_dx&#39;, &#39;X_smooth_spl_d2x&#39;,  # curves
+                         &#39;X_quantiles&#39;,
                          ]
     ]
     return feat_names
@@ -252,20 +262,21 @@ def get_feature_names(df):
 
 def select_final_feats(feat_names, binarize=False):
     feat_names = [x for x in feat_names
-                  if not x.startswith(&#39;sc_&#39;)
-                  and not x.startswith(&#39;nmf_&#39;)
+                  if not x.startswith(&#39;sc_&#39;)  # sparse coding
+                  and not x.startswith(&#39;nmf_&#39;) # nmf
                   and not x in [&#39;center_max&#39;, &#39;left_max&#39;, &#39;right_max&#39;, &#39;up_max&#39;, &#39;down_max&#39;,
                                 &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;, &#39;X_max_diff_after_Y_peak&#39;]
                   and not x.startswith(&#39;pc_&#39;)
                   and not &#39;extended&#39; in x
+                  and not x == &#39;slope_end&#39;
+                  and not &#39;_tf_smooth&#39; in x
+                  and not &#39;local&#39; in x
+                  and not &#39;last&#39; in x
+                  and not x == &#39;X_quantiles&#39;
                   #               and not &#39;X_peak&#39; in x
                   #               and not &#39;slope&#39; in x
                   #               and not x in [&#39;fall_final&#39;, &#39;fall_slope&#39;, &#39;fall_imp&#39;, &#39;fall&#39;]
                   ]
-    feat_names = [x for x in feat_names if not &#39;_tf_smooth&#39; in x]
-    feat_names = [x for x in feat_names if not &#39;local&#39; in x]
-    feat_names = [x for x in feat_names if not &#39;last&#39; in x]
-    # feat_names = [x for x in feat_names if &#39;_tf_smooth&#39; in x]
 
     if binarize:
         feat_names = [x for x in feat_names if &#39;binary&#39; in x]
@@ -282,10 +293,10 @@ if __name__ == &#39;__main__&#39;:
     
     # process new data (using lifetime thresholds from original data)
     outcome_def = &#39;y_consec_sig&#39;
-    for dset in [&#39;clath_aux_dynamin&#39;]:
-#     for dset in config.DSETS.keys():
-        df = get_data(dset=dset,
-                      previous_meta_file=f&#39;{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl&#39;)
+#     for dset in [&#39;clath_aux_dynamin&#39;]:
+    for dset in config.DSETS.keys():
+        df = get_data(dset=dset, previous_meta_file=None)
+        # df = get_data(dset=dset, previous_meta_file=f&#39;{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl&#39;)
         print(dset, &#39;num cells&#39;, len(df[&#39;cell_num&#39;].unique()), &#39;num tracks&#39;, df.shape[0], &#39;num aux+&#39;,
               df[outcome_def].sum(), &#39;aux+ fraction&#39;, (df[outcome_def].sum() / df.shape[0]).round(3),
               &#39;valid&#39;, df.valid.sum(), &#39;valid aux+&#39;, df[df.valid][outcome_def].sum(), &#39;valid aux+ fraction&#39;,
@@ -380,6 +391,9 @@ the thresholds for lifetime are taken from this file</dd>
     else:
         print(&#39;loading + preprocessing data...&#39;)
         metadata = {}
+        
+        
+        # load tracks
         print(&#39;\tloading tracks...&#39;)
         df = load_tracking.get_tracks(data_dir=DSET[&#39;data_dir&#39;],
                                       split=DSET, all_data=all_data,
@@ -393,8 +407,11 @@ the thresholds for lifetime are taken from this file</dd>
         if DSET[&#39;test&#39;] is not None:
             df[&#39;valid&#39;][df.cell_num.isin(DSET[&#39;test&#39;])] = False
         metadata[&#39;num_tracks&#39;] = df.valid.sum()
-        # print(&#39;traininng&#39;, df.valid.sum())
+        # print(&#39;training&#39;, df.valid.sum())
 
+        
+        
+        # preprocess data
         print(&#39;\tpreprocessing data...&#39;)
         df = remove_invalid_tracks(df)  # use catIdx
         # print(&#39;valid&#39;, df.valid.sum())
@@ -414,7 +431,10 @@ the thresholds for lifetime are taken from this file</dd>
         metadata[&#39;num_tracks_hard&#39;] = df[&#39;valid&#39;].sum()
         metadata[&#39;num_aux_pos_hard&#39;] = int(df[df.valid == 1][outcome_def].sum())
 
+        
+        # add features
         print(&#39;\tadding features...&#39;)
+        df = features.add_dasc_features(df)
         # df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
@@ -455,7 +475,8 @@ Removes metadata + time-series columns + outcomes</p></section>
                          &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;,  # redudant with X_max / fall
                          &#39;X_max_diff&#39;, &#39;X_peak_idx&#39;,  # unlikely to be useful
                          &#39;t&#39;, &#39;x_pos_seq&#39;, &#39;y_pos_seq&#39;,  # curves
-                         &#39;X_smooth_spl&#39;, &#39;X_smooth_spl_dx&#39;, &#39;X_smooth_spl_d2x&#39;  # curves
+                         &#39;X_smooth_spl&#39;, &#39;X_smooth_spl_dx&#39;, &#39;X_smooth_spl_d2x&#39;,  # curves
+                         &#39;X_quantiles&#39;,
                          ]
     ]
     return feat_names</code></pre>
@@ -584,20 +605,21 @@ Only keep cat_idx
 </summary>
 <pre><code class="python">def select_final_feats(feat_names, binarize=False):
     feat_names = [x for x in feat_names
-                  if not x.startswith(&#39;sc_&#39;)
-                  and not x.startswith(&#39;nmf_&#39;)
+                  if not x.startswith(&#39;sc_&#39;)  # sparse coding
+                  and not x.startswith(&#39;nmf_&#39;) # nmf
                   and not x in [&#39;center_max&#39;, &#39;left_max&#39;, &#39;right_max&#39;, &#39;up_max&#39;, &#39;down_max&#39;,
                                 &#39;X_max_around_Y_peak&#39;, &#39;X_max_after_Y_peak&#39;, &#39;X_max_diff_after_Y_peak&#39;]
                   and not x.startswith(&#39;pc_&#39;)
                   and not &#39;extended&#39; in x
+                  and not x == &#39;slope_end&#39;
+                  and not &#39;_tf_smooth&#39; in x
+                  and not &#39;local&#39; in x
+                  and not &#39;last&#39; in x
+                  and not x == &#39;X_quantiles&#39;
                   #               and not &#39;X_peak&#39; in x
                   #               and not &#39;slope&#39; in x
                   #               and not x in [&#39;fall_final&#39;, &#39;fall_slope&#39;, &#39;fall_imp&#39;, &#39;fall&#39;]
                   ]
-    feat_names = [x for x in feat_names if not &#39;_tf_smooth&#39; in x]
-    feat_names = [x for x in feat_names if not &#39;local&#39; in x]
-    feat_names = [x for x in feat_names if not &#39;last&#39; in x]
-    # feat_names = [x for x in feat_names if &#39;_tf_smooth&#39; in x]
 
     if binarize:
         feat_names = [x for x in feat_names if &#39;binary&#39; in x]

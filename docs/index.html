@@ -23,17 +23,22 @@ predicting auxilin spikes in clathrin-mediated endocytosis …" />
 <section id="section-intro">
 <p>Python package for documenting all the functions used in auxilin prediction.</p>
 <h1 id="predicting-auxilin-spikes-in-clathrin-mediated-endocytosis">predicting auxilin spikes in clathrin-mediated endocytosis</h1>
-<p><img alt="" src="https://yu-group.github.io/auxilin-prediction/reports/figs/fig_pipeline.jpg"></p>
-<h2 id="quickstart">quickstart</h2>
+<p><img alt="" src="https://yu-group.github.io/auxilin-prediction/fig_pipeline.jpg"></p>
+<h2 id="quickstart-for-making-new-predictions">quickstart for making new predictions</h2>
+<ul>
+<li>our fully trained model is available in the <a href="models">models</a> folder</li>
+</ul>
+<h2 id="reproducibility">reproducibility</h2>
 <ul>
 <li><strong>download data</strong>: download cached data after tracking from <a href="https://drive.google.com/drive/folders/1mh2wn0KLtj90j_rfgPUGEJgMZAEl0Yi7?usp=sharing">this gdrive folder</a> - should be added to the folder <code>data/tracks</code></li>
 <li><strong>process data</strong>: run <code>python data.py</code> to properly preprocess all the data (will cache it into the "processed folder")</li>
 <li><strong>rerun analysis</strong>: <a href="notebooks">notebooks</a> folder contains step-by-step analysis</li>
+<li><strong>tests</strong>: run tests with <code>pytest</code> in the <code>tests</code> folder</li>
 </ul>
 <h2 id="acknowledgements">acknowledgements</h2>
 <ul>
 <li>this is a collaboration between the Berkeley <a href="https://www.stat.berkeley.edu/~yugroup/">Yu-Group</a> and the <a href="http://abc.berkeley.edu/">Berkeley Advanced Bioimaging Center</a></li>
-<li>uses code from several wonderful packages including <a href="https://github.com/DanuserLab/cmeAnalysis">cmeAnalysis</a> (DanuserLab) and sklearn</li>
+<li>uses code from several wonderful packages including <a href="https://github.com/DanuserLab/cmeAnalysis">cmeAnalysis</a> (DanuserLab)</li>
 </ul>
 <details class="source">
 <summary>
@@ -70,6 +75,10 @@ Takes in path to raw data, tracks, processed df, and then later interim data</p>
 <section class="desc"></section>
 </dd>
 <dt><code class="name"><a title="src.models" href="models.html">src.models</a></code></dt>
+<dd>
+<section class="desc"></section>
+</dd>
+<dt><code class="name"><a title="src.neural_networks" href="neural_networks.html">src.neural_networks</a></code></dt>
 <dd>
 <section class="desc"></section>
 </dd>
@@ -111,7 +120,8 @@ Takes in path to raw data, tracks, processed df, and then later interim data</p>
 <div class="toc">
 <ul>
 <li><a href="#predicting-auxilin-spikes-in-clathrin-mediated-endocytosis">predicting auxilin spikes in clathrin-mediated endocytosis</a><ul>
-<li><a href="#quickstart">quickstart</a></li>
+<li><a href="#quickstart-for-making-new-predictions">quickstart for making new predictions</a></li>
+<li><a href="#reproducibility">reproducibility</a></li>
 <li><a href="#acknowledgements">acknowledgements</a></li>
 </ul>
 </li>
@@ -126,6 +136,7 @@ Takes in path to raw data, tracks, processed df, and then later interim data</p>
 <li><code><a title="src.features" href="features.html">src.features</a></code></li>
 <li><code><a title="src.load_tracking" href="load_tracking.html">src.load_tracking</a></code></li>
 <li><code><a title="src.models" href="models.html">src.models</a></code></li>
+<li><code><a title="src.neural_networks" href="neural_networks.html">src.neural_networks</a></code></li>
 <li><code><a title="src.outcomes" href="outcomes.html">src.outcomes</a></code></li>
 <li><code><a title="src.ref" href="ref/index.html">src.ref</a></code></li>
 <li><code><a title="src.train" href="train.html">src.train</a></code></li>

@@ -40,6 +40,8 @@ from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
 import trend_filtering
 import data
+from scipy.stats import skew, pearsonr
+
 
 
 def add_pcs(df):
@@ -175,8 +177,8 @@ def add_basic_features(df):
     df[&#39;X_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
     df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
     df[&#39;X_peak_time_frac&#39;] = df[&#39;X_peak_idx&#39;].values / df[&#39;lifetime&#39;].values
-    df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
-                               axis=1)
+#     df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
+#                                axis=1)
     df[&#39;X_peak_last_15&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.85
     df[&#39;X_peak_last_5&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.95
 
@@ -274,10 +276,125 @@ def add_binary_features(df, outcome_def):
     &#39;&#39;&#39;
     feat_names = data.get_feature_names(df)
     threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
-    for i, k in enumerate(feat_names):
+    for i, k in tqdm(enumerate(feat_names)):
         thresh = threshes.loc[k]
         df[k + &#39;_binary&#39;] = df[k] &gt;= thresh
-    return df</code></pre>
+    return df
+
+def add_dasc_features(df, bins=100, by_cell=True):
+    &#34;&#34;&#34;
+    add DASC features from Wang et al. 2020 paper
+    
+    Parameters:
+        df: pd.DataFrame
+        
+        bins: int
+            number of bins 
+            default value is 100: the intensity level of clathrin is assigned to 100 equal-length bins
+            from vmin(min intensity across all tracks) to vmax(max intensity across all tracks)
+            
+        by_cell: Boolean
+            whether to do binning within each cell
+    &#34;&#34;&#34;
+    x_dist = {}
+    n = len(df)
+    
+    # gather min and max clathrin intensity within each cell
+    if by_cell == True:
+        for cell in set(df[&#39;cell_num&#39;]):
+            x = []
+            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+            for i in cell_idx:
+                x += df[&#39;X&#39;].values[i]
+            x_dist[cell] = (min(x), max(x))
+    else:
+        x = []
+        for i in range(n):
+            x += df[&#39;X&#39;].values[i]
+        for cell in set(df[&#39;cell_num&#39;]):
+            x_dist[cell] = (min(x), max(x))
+    
+    # transform the clathrin intensity to a value between 0 to 100
+    X_quantiles = []
+    for i in range(n):
+        r = df.iloc[i]
+        cell = r[&#39;cell_num&#39;]
+        X_quantiles.append([np.int(1.0*bins*(x - x_dist[cell][0])/(x_dist[cell][1] - x_dist[cell][0])) if not np.isnan(x) else 0 for x in r[&#39;X&#39;]])
+    df[&#39;X_quantiles&#39;] = X_quantiles
+    
+    # compute transition probability between different intensities, for different frames
+    trans_prob = {}
+    tmax = max([len(df[&#39;X_quantiles&#39;].values[i]) for i in range(len(df))])
+    for t in range(tmax - 1):
+        int_pairs = []
+        for i in range(n):
+            if len(df[&#39;X_quantiles&#39;].values[i]) &gt; t + 1:
+                int_pairs.append([df[&#39;X_quantiles&#39;].values[i][t], df[&#39;X_quantiles&#39;].values[i][t + 1]])
+        int_pairs = np.array(int_pairs)
+        trans_prob_t = {}
+        for i in range(bins + 1):
+            x1 = np.where(int_pairs[:,0]== i)[0]
+            lower_states_num = np.zeros((i, 2))
+            for j in range(len(int_pairs)):
+                if int_pairs[j, 0] &lt; i:
+                    lower_states_num[int_pairs[j, 0], 0] += 1
+                    if int_pairs[j, 1] == i:
+                        lower_states_num[int_pairs[j, 0], 1] += 1
+            lower_prob = [1.*lower_states_num[k, 1]/lower_states_num[k, 0] for k in range(i) if lower_states_num[k, 0] &gt; 0]
+            trans_prob_t[i] = (np.nanmean(int_pairs[x1,1] &lt; i), 
+                               #np.nanmean(int_pairs[x1,1] &gt; i)
+                              sum(lower_prob)
+                              )  
+        trans_prob[t] = trans_prob_t
+        
+    # compute D sequence 
+    X_d = [[] for i in range(len(df))]
+    for i in range(len(df)):
+        for j, q in enumerate(df[&#39;X_quantiles&#39;].values[i][:-1]):
+            probs = trans_prob[j][q]
+            if 0 &lt; probs[0] and 0 &lt; probs[1]:
+                X_d[i].append(np.log(probs[0]/probs[1]))
+            else:
+                X_d[i].append(0)
+                
+    # compute features
+    d1 = [np.mean(x) for x in X_d]
+    d2 = [np.log(max((np.max(x) - np.min(x))/len(x), 1e-4)) for x in X_d]
+    d3 = [skew(x) for x in X_d]
+    df[&#39;X_d1&#39;] = d1
+    df[&#39;X_d2&#39;] = d2
+    df[&#39;X_d3&#39;] = d3
+    
+    return df
+
+def downsample(x, length):
+    
+    &#34;&#34;&#34;
+    downsample (clathrin) track
+    
+    Parameters:
+    ==========================================================
+        x: list
+            original clathrin track (of different lengths)
+            
+        length: int
+            length of track after downsampling
+            
+    Returns:
+    ==========================================================
+        x_ds: list
+            downsampled track
+    &#34;&#34;&#34;
+    
+    x = np.array(x)[np.where(np.isnan(x) == False)]
+    n = len(x)
+    if n &gt;= length:   
+        # if length of original track is greater than targeted length, downsample     
+        x_ds = [x[np.int(1.0 * (n-1) * i/(length - 1))] for i in range(length)]
+    else:
+        # if length of original track is smaller than targeted length, fill the track with 0s
+        x_ds = list(x) + [0]*(length - len(x))
+    return x_ds</code></pre>
 </details>
 </section>
 <section>
@@ -311,8 +428,8 @@ def add_binary_features(df, outcome_def):
     df[&#39;X_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(x) for x in df.X]))
     df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
     df[&#39;X_peak_time_frac&#39;] = df[&#39;X_peak_idx&#39;].values / df[&#39;lifetime&#39;].values
-    df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
-                               axis=1)
+#     df[&#39;slope_end&#39;] = df.apply(lambda row: (row[&#39;X_max&#39;] - row[&#39;X&#39;][-1]) / (row[&#39;lifetime&#39;] - row[&#39;X_peak_idx&#39;]),
+#                                axis=1)
     df[&#39;X_peak_last_15&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.85
     df[&#39;X_peak_last_5&#39;] = df[&#39;X_peak_time_frac&#39;] &gt;= 0.95
 
@@ -419,9 +536,118 @@ def add_binary_features(df, outcome_def):
     &#39;&#39;&#39;
     feat_names = data.get_feature_names(df)
     threshes = (df[df[outcome_def] == 1].mean() + df[df[outcome_def] == 0].mean()) / 2
-    for i, k in enumerate(feat_names):
+    for i, k in tqdm(enumerate(feat_names)):
         thresh = threshes.loc[k]
         df[k + &#39;_binary&#39;] = df[k] &gt;= thresh
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.add_dasc_features"><code class="name flex">
+<span>def <span class="ident">add_dasc_features</span></span>(<span>df, bins=100, by_cell=True)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>add DASC features from Wang et al. 2020 paper</p>
+<h2 id="parameters">Parameters</h2>
+<dl>
+<dt><strong><code>df</code></strong></dt>
+<dd>pd.DataFrame</dd>
+<dt><strong><code>bins</code></strong></dt>
+<dd>int
+number of bins
+default value is 100: the intensity level of clathrin is assigned to 100 equal-length bins
+from vmin(min intensity across all tracks) to vmax(max intensity across all tracks)</dd>
+<dt><strong><code>by_cell</code></strong></dt>
+<dd>Boolean
+whether to do binning within each cell</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_dasc_features(df, bins=100, by_cell=True):
+    &#34;&#34;&#34;
+    add DASC features from Wang et al. 2020 paper
+    
+    Parameters:
+        df: pd.DataFrame
+        
+        bins: int
+            number of bins 
+            default value is 100: the intensity level of clathrin is assigned to 100 equal-length bins
+            from vmin(min intensity across all tracks) to vmax(max intensity across all tracks)
+            
+        by_cell: Boolean
+            whether to do binning within each cell
+    &#34;&#34;&#34;
+    x_dist = {}
+    n = len(df)
+    
+    # gather min and max clathrin intensity within each cell
+    if by_cell == True:
+        for cell in set(df[&#39;cell_num&#39;]):
+            x = []
+            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+            for i in cell_idx:
+                x += df[&#39;X&#39;].values[i]
+            x_dist[cell] = (min(x), max(x))
+    else:
+        x = []
+        for i in range(n):
+            x += df[&#39;X&#39;].values[i]
+        for cell in set(df[&#39;cell_num&#39;]):
+            x_dist[cell] = (min(x), max(x))
+    
+    # transform the clathrin intensity to a value between 0 to 100
+    X_quantiles = []
+    for i in range(n):
+        r = df.iloc[i]
+        cell = r[&#39;cell_num&#39;]
+        X_quantiles.append([np.int(1.0*bins*(x - x_dist[cell][0])/(x_dist[cell][1] - x_dist[cell][0])) if not np.isnan(x) else 0 for x in r[&#39;X&#39;]])
+    df[&#39;X_quantiles&#39;] = X_quantiles
+    
+    # compute transition probability between different intensities, for different frames
+    trans_prob = {}
+    tmax = max([len(df[&#39;X_quantiles&#39;].values[i]) for i in range(len(df))])
+    for t in range(tmax - 1):
+        int_pairs = []
+        for i in range(n):
+            if len(df[&#39;X_quantiles&#39;].values[i]) &gt; t + 1:
+                int_pairs.append([df[&#39;X_quantiles&#39;].values[i][t], df[&#39;X_quantiles&#39;].values[i][t + 1]])
+        int_pairs = np.array(int_pairs)
+        trans_prob_t = {}
+        for i in range(bins + 1):
+            x1 = np.where(int_pairs[:,0]== i)[0]
+            lower_states_num = np.zeros((i, 2))
+            for j in range(len(int_pairs)):
+                if int_pairs[j, 0] &lt; i:
+                    lower_states_num[int_pairs[j, 0], 0] += 1
+                    if int_pairs[j, 1] == i:
+                        lower_states_num[int_pairs[j, 0], 1] += 1
+            lower_prob = [1.*lower_states_num[k, 1]/lower_states_num[k, 0] for k in range(i) if lower_states_num[k, 0] &gt; 0]
+            trans_prob_t[i] = (np.nanmean(int_pairs[x1,1] &lt; i), 
+                               #np.nanmean(int_pairs[x1,1] &gt; i)
+                              sum(lower_prob)
+                              )  
+        trans_prob[t] = trans_prob_t
+        
+    # compute D sequence 
+    X_d = [[] for i in range(len(df))]
+    for i in range(len(df)):
+        for j, q in enumerate(df[&#39;X_quantiles&#39;].values[i][:-1]):
+            probs = trans_prob[j][q]
+            if 0 &lt; probs[0] and 0 &lt; probs[1]:
+                X_d[i].append(np.log(probs[0]/probs[1]))
+            else:
+                X_d[i].append(0)
+                
+    # compute features
+    d1 = [np.mean(x) for x in X_d]
+    d2 = [np.log(max((np.max(x) - np.min(x))/len(x), 1e-4)) for x in X_d]
+    d3 = [skew(x) for x in X_d]
+    df[&#39;X_d1&#39;] = d1
+    df[&#39;X_d2&#39;] = d2
+    df[&#39;X_d3&#39;] = d3
+    
     return df</code></pre>
 </details>
 </dd>
@@ -579,6 +805,56 @@ def add_binary_features(df, outcome_def):
     return df</code></pre>
 </details>
 </dd>
+<dt id="src.features.downsample"><code class="name flex">
+<span>def <span class="ident">downsample</span></span>(<span>x, length)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>downsample (clathrin) track</p>
+<h1 id="parameters">Parameters:</h1>
+<pre><code>x: list
+    original clathrin track (of different lengths)
+
+length: int
+    length of track after downsampling
+</code></pre>
+<h1 id="returns">Returns:</h1>
+<pre><code>x_ds: list
+    downsampled track
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def downsample(x, length):
+    
+    &#34;&#34;&#34;
+    downsample (clathrin) track
+    
+    Parameters:
+    ==========================================================
+        x: list
+            original clathrin track (of different lengths)
+            
+        length: int
+            length of track after downsampling
+            
+    Returns:
+    ==========================================================
+        x_ds: list
+            downsampled track
+    &#34;&#34;&#34;
+    
+    x = np.array(x)[np.where(np.isnan(x) == False)]
+    n = len(x)
+    if n &gt;= length:   
+        # if length of original track is greater than targeted length, downsample     
+        x_ds = [x[np.int(1.0 * (n-1) * i/(length - 1))] for i in range(length)]
+    else:
+        # if length of original track is smaller than targeted length, fill the track with 0s
+        x_ds = list(x) + [0]*(length - len(x))
+    return x_ds</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -599,10 +875,12 @@ def add_binary_features(df, outcome_def):
 <ul class="">
 <li><code><a title="src.features.add_basic_features" href="#src.features.add_basic_features">add_basic_features</a></code></li>
 <li><code><a title="src.features.add_binary_features" href="#src.features.add_binary_features">add_binary_features</a></code></li>
+<li><code><a title="src.features.add_dasc_features" href="#src.features.add_dasc_features">add_dasc_features</a></code></li>
 <li><code><a title="src.features.add_dict_features" href="#src.features.add_dict_features">add_dict_features</a></code></li>
 <li><code><a title="src.features.add_pcs" href="#src.features.add_pcs">add_pcs</a></code></li>
 <li><code><a title="src.features.add_smoothed_splines" href="#src.features.add_smoothed_splines">add_smoothed_splines</a></code></li>
 <li><code><a title="src.features.add_trend_filtering" href="#src.features.add_trend_filtering">add_trend_filtering</a></code></li>
+<li><code><a title="src.features.downsample" href="#src.features.downsample">downsample</a></code></li>
 </ul>
 </li>
 </ul>

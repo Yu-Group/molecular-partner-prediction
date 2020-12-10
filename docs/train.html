@@ -172,7 +172,7 @@ def train(df, feat_names,
         feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf,
                                            max_features=feature_selection_num)
         idxs = df.cell_num.isin(cell_nums_feature_selection)
-        feature_selector.fit(X[idxs], y[idxs])
+        feature_selector.fit(X[idxs], y[idxs].reshape(-1, 1))
         X = feature_selector.transform(X)
         support = np.array(feature_selector.get_support())
     else:
@@ -400,7 +400,7 @@ This will normalize the features before fitting</p>
         feature_selector = SelectFromModel(feature_selector_model, threshold=-np.inf,
                                            max_features=feature_selection_num)
         idxs = df.cell_num.isin(cell_nums_feature_selection)
-        feature_selector.fit(X[idxs], y[idxs])
+        feature_selector.fit(X[idxs], y[idxs].reshape(-1, 1))
         X = feature_selector.transform(X)
         support = np.array(feature_selector.get_support())
     else:

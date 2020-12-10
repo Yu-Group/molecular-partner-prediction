@@ -29,6 +29,152 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
+class FCNN(nn.Module):
+    
+    &#34;&#34;&#34;
+    customized (one hidden layer) fully connected neural network class
+    &#34;&#34;&#34;
+
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(FCNN, self).__init__()
+        self.fc1 = nn.Linear(D_in, H)
+        #self.fc2 = nn.Linear(H, H)
+        self.bn1 = nn.BatchNorm1d(H)
+        self.fc2 = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        
+        z1 = self.fc1(x1)
+        z1 = self.bn1(z1)
+        h1 = F.relu(z1)
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        z2 = self.fc2(h1)
+        #h2 = F.relu(z2)
+        #z3 = self.fc3(h2)       
+        
+        return z2
+    
+    
+class LSTMNet(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(LSTMNet, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
+        outputs, (h1, c1) = self.lstm(x1) # get hidden vec
+        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc(h1)
+    
+class CNN(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(CNN, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=H, kernel_size=7)
+        self.maxpool1 = nn.MaxPool1d(kernel_size=2)
+        self.conv2 = nn.Conv1d(in_channels=H, out_channels=3, kernel_size=5)
+        self.maxpool2 = nn.MaxPool1d(kernel_size=2)
+        self.fc = nn.Linear(18 + p, 1) # this is hard-coded
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(1) # add channel dim
+        x1 = self.conv1(x1)
+        x1 = self.maxpool1(x1)
+        x1 = self.conv2(x1)
+        x1 = self.maxpool2(x1)
+        x1 = x1.reshape(x1.shape[0], -1) # flatten channel dim
+        
+        if x2 is not None:
+            x1 = torch.cat((x1, x2), 1)
+        return self.fc(x1)
+    
+class AttentionNet(nn.Module):
+    
+    &#34;&#34;&#34;
+    customized (one hidden layer) fully connected neural network class
+    &#34;&#34;&#34;
+
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(AttentionNet, self).__init__()
+        self.att1 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln1 = nn.LayerNorm(D_in)
+        self.fc1 = nn.Linear(D_in, 1) 
+        self.relu1 = nn.ReLU()
+        self.att2 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln2 = nn.LayerNorm(D_in)
+        self.fc2 = nn.Linear(D_in + p, 1) 
+    
+    def forward(self, x1, x2):
+        print(x1.shape)
+        x1 = self.att1(x1, x1)
+        x1 = self.ln1(x1)
+        x1 = self.fc1(x1)
+        x1 = self.relu1(x1)
+        x1 = self.att2(x1, x1)
+        x1 = self.ln2(x1)
+        
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc2(h1)
 
 class MaxLinear(nn.Module):
     &#39;&#39;&#39;Takes flattened input and predicts it using many linear units
@@ -132,6 +278,418 @@ class MaxConvLinear(nn.Module):
 <section>
 <h2 class="section-title" id="header-classes">Classes</h2>
 <dl>
+<dt id="src.models.AttentionNet"><code class="flex name class">
+<span>class <span class="ident">AttentionNet</span></span>
+<span>(</span><span>D_in, H, p)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>customized (one hidden layer) fully connected neural network class</p>
+<h1 id="parameters">Parameters:</h1>
+<pre><code>D_in: int
+    dimension of input track (ignored, can be variable)
+
+H: int
+    hidden layer size
+
+p: int
+    number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class AttentionNet(nn.Module):
+    
+    &#34;&#34;&#34;
+    customized (one hidden layer) fully connected neural network class
+    &#34;&#34;&#34;
+
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(AttentionNet, self).__init__()
+        self.att1 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln1 = nn.LayerNorm(D_in)
+        self.fc1 = nn.Linear(D_in, 1) 
+        self.relu1 = nn.ReLU()
+        self.att2 = nn.MultiheadAttention(embed_dim=18, num_heads=3)
+        self.ln2 = nn.LayerNorm(D_in)
+        self.fc2 = nn.Linear(D_in + p, 1) 
+    
+    def forward(self, x1, x2):
+        print(x1.shape)
+        x1 = self.att1(x1, x1)
+        x1 = self.ln1(x1)
+        x1 = self.fc1(x1)
+        x1 = self.relu1(x1)
+        x1 = self.att2(x1, x1)
+        x1 = self.ln2(x1)
+        
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc2(h1)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.models.AttentionNet.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x1, x2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x1, x2):
+    print(x1.shape)
+    x1 = self.att1(x1, x1)
+    x1 = self.ln1(x1)
+    x1 = self.fc1(x1)
+    x1 = self.relu1(x1)
+    x1 = self.att2(x1, x1)
+    x1 = self.ln2(x1)
+    
+    if x2 is not None:
+        h1 = torch.cat((h1, x2), 1)
+    return self.fc2(h1)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.models.CNN"><code class="flex name class">
+<span>class <span class="ident">CNN</span></span>
+<span>(</span><span>D_in, H, p)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+class Model(nn.Module):
+    def __init__(self):
+        super(Model, self).__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<h1 id="parameters">Parameters:</h1>
+<pre><code>D_in: int
+    dimension of input track (ignored, can be variable)
+
+H: int
+    hidden layer size
+
+p: int
+    number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class CNN(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(CNN, self).__init__()
+        self.conv1 = nn.Conv1d(in_channels=1, out_channels=H, kernel_size=7)
+        self.maxpool1 = nn.MaxPool1d(kernel_size=2)
+        self.conv2 = nn.Conv1d(in_channels=H, out_channels=3, kernel_size=5)
+        self.maxpool2 = nn.MaxPool1d(kernel_size=2)
+        self.fc = nn.Linear(18 + p, 1) # this is hard-coded
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(1) # add channel dim
+        x1 = self.conv1(x1)
+        x1 = self.maxpool1(x1)
+        x1 = self.conv2(x1)
+        x1 = self.maxpool2(x1)
+        x1 = x1.reshape(x1.shape[0], -1) # flatten channel dim
+        
+        if x2 is not None:
+            x1 = torch.cat((x1, x2), 1)
+        return self.fc(x1)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.models.CNN.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x1, x2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x1, x2):
+    x1 = x1.unsqueeze(1) # add channel dim
+    x1 = self.conv1(x1)
+    x1 = self.maxpool1(x1)
+    x1 = self.conv2(x1)
+    x1 = self.maxpool2(x1)
+    x1 = x1.reshape(x1.shape[0], -1) # flatten channel dim
+    
+    if x2 is not None:
+        x1 = torch.cat((x1, x2), 1)
+    return self.fc(x1)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.models.FCNN"><code class="flex name class">
+<span>class <span class="ident">FCNN</span></span>
+<span>(</span><span>D_in, H, p)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>customized (one hidden layer) fully connected neural network class</p>
+<h1 id="parameters">Parameters:</h1>
+<pre><code>D_in: int
+    dimension of input track
+
+H: int
+    hidden layer size
+
+p: int
+    number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class FCNN(nn.Module):
+    
+    &#34;&#34;&#34;
+    customized (one hidden layer) fully connected neural network class
+    &#34;&#34;&#34;
+
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(FCNN, self).__init__()
+        self.fc1 = nn.Linear(D_in, H)
+        #self.fc2 = nn.Linear(H, H)
+        self.bn1 = nn.BatchNorm1d(H)
+        self.fc2 = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        
+        z1 = self.fc1(x1)
+        z1 = self.bn1(z1)
+        h1 = F.relu(z1)
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        z2 = self.fc2(h1)
+        #h2 = F.relu(z2)
+        #z3 = self.fc3(h2)       
+        
+        return z2</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.models.FCNN.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x1, x2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x1, x2):
+    
+    z1 = self.fc1(x1)
+    z1 = self.bn1(z1)
+    h1 = F.relu(z1)
+    if x2 is not None:
+        h1 = torch.cat((h1, x2), 1)
+    z2 = self.fc2(h1)
+    #h2 = F.relu(z2)
+    #z3 = self.fc3(h2)       
+    
+    return z2</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
+<dt id="src.models.LSTMNet"><code class="flex name class">
+<span>class <span class="ident">LSTMNet</span></span>
+<span>(</span><span>D_in, H, p)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Base class for all neural network modules.</p>
+<p>Your models should also subclass this class.</p>
+<p>Modules can also contain other Modules, allowing to nest them in
+a tree structure. You can assign the submodules as regular attributes::</p>
+<pre><code>import torch.nn as nn
+import torch.nn.functional as F
+
+class Model(nn.Module):
+    def __init__(self):
+        super(Model, self).__init__()
+        self.conv1 = nn.Conv2d(1, 20, 5)
+        self.conv2 = nn.Conv2d(20, 20, 5)
+
+    def forward(self, x):
+        x = F.relu(self.conv1(x))
+        return F.relu(self.conv2(x))
+</code></pre>
+<p>Submodules assigned in this way will be registered, and will have their
+parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<h1 id="parameters">Parameters:</h1>
+<pre><code>D_in: int
+    dimension of input track (ignored, can be variable)
+
+H: int
+    hidden layer size
+
+p: int
+    number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)
+</code></pre></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">class LSTMNet(nn.Module):
+    def __init__(self, D_in, H, p):
+        
+        &#34;&#34;&#34;
+        Parameters:        
+        ==========================================================
+            D_in: int
+                dimension of input track (ignored, can be variable)
+                
+            H: int
+                hidden layer size
+                
+            p: int
+                number of additional covariates (such as lifetime, msd, etc..., to be concatenated to the hidden layer)            
+        &#34;&#34;&#34;
+
+        super(LSTMNet, self).__init__()
+        self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(H + p, 1) 
+    
+    def forward(self, x1, x2):
+        x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
+        outputs, (h1, c1) = self.lstm(x1) # get hidden vec
+        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+        if x2 is not None:
+            h1 = torch.cat((h1, x2), 1)
+        return self.fc(h1)</code></pre>
+</details>
+<h3>Ancestors</h3>
+<ul class="hlist">
+<li>torch.nn.modules.module.Module</li>
+</ul>
+<h3>Methods</h3>
+<dl>
+<dt id="src.models.LSTMNet.forward"><code class="name flex">
+<span>def <span class="ident">forward</span></span>(<span>self, x1, x2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Defines the computation performed at every call.</p>
+<p>Should be overridden by all subclasses.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Although the recipe for forward pass needs to be defined within
+this function, one should call the :class:<code>Module</code> instance afterwards
+instead of this since the former takes care of running the
+registered hooks while the latter silently ignores them.</p>
+</div></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def forward(self, x1, x2):
+    x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
+    outputs, (h1, c1) = self.lstm(x1) # get hidden vec
+    h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+    if x2 is not None:
+        h1 = torch.cat((h1, x2), 1)
+    return self.fc(h1)</code></pre>
+</details>
+</dd>
+</dl>
+</dd>
 <dt id="src.models.MaxConv"><code class="flex name class">
 <span>class <span class="ident">MaxConv</span></span>
 <span>(</span><span>num_units=20, kernel_size=30, nonlin=&lt;function relu&gt;, use_bias=False)</span>
@@ -406,6 +964,30 @@ registered hooks while the latter silently ignores them.</p>
 </li>
 <li><h3><a href="#header-classes">Classes</a></h3>
 <ul>
+<li>
+<h4><code><a title="src.models.AttentionNet" href="#src.models.AttentionNet">AttentionNet</a></code></h4>
+<ul class="">
+<li><code><a title="src.models.AttentionNet.forward" href="#src.models.AttentionNet.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.models.CNN" href="#src.models.CNN">CNN</a></code></h4>
+<ul class="">
+<li><code><a title="src.models.CNN.forward" href="#src.models.CNN.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.models.FCNN" href="#src.models.FCNN">FCNN</a></code></h4>
+<ul class="">
+<li><code><a title="src.models.FCNN.forward" href="#src.models.FCNN.forward">forward</a></code></li>
+</ul>
+</li>
+<li>
+<h4><code><a title="src.models.LSTMNet" href="#src.models.LSTMNet">LSTMNet</a></code></h4>
+<ul class="">
+<li><code><a title="src.models.LSTMNet.forward" href="#src.models.LSTMNet.forward">forward</a></code></li>
+</ul>
+</li>
 <li>
 <h4><code><a title="src.models.MaxConv" href="#src.models.MaxConv">MaxConv</a></code></h4>
 <ul class="">

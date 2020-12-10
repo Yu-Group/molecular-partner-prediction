@@ -35,8 +35,13 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ###### Random projections
 
+# 01_reg
+
+
 # 01_reg_amplitude
 
+
+#### compare with DASC
 
 ###### Max strength prediction
 
@@ -70,6 +75,17 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## rest of nb is finding rules to define outcome
 
+# 02_run_data_pipeline
+
+
+## process original data
+
+## process new data
+
+## check data stats
+
+## visualize differences
+
 # 03_classify
 
 
@@ -82,58 +98,17 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 **look at feat importances**
 
-# 05_posthoc_analysis
+# 05_calc_dists
 
 
-## look at single model
-
-###### visualize errs
-
-###### calculate accs
-
-###### viz feature relationships
-
-###### viz boundaries / outliers
-
-###### look at pcs
-
-## look at many models
-
-###### ensemble err
-
-**venn-diagram**
-
-# 06_transfer
+# 06_eda_limits
 
 
-## accuracies on different test datasets
+**binarize features**
 
-**calculate predictions on diff datasets**
+**acc predicting majority class for every bucket**
 
-**show metrics on different dsets**
-
-## diff dataset summaries
-
-**means of some features**
-
-## lower res data
-
-## viz biggest errs
-
-# 07_calc_dists
-
-
-# 07_match_errs
-
-
-## example
-
-## look at closest pairs
-
-# 08_eda_limits
-
-
-# 09_eda_dynamin
+# 07_eda_dynamin
 
 
 ## load dynamin tracks directly
@@ -143,4 +118,13 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 **look at clath curves**
 
 **compare aux + dynamin**
+
+# 08_deep_learning
+
+
+## prepare data
+
+#### train neural net
+
+## analyze results
 
