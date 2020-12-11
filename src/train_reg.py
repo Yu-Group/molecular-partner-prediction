@@ -89,7 +89,7 @@ def add_sig_mean(df, resp_tracks=['Y']):
         df[f'{track}_sig_mean_normalized'] = sig_mean
         for cell in set(df['cell_num']):
             cell_idx = np.where(df['cell_num'].values == cell)[0]
-            y = df[f'{track}_sig_mean_normalized'].values[cell_idx]
+            y = df[f'{track}_sig_mean'].values[cell_idx]
             df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
@@ -131,11 +131,11 @@ def train_reg(df,
         train fully connected neural network
         """
         
-        D_in = len(df['X_same_length'].iloc[0])
         H = kwargs['fcnn_hidden_neurons'] if 'fcnn_hidden_neurons' in kwargs else 40
         epochs = kwargs['fcnn_epochs'] if 'fcnn_epochs' in kwargs else 1000
         batch_size = kwargs['fcnn_batch_size'] if 'fcnn_batch_size' in kwargs else 1000
         track_name = kwargs['track_name'] if 'track_name' in kwargs else 'X_same_length'
+        D_in = len(df[track_name].iloc[0])
         
         m = neural_net_sklearn(D_in=D_in, 
                              H=H, 
@@ -185,7 +185,7 @@ def train_reg(df,
             cv_score.append(r2_score(np.exp(Y_val_cv), np.exp(preds)))
             cv_pearsonr.append(pearsonr(np.exp(Y_val_cv), np.exp(preds))[0])
         else:
-            #print(r2_score(Y_val_cv, preds))
+            print(r2_score(Y_val_cv, preds))
             cv_score.append(r2_score(Y_val_cv, preds))
             cv_pearsonr.append(pearsonr(Y_val_cv, preds)[0])
     
@@ -213,6 +213,8 @@ def train_reg(df,
 def load_results(out_dir, by_cell=True):
     r = []
     for fname in os.listdir(out_dir):
+        if os.path.isdir(oj(out_dir, fname)): 
+            continue
         d = pkl.load(open(oj(out_dir, fname), 'rb'))
         metrics = {k: d['cv'][k] for k in d['cv'].keys() if not 'curve' in k}
         num_pts_by_fold_cv = d['num_pts_by_fold_cv']
@@ -222,7 +224,7 @@ def load_results(out_dir, by_cell=True):
             out.update({'cv_accuracy_by_cell': metrics['r2']})
         out.update({k + '_std': np.std(metrics[k]) for k in metrics})
         out['model_type'] = fname.replace('.pkl', '')  # d['model_type']
-#         print(d['cv'].keys())
+        print(d['cv'].keys())
         # imp_mat = np.array(d['imps']['imps'])
         # imp_mu = imp_mat.mean(axis=0)
         # imp_sd = imp_mat.std(axis=0)

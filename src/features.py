@@ -386,3 +386,22 @@ def downsample(x, length):
         # if length of original track is smaller than targeted length, fill the track with 0s
         x_ds = list(x) + [0]*(length - len(x))
     return x_ds
+
+def normalize_track(df, track='X_same_length'):
+    
+    df[f'{track}_normalized'] = df[track].values
+    for cell in set(df['cell_num']):
+        cell_idx = np.where(df['cell_num'].values == cell)[0]
+        y = df[track].values[cell_idx]
+        y = np.array(list(y))
+        df[f'{track}_normalized'].values[cell_idx] = list((y - np.mean(y, axis=0))/np.std(y, axis=0))
+    return df
+
+def normalize_feature(df, feat):
+        
+    for cell in set(df['cell_num']):
+        cell_idx = np.where(df['cell_num'].values == cell)[0]
+        y = df[feat].values[cell_idx]
+            #y = np.array(list(y))
+        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df
