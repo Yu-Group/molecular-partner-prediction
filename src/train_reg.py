@@ -222,7 +222,7 @@ def load_results(out_dir, by_cell=True):
             out.update({'cv_accuracy_by_cell': metrics['r2']})
         out.update({k + '_std': np.std(metrics[k]) for k in metrics})
         out['model_type'] = fname.replace('.pkl', '')  # d['model_type']
-        print(d['cv'].keys())
+#         print(d['cv'].keys())
         # imp_mat = np.array(d['imps']['imps'])
         # imp_mu = imp_mat.mean(axis=0)
         # imp_sd = imp_mat.std(axis=0)

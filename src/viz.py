@@ -490,7 +490,7 @@ def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
     xticks = mtick.FormatStrFormatter(fmt)
     ax.xaxis.set_major_formatter(xticks)
 
-    plt.legend()
+    plt.legend(fontsize='x-large', frameon=False)
     plt.grid(alpha=0.2)
     plt.tight_layout()
     print('total acc', (np.cumsum(accs)[ns:] / nums[ns:])[-1])

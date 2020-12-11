@@ -244,6 +244,23 @@ def add_basic_features(df):
 
     return df
 
+def extract_X_mat(df):
+    '''Extract matrix for X filled with zeros after sequences
+    Width of matrix is length of longest lifetime
+    '''
+    p = df.lifetime.max()
+    n = df.shape[0]
+    X_mat = np.zeros((n, p)).astype(np.float32)
+    X = df['X'].values
+    for i in range(n):
+        x = X[i]
+        num_timepoints = min(p, len(x))
+        X_mat[i, :num_timepoints] = x[:num_timepoints]
+    X_mat = np.nan_to_num(X_mat)
+    X_mat -= np.min(X_mat)
+    X_mat /= np.std(X_mat)
+    return X_mat
+
 
 def add_binary_features(df, outcome_def):
     '''binarize features at the difference between the mean of each class

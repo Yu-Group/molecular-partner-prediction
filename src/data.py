@@ -22,6 +22,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
              processed_file=oj(config.DIR_PROCESSED, 'df.pkl'),
              metadata_file=oj(config.DIR_PROCESSED, 'metadata.pkl'),
              use_processed_dicts=True,
+             compute_dictionary_learning=False,
              outcome_def='y_consec_thresh',
              all_data: bool=False,
              acc_thresh=0.95,
@@ -95,7 +96,8 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         # add features
         print('\tadding features...')
         df = features.add_dasc_features(df)
-        # df = features.add_dict_features(df, use_processed=use_processed_dicts)
+        if compute_dictionary_learning:
+            df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
@@ -118,24 +120,6 @@ def remove_invalid_tracks(df, keep=[1, 2]):
     5-8 (there is merging or splitting)
     '''
     return df[df.catIdx.isin(keep)]
-
-
-def extract_X_mat(df):
-    '''Extract matrix for X filled with zeros after sequences
-    Width of matrix is length of longest lifetime
-    '''
-    p = df.lifetime.max()
-    n = df.shape[0]
-    X_mat = np.zeros((n, p)).astype(np.float32)
-    X = df['X'].values
-    for i in range(n):
-        x = X[i]
-        num_timepoints = min(p, len(x))
-        X_mat[i, :num_timepoints] = x[:num_timepoints]
-    X_mat = np.nan_to_num(X_mat)
-    X_mat -= np.min(X_mat)
-    X_mat /= np.std(X_mat)
-    return X_mat
 
 
 def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str,
