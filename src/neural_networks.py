@@ -66,6 +66,14 @@ class neural_net_sklearn():
         """        
         
         torch.manual_seed(self.torch_seed)
+        if self.arch == 'fcnn':
+            self.model = models.FCNN(self.D_in, self.H, self.p)
+        elif 'lstm' in self.arch:
+            self.model = models.LSTMNet(self.D_in, self.H, self.p)
+        elif 'cnn' in self.arch:
+            self.model = models.CNN(self.D_in, self.H, self.p)
+        elif 'attention' in self.arch:
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)        
         
         # convert input dataframe to tensors
         X_track = X[self.track_name] # track
