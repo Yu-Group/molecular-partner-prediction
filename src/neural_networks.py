@@ -13,7 +13,7 @@ class neural_net_sklearn():
     sklearn wrapper for training a neural net
     """
     
-    def __init__(self, D_in, H, p, epochs, batch_size, track_name, arch='fcnn', torch_seed=2):
+    def __init__(self, D_in=40, H=40, p=17, epochs=1000, batch_size=100, track_name='X_same_length_normalized', arch='fcnn', torch_seed=2):
         
         """
         Parameters:

@@ -196,6 +196,7 @@ def train_reg(df,
     #test_preds = m.predict(X_test)
     results = {'y_preds': y_preds,
                'y': y,
+               'model_state_dict': m.model.state_dict(),
                #'test_preds': test_preds,
                'cv': {'r2': cv_score, 'pearsonr': cv_pearsonr},
                'model_type': model_type,
