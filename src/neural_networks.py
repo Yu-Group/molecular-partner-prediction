@@ -5,6 +5,7 @@ import numpy as np
 from tqdm import tqdm
 import torch.utils.data as data_utils
 from features import downsample
+import pickle as pkl
 import models
    
 class neural_net_sklearn():
@@ -51,7 +52,7 @@ class neural_net_sklearn():
         elif 'attention' in arch:
             self.model = models.AttentionNet(self.D_in, self.H, self.p)
 
-    def fit(self, X, y):
+    def fit(self, X, y, verbose=False, checkpoint_fname=None):
         
         """
         Train model
@@ -111,8 +112,13 @@ class neural_net_sklearn():
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
-            if epoch % (self.epochs // 10) == 99:
-                print(f'Epoch: {epoch}, Average loss: {train_loss/len(X_track)}')
+            if verbose:
+                print(f'Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}')
+            elif epoch % (self.epochs // 10) == 99:
+                print(f'Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}')
+            if checkpoint_fname is not None:
+                pkl.dump({'model_state_dict': self.model.state_dict()},
+                         open(checkpoint_fname, 'wb'))
             
     def predict(self, X_new):
         
