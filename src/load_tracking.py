@@ -15,9 +15,10 @@ import pickle as pkl
 from viz import *
 import math
 import config
+from tqdm import tqdm
 
 
-def get_tracks(data_dir, split=None, all_data=False,
+def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
                processed_tracks_file=oj(config.DIR_TRACKS, 'tracks.pkl'),
                dset='orig'):
     '''Read and save tracks tracks from folders within data_dir into a dataframe
@@ -26,8 +27,8 @@ def get_tracks(data_dir, split=None, all_data=False,
     processed_tracks_file = processed_tracks_file[:-4] + '_' + dset + '.pkl'
     print('\t', processed_tracks_file, data_dir)
 
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
+    #if os.path.exists(processed_tracks_file):
+    #    return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split['feature_selection'] is None:
@@ -121,7 +122,7 @@ def get_tracks(data_dir, split=None, all_data=False,
             data['lifetime_extended'] = [len(x) for x in data['X_extended']]
 
             # pixel features
-            if all_data:
+            if pixel_data:
                 cla, aux = get_images(full_dir)
                 pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks['t'][i]))]
@@ -150,6 +151,50 @@ def get_tracks(data_dir, split=None, all_data=False,
                 data['right_max'] = [max(pixel_right[i]) for i in range(n)]
                 data['up_max'] = [max(pixel_up[i]) for i in range(n)]
                 data['down_max'] = [max(pixel_down[i]) for i in range(n)]
+                
+            if video_data:
+                
+                X_video = []
+                square_size = 10
+                cla, aux = get_images(full_dir)
+                for i in tqdm(range(n)):
+                    if data['lifetime'][i] >= 15:
+                        x_pos_max, x_pos_min = int(max(data['x_pos_seq'][i])), int(min(data['x_pos_seq'][i]))
+                        y_pos_max, y_pos_min = int(max(data['y_pos_seq'][i])), int(min(data['y_pos_seq'][i]))
+                        
+                        if x_pos_max - x_pos_min < square_size:
+                                                       
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)
+                            if x_left < 0:
+                                x_left, x_right = 0, square_size - 1
+                            if x_right > cla.shape[2] - 1:
+                                x_left, x_right = cla.shape[2] - square_size, cla.shape[2] - 1
+                                
+                        else:
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)                            
+
+                        if y_pos_max - y_pos_min < square_size:
+                                                       
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2)
+                            if y_left < 0:
+                                y_left, y_right = 0, square_size - 1
+                            if y_right > cla.shape[1] - 1:
+                                y_left, y_right = cla.shape[1] - square_size, cla.shape[1] - 1
+                                
+                        else:
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2) 
+                            
+                        video = cla[int(np.nanmin(t[i])):int(np.nanmax(t[i]) + 1), :, :][:, y_left:(y_right + 1), :][:, :, x_left:(x_right + 1)]
+                        X_video.append(video)
+                    else:
+                        X_video.append(np.zeros(0))
+                data['X_video'] = X_video
+                            
+                    
             
             df = pd.DataFrame.from_dict(data)
             dfs.append(deepcopy(df))
