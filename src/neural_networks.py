@@ -135,7 +135,7 @@ class neural_net_sklearn():
         X_new_track = X_new[self.track_name]
         X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
         X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
-        X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)        
+        X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)      
         #X_new = torch.tensor(np.array(list(X_new.values)), dtype=torch.float)
         
         # make predictions

@@ -115,7 +115,7 @@ def add_sig_mean(df, resp_tracks=[&#39;Y&#39;]):
         df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
         for cell in set(df[&#39;cell_num&#39;]):
             cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
-            y = df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx]
+            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
             df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
@@ -157,11 +157,11 @@ def train_reg(df,
         train fully connected neural network
         &#34;&#34;&#34;
         
-        D_in = len(df[&#39;X_same_length&#39;].iloc[0])
         H = kwargs[&#39;fcnn_hidden_neurons&#39;] if &#39;fcnn_hidden_neurons&#39; in kwargs else 40
         epochs = kwargs[&#39;fcnn_epochs&#39;] if &#39;fcnn_epochs&#39; in kwargs else 1000
         batch_size = kwargs[&#39;fcnn_batch_size&#39;] if &#39;fcnn_batch_size&#39; in kwargs else 1000
         track_name = kwargs[&#39;track_name&#39;] if &#39;track_name&#39; in kwargs else &#39;X_same_length&#39;
+        D_in = len(df[track_name].iloc[0])
         
         m = neural_net_sklearn(D_in=D_in, 
                              H=H, 
@@ -211,7 +211,7 @@ def train_reg(df,
             cv_score.append(r2_score(np.exp(Y_val_cv), np.exp(preds)))
             cv_pearsonr.append(pearsonr(np.exp(Y_val_cv), np.exp(preds))[0])
         else:
-            #print(r2_score(Y_val_cv, preds))
+            print(r2_score(Y_val_cv, preds))
             cv_score.append(r2_score(Y_val_cv, preds))
             cv_pearsonr.append(pearsonr(Y_val_cv, preds)[0])
     
@@ -222,6 +222,7 @@ def train_reg(df,
     #test_preds = m.predict(X_test)
     results = {&#39;y_preds&#39;: y_preds,
                &#39;y&#39;: y,
+               &#39;model_state_dict&#39;: m.model.state_dict(),
                #&#39;test_preds&#39;: test_preds,
                &#39;cv&#39;: {&#39;r2&#39;: cv_score, &#39;pearsonr&#39;: cv_pearsonr},
                &#39;model_type&#39;: model_type,
@@ -239,6 +240,8 @@ def train_reg(df,
 def load_results(out_dir, by_cell=True):
     r = []
     for fname in os.listdir(out_dir):
+        if os.path.isdir(oj(out_dir, fname)): 
+            continue
         d = pkl.load(open(oj(out_dir, fname), &#39;rb&#39;))
         metrics = {k: d[&#39;cv&#39;][k] for k in d[&#39;cv&#39;].keys() if not &#39;curve&#39; in k}
         num_pts_by_fold_cv = d[&#39;num_pts_by_fold_cv&#39;]
@@ -383,7 +386,7 @@ def test_reg(df,
         df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
         for cell in set(df[&#39;cell_num&#39;]):
             cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
-            y = df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx]
+            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
             df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df</code></pre>
 </details>
@@ -449,6 +452,8 @@ def test_reg(df,
 <pre><code class="python">def load_results(out_dir, by_cell=True):
     r = []
     for fname in os.listdir(out_dir):
+        if os.path.isdir(oj(out_dir, fname)): 
+            continue
         d = pkl.load(open(oj(out_dir, fname), &#39;rb&#39;))
         metrics = {k: d[&#39;cv&#39;][k] for k in d[&#39;cv&#39;].keys() if not &#39;curve&#39; in k}
         num_pts_by_fold_cv = d[&#39;num_pts_by_fold_cv&#39;]
@@ -616,11 +621,11 @@ def test_reg(df,
         train fully connected neural network
         &#34;&#34;&#34;
         
-        D_in = len(df[&#39;X_same_length&#39;].iloc[0])
         H = kwargs[&#39;fcnn_hidden_neurons&#39;] if &#39;fcnn_hidden_neurons&#39; in kwargs else 40
         epochs = kwargs[&#39;fcnn_epochs&#39;] if &#39;fcnn_epochs&#39; in kwargs else 1000
         batch_size = kwargs[&#39;fcnn_batch_size&#39;] if &#39;fcnn_batch_size&#39; in kwargs else 1000
         track_name = kwargs[&#39;track_name&#39;] if &#39;track_name&#39; in kwargs else &#39;X_same_length&#39;
+        D_in = len(df[track_name].iloc[0])
         
         m = neural_net_sklearn(D_in=D_in, 
                              H=H, 
@@ -670,7 +675,7 @@ def test_reg(df,
             cv_score.append(r2_score(np.exp(Y_val_cv), np.exp(preds)))
             cv_pearsonr.append(pearsonr(np.exp(Y_val_cv), np.exp(preds))[0])
         else:
-            #print(r2_score(Y_val_cv, preds))
+            print(r2_score(Y_val_cv, preds))
             cv_score.append(r2_score(Y_val_cv, preds))
             cv_pearsonr.append(pearsonr(Y_val_cv, preds)[0])
     
@@ -681,6 +686,7 @@ def test_reg(df,
     #test_preds = m.predict(X_test)
     results = {&#39;y_preds&#39;: y_preds,
                &#39;y&#39;: y,
+               &#39;model_state_dict&#39;: m.model.state_dict(),
                #&#39;test_preds&#39;: test_preds,
                &#39;cv&#39;: {&#39;r2&#39;: cv_score, &#39;pearsonr&#39;: cv_pearsonr},
                &#39;model_type&#39;: model_type,

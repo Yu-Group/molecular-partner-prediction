@@ -48,6 +48,7 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
              processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
              metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
              use_processed_dicts=True,
+             compute_dictionary_learning=False,
              outcome_def=&#39;y_consec_thresh&#39;,
              all_data: bool=False,
              acc_thresh=0.95,
@@ -121,7 +122,8 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
         # add features
         print(&#39;\tadding features...&#39;)
         df = features.add_dasc_features(df)
-        # df = features.add_dict_features(df, use_processed=use_processed_dicts)
+        if compute_dictionary_learning:
+            df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
@@ -144,24 +146,6 @@ def remove_invalid_tracks(df, keep=[1, 2]):
     5-8 (there is merging or splitting)
     &#39;&#39;&#39;
     return df[df.catIdx.isin(keep)]
-
-
-def extract_X_mat(df):
-    &#39;&#39;&#39;Extract matrix for X filled with zeros after sequences
-    Width of matrix is length of longest lifetime
-    &#39;&#39;&#39;
-    p = df.lifetime.max()
-    n = df.shape[0]
-    X_mat = np.zeros((n, p)).astype(np.float32)
-    X = df[&#39;X&#39;].values
-    for i in range(n):
-        x = X[i]
-        num_timepoints = min(p, len(x))
-        X_mat[i, :num_timepoints] = x[:num_timepoints]
-    X_mat = np.nan_to_num(X_mat)
-    X_mat -= np.min(X_mat)
-    X_mat /= np.std(X_mat)
-    return X_mat
 
 
 def process_tracks_by_lifetime(df: pd.DataFrame, outcome_def: str,
@@ -310,36 +294,8 @@ if __name__ == &#39;__main__&#39;:
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
-<dt id="src.data.extract_X_mat"><code class="name flex">
-<span>def <span class="ident">extract_X_mat</span></span>(<span>df)</span>
-</code></dt>
-<dd>
-<section class="desc"><p>Extract matrix for X filled with zeros after sequences
-Width of matrix is length of longest lifetime</p></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def extract_X_mat(df):
-    &#39;&#39;&#39;Extract matrix for X filled with zeros after sequences
-    Width of matrix is length of longest lifetime
-    &#39;&#39;&#39;
-    p = df.lifetime.max()
-    n = df.shape[0]
-    X_mat = np.zeros((n, p)).astype(np.float32)
-    X = df[&#39;X&#39;].values
-    for i in range(n):
-        x = X[i]
-        num_timepoints = min(p, len(x))
-        X_mat[i, :num_timepoints] = x[:num_timepoints]
-    X_mat = np.nan_to_num(X_mat)
-    X_mat -= np.min(X_mat)
-    X_mat /= np.std(X_mat)
-    return X_mat</code></pre>
-</details>
-</dd>
 <dt id="src.data.get_data"><code class="name flex">
-<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/df.pkl', metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/metadata.pkl', use_processed_dicts=True, outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95, previous_meta_file=None)</span>
+<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/df.pkl', metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/metadata.pkl', use_processed_dicts=True, compute_dictionary_learning=False, outcome_def='y_consec_thresh', all_data=False, acc_thresh=0.95, previous_meta_file=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><h2 id="params">Params</h2>
@@ -362,6 +318,7 @@ the thresholds for lifetime are taken from this file</dd>
              processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
              metadata_file=oj(config.DIR_PROCESSED, &#39;metadata.pkl&#39;),
              use_processed_dicts=True,
+             compute_dictionary_learning=False,
              outcome_def=&#39;y_consec_thresh&#39;,
              all_data: bool=False,
              acc_thresh=0.95,
@@ -435,7 +392,8 @@ the thresholds for lifetime are taken from this file</dd>
         # add features
         print(&#39;\tadding features...&#39;)
         df = features.add_dasc_features(df)
-        # df = features.add_dict_features(df, use_processed=use_processed_dicts)
+        if compute_dictionary_learning:
+            df = features.add_dict_features(df, use_processed=use_processed_dicts)
         # df = features.add_smoothed_tracks(df)
         # df = features.add_pcs(df)
         # df = features.add_trend_filtering(df) 
@@ -646,7 +604,6 @@ Only keep cat_idx
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
-<li><code><a title="src.data.extract_X_mat" href="#src.data.extract_X_mat">extract_X_mat</a></code></li>
 <li><code><a title="src.data.get_data" href="#src.data.get_data">get_data</a></code></li>
 <li><code><a title="src.data.get_feature_names" href="#src.data.get_feature_names">get_feature_names</a></code></li>
 <li><code><a title="src.data.process_tracks_by_lifetime" href="#src.data.process_tracks_by_lifetime">process_tracks_by_lifetime</a></code></li>

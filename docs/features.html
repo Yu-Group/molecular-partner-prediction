@@ -270,6 +270,23 @@ def add_basic_features(df):
 
     return df
 
+def extract_X_mat(df):
+    &#39;&#39;&#39;Extract matrix for X filled with zeros after sequences
+    Width of matrix is length of longest lifetime
+    &#39;&#39;&#39;
+    p = df.lifetime.max()
+    n = df.shape[0]
+    X_mat = np.zeros((n, p)).astype(np.float32)
+    X = df[&#39;X&#39;].values
+    for i in range(n):
+        x = X[i]
+        num_timepoints = min(p, len(x))
+        X_mat[i, :num_timepoints] = x[:num_timepoints]
+    X_mat = np.nan_to_num(X_mat)
+    X_mat -= np.min(X_mat)
+    X_mat /= np.std(X_mat)
+    return X_mat
+
 
 def add_binary_features(df, outcome_def):
     &#39;&#39;&#39;binarize features at the difference between the mean of each class
@@ -394,7 +411,26 @@ def downsample(x, length):
     else:
         # if length of original track is smaller than targeted length, fill the track with 0s
         x_ds = list(x) + [0]*(length - len(x))
-    return x_ds</code></pre>
+    return x_ds
+
+def normalize_track(df, track=&#39;X_same_length&#39;):
+    
+    df[f&#39;{track}_normalized&#39;] = df[track].values
+    for cell in set(df[&#39;cell_num&#39;]):
+        cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+        y = df[track].values[cell_idx]
+        y = np.array(list(y))
+        df[f&#39;{track}_normalized&#39;].values[cell_idx] = list((y - np.mean(y, axis=0))/np.std(y, axis=0))
+    return df
+
+def normalize_feature(df, feat):
+        
+    for cell in set(df[&#39;cell_num&#39;]):
+        cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+        y = df[feat].values[cell_idx]
+            #y = np.array(list(y))
+        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df</code></pre>
 </details>
 </section>
 <section>
@@ -855,6 +891,73 @@ length: int
     return x_ds</code></pre>
 </details>
 </dd>
+<dt id="src.features.extract_X_mat"><code class="name flex">
+<span>def <span class="ident">extract_X_mat</span></span>(<span>df)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Extract matrix for X filled with zeros after sequences
+Width of matrix is length of longest lifetime</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def extract_X_mat(df):
+    &#39;&#39;&#39;Extract matrix for X filled with zeros after sequences
+    Width of matrix is length of longest lifetime
+    &#39;&#39;&#39;
+    p = df.lifetime.max()
+    n = df.shape[0]
+    X_mat = np.zeros((n, p)).astype(np.float32)
+    X = df[&#39;X&#39;].values
+    for i in range(n):
+        x = X[i]
+        num_timepoints = min(p, len(x))
+        X_mat[i, :num_timepoints] = x[:num_timepoints]
+    X_mat = np.nan_to_num(X_mat)
+    X_mat -= np.min(X_mat)
+    X_mat /= np.std(X_mat)
+    return X_mat</code></pre>
+</details>
+</dd>
+<dt id="src.features.normalize_feature"><code class="name flex">
+<span>def <span class="ident">normalize_feature</span></span>(<span>df, feat)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def normalize_feature(df, feat):
+        
+    for cell in set(df[&#39;cell_num&#39;]):
+        cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+        y = df[feat].values[cell_idx]
+            #y = np.array(list(y))
+        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df</code></pre>
+</details>
+</dd>
+<dt id="src.features.normalize_track"><code class="name flex">
+<span>def <span class="ident">normalize_track</span></span>(<span>df, track='X_same_length')</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def normalize_track(df, track=&#39;X_same_length&#39;):
+    
+    df[f&#39;{track}_normalized&#39;] = df[track].values
+    for cell in set(df[&#39;cell_num&#39;]):
+        cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+        y = df[track].values[cell_idx]
+        y = np.array(list(y))
+        df[f&#39;{track}_normalized&#39;].values[cell_idx] = list((y - np.mean(y, axis=0))/np.std(y, axis=0))
+    return df</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -881,6 +984,9 @@ length: int
 <li><code><a title="src.features.add_smoothed_splines" href="#src.features.add_smoothed_splines">add_smoothed_splines</a></code></li>
 <li><code><a title="src.features.add_trend_filtering" href="#src.features.add_trend_filtering">add_trend_filtering</a></code></li>
 <li><code><a title="src.features.downsample" href="#src.features.downsample">downsample</a></code></li>
+<li><code><a title="src.features.extract_X_mat" href="#src.features.extract_X_mat">extract_X_mat</a></code></li>
+<li><code><a title="src.features.normalize_feature" href="#src.features.normalize_feature">normalize_feature</a></code></li>
+<li><code><a title="src.features.normalize_track" href="#src.features.normalize_track">normalize_track</a></code></li>
 </ul>
 </li>
 </ul>

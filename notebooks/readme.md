@@ -124,7 +124,13 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## prepare data
 
-#### train neural net
+#### train neural net with cv
 
-## analyze results
+**analyze cv results**
+
+#### train neural net on all training data
+
+## transfer to classification
+
+## interpretation
 
