@@ -24,7 +24,8 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
              use_processed_dicts=True,
              compute_dictionary_learning=False,
              outcome_def='y_consec_thresh',
-             all_data: bool=False,
+             pixel_data: bool=False,
+             video_data: bool=True,
              acc_thresh=0.95,
              previous_meta_file: str=None):
     '''
@@ -57,7 +58,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         # load tracks
         print('\tloading tracks...')
         df = load_tracking.get_tracks(data_dir=DSET['data_dir'],
-                                      split=DSET, all_data=all_data,
+                                      split=DSET, pixel_data=pixel_data, video_data=video_data,
                                       dset=dset)  # note: different Xs can be different shapes
 #         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
 #         print('num nans', df.isna().sum())
