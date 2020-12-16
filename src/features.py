@@ -387,6 +387,27 @@ def downsample(x, length):
         x_ds = list(x) + [0]*(length - len(x))
     return x_ds
 
+def downsample_video(x, length):
+    
+    """
+    haven't tested yet
+    
+
+    """
+    
+    
+    n = len(x)    
+    if n >= length:   
+        # if length of original track is greater than targeted length, downsample 
+        time_index = [np.int(1.0 * (n-1) * i/(length - 1)) for i in range(length)]
+        x_ds = x[time_index, :, :]
+    elif n > 0:
+        # if length of original track is smaller than targeted length, fill the track with 0s
+        x_ds = np.hstack(x, np.zeros((length - n, 10, 10)))
+    else:
+        x_ds = np.zeros((40, 10, 10))
+    return x_ds
+
 def normalize_track(df, track='X_same_length'):
     
     df[f'{track}_normalized'] = df[track].values
