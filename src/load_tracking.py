@@ -157,7 +157,7 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
                 X_video = []
                 square_size = 10
                 cla, aux = get_images(full_dir)
-                for i in tqdm(range(n)):
+                for i in (range(n)):
                     if data['lifetime'][i] >= 15:
                         x_pos_max, x_pos_min = int(max(data['x_pos_seq'][i])), int(min(data['x_pos_seq'][i]))
                         y_pos_max, y_pos_min = int(max(data['y_pos_seq'][i])), int(min(data['y_pos_seq'][i]))

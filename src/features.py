@@ -390,12 +390,9 @@ def downsample(x, length):
 def downsample_video(x, length):
     
     """
-    haven't tested yet
-    
-
+    downsample video feature in the same way
     """
-    
-    
+   
     n = len(x)    
     if n >= length:   
         # if length of original track is greater than targeted length, downsample 
@@ -403,7 +400,7 @@ def downsample_video(x, length):
         x_ds = x[time_index, :, :]
     elif n > 0:
         # if length of original track is smaller than targeted length, fill the track with 0s
-        x_ds = np.hstack(x, np.zeros((length - n, 10, 10)))
+        x_ds = np.vstack((x, np.zeros((length - n, 10, 10))))
     else:
         x_ds = np.zeros((40, 10, 10))
     return x_ds
@@ -426,3 +423,20 @@ def normalize_feature(df, feat):
             #y = np.array(list(y))
         df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
+
+def normalize_video(df, video='X_video'):
+    
+    df[f'{video}_normalized'] = df[video].values
+    for cell in set(df['cell_num']):
+        cell_idx = np.where(df['cell_num'].values == cell)[0]
+        y = df[video].values[cell_idx]
+        video_shape = y[0].shape
+        video_mean, video_std = np.zeros(video_shape), np.zeros(video_shape)
+        for j in (range(video_shape[0])):
+            all_frames_j = np.array([y[i][j].reshape(1, -1)[0] for i in range(len(y))]).reshape(1, -1)[0]
+            video_mean[j] = np.mean(all_frames_j) * np.ones((video_shape[1], video_shape[2]))
+            video_std[j] = np.std(all_frames_j) * np.ones((video_shape[1], video_shape[2]))
+        df[f'{video}_normalized'].values[cell_idx] = list((list(y) - video_mean)/(video_std))
+    return df    
+    
+    

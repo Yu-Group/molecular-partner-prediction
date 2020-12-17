@@ -58,7 +58,9 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         # load tracks
         print('\tloading tracks...')
         df = load_tracking.get_tracks(data_dir=DSET['data_dir'],
-                                      split=DSET, pixel_data=pixel_data, video_data=video_data,
+                                      split=DSET, 
+                                      pixel_data=pixel_data, 
+                                      video_data=video_data,
                                       dset=dset)  # note: different Xs can be different shapes
 #         df = df.fillna(df.median()) # this only does anything for the dynamin tracks, where x_pos is sometimes NaN
 #         print('num nans', df.isna().sum())
@@ -231,6 +233,7 @@ def select_final_feats(feat_names, binarize=False):
                   and not '_tf_smooth' in x
                   and not 'local' in x
                   and not 'last' in x
+                  and not 'video' in x
                   and not x == 'X_quantiles'
                   #               and not 'X_peak' in x
                   #               and not 'slope' in x
