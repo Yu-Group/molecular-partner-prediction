@@ -154,14 +154,21 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
                 
             if video_data:
                 
+                # load video data
+                
                 X_video = []
                 square_size = 10
                 cla, aux = get_images(full_dir)
                 for i in (range(n)):
+                    # only extract videos if lifetime > 15
                     if data['lifetime'][i] >= 15:
+                        
+                        # range of positions of track
                         x_pos_max, x_pos_min = int(max(data['x_pos_seq'][i])), int(min(data['x_pos_seq'][i]))
                         y_pos_max, y_pos_min = int(max(data['y_pos_seq'][i])), int(min(data['y_pos_seq'][i]))
                         
+                        # crop videos to 10X10 square
+                        # e.g. if x_pos_max = 52, x_pos_min = 48, then take x_left = 45, x_right = 54, etc.
                         if x_pos_max - x_pos_min < square_size:
                                                        
                             x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \

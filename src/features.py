@@ -407,6 +407,10 @@ def downsample_video(x, length):
 
 def normalize_track(df, track='X_same_length'):
     
+    """
+    normalize tracks
+    """
+    
     df[f'{track}_normalized'] = df[track].values
     for cell in set(df['cell_num']):
         cell_idx = np.where(df['cell_num'].values == cell)[0]
@@ -416,7 +420,11 @@ def normalize_track(df, track='X_same_length'):
     return df
 
 def normalize_feature(df, feat):
-        
+    
+    """
+    normalize scalar features
+    """
+    
     for cell in set(df['cell_num']):
         cell_idx = np.where(df['cell_num'].values == cell)[0]
         y = df[feat].values[cell_idx]
@@ -425,6 +433,14 @@ def normalize_feature(df, feat):
     return df
 
 def normalize_video(df, video='X_video'):
+    
+    """
+    normalize videos (different frames are normalized separately)
+    
+    e.g. to normalize the first frame, we take the first frame of all videos,
+    flatten and concatenate them into one 1-d array, 
+    and extract the mean and std
+    """
     
     df[f'{video}_normalized'] = df[video].values
     for cell in set(df['cell_num']):
