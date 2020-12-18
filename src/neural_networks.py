@@ -41,16 +41,7 @@ class neural_net_sklearn():
         self.track_name = track_name
         self.torch_seed = torch_seed
         self.arch = arch
-        
-        # initialize model
-        if arch == 'fcnn':
-            self.model = models.FCNN(self.D_in, self.H, self.p)
-        elif 'lstm' in arch:
-            self.model = models.LSTMNet(self.D_in, self.H, self.p)
-        elif 'cnn' in arch:
-            self.model = models.CNN(self.D_in, self.H, self.p)
-        elif 'attention' in arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)
+
 
     def fit(self, X, y, verbose=False, checkpoint_fname=None):
         
@@ -74,7 +65,9 @@ class neural_net_sklearn():
         elif 'cnn' in self.arch:
             self.model = models.CNN(self.D_in, self.H, self.p)
         elif 'attention' in self.arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)        
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+        elif 'video' in self.arch:
+            self.model = models.VideoNet()
         
         # convert input dataframe to tensors
         X_track = X[self.track_name] # track
@@ -93,7 +86,10 @@ class neural_net_sklearn():
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         
         # initialize dataloader
-        dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        if X_covariates is not None:
+            dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        else:
+            dataset = torch.utils.data.TensorDataset(X_track, y)
         train_loader = torch.utils.data.DataLoader(dataset, 
                                                    batch_size=self.batch_size,
                                                    shuffle=True) 
@@ -105,10 +101,15 @@ class neural_net_sklearn():
             train_loss = 0
             for batch_idx, data in enumerate(train_loader):
                 optimizer.zero_grad()
-#                 print('shapes input', data[0].shape, data[1].shape)
-                preds = self.model(data[0], data[1])
+                # print('shapes input', data[0].shape, data[1].shape)
+                if X_covariates is not None:
+                    preds = self.model(data[0], data[1])
+                    y = data[2]
+                else:
+                    preds = self.model(data[0])
+                    y = data[1]
                 loss_fn = torch.nn.MSELoss()
-                loss = loss_fn(preds, data[2])
+                loss = loss_fn(preds, y)
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()

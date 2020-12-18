@@ -3,6 +3,47 @@ from torch import nn
 import torch.nn.functional as F
 import torch
 
+
+class VideoNet(nn.Module):
+    def __init__(self):
+
+        super(VideoNet, self).__init__()
+        self.conv1 = nn.Conv2d(in_channels=1, out_channels=3, kernel_size=5)
+        self.relu1 = nn.ReLU()
+        self.maxpool1 = nn.MaxPool2d(kernel_size=2, stride=1)
+        self.conv2 = nn.Conv2d(in_channels=3, out_channels=1, kernel_size=3)
+        self.lstm = nn.LSTM(input_size=1, hidden_size=40, num_layers=1, batch_first=True)
+        self.fc = nn.Linear(40, 1) 
+#         self.conv2 = nn.Conv1d(in_channels=H, out_channels=3, kernel_size=5)
+#         self.maxpool2 = nn.MaxPool1d(kernel_size=2)
+#         self.fc = nn.Linear(18 + p, 1) # this is hard-coded
+    
+    def forward(self, x):
+        '''
+        x: torch.Tensor
+            (batch_size, time_steps, height, width)
+          = (batch_size, 40, 10, 10)
+        '''
+#         print('in shape', x.shape)
+        # extract features from each time_step separately
+        # reshape time_steps and batch into same dim
+        batch_size = x.shape[0]
+        T = x.shape[1]
+        x = x.reshape(batch_size * T, 1, x.shape[2], x.shape[3])
+        x = self.conv1(x)
+        x = self.relu1(x)
+        x = self.maxpool1(x)
+        x = self.conv2(x)
+        x = torch.max(x, dim=3).values
+        x = torch.max(x, dim=2).values
+        
+        # extract time_steps back out
+        # run lstm on result 1D time series
+        x = x.reshape(batch_size, T, 1)
+        outputs, (h1, c1) = self.lstm(x) # get hidden vec
+        h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
+        return self.fc(h1)
+
 class FCNN(nn.Module):
     
     """
