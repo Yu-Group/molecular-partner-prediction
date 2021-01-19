@@ -8,7 +8,7 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
-from viz import *
+#from viz import *
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
@@ -405,7 +405,7 @@ def downsample_video(x, length):
         x_ds = np.zeros((40, 10, 10))
     return x_ds
 
-def normalize_track(df, track='X_same_length'):
+def normalize_track(df, track='X_same_length', by_time_point=True):
     
     """
     normalize tracks
@@ -416,7 +416,10 @@ def normalize_track(df, track='X_same_length'):
         cell_idx = np.where(df['cell_num'].values == cell)[0]
         y = df[track].values[cell_idx]
         y = np.array(list(y))
-        df[f'{track}_normalized'].values[cell_idx] = list((y - np.mean(y, axis=0))/np.std(y, axis=0))
+        if by_time_point:
+            df[f'{track}_normalized'].values[cell_idx] = list((y - np.mean(y, axis=0))/np.std(y, axis=0))
+        else:
+            df[f'{track}_normalized'].values[cell_idx] = list((y - np.mean(y))/np.std(y))
     return df
 
 def normalize_feature(df, feat):
