@@ -7,7 +7,10 @@ import mat4py
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from skimage.external.tifffile import imread
+try:
+    from skimage.external.tifffile import imread
+except:
+    from skimage.io import imread
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
