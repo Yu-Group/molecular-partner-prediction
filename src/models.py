@@ -105,7 +105,7 @@ class LSTMNet(nn.Module):
         self.lstm = nn.LSTM(input_size=1, hidden_size=H, num_layers=1, batch_first=True)
         self.fc = nn.Linear(H + p, 1) 
     
-    def forward(self, x1, x2):
+    def forward(self, x1, x2=None):
         x1 = x1.unsqueeze(2) # add input_size dimension (this is usually for the size of embedding vector)
         outputs, (h1, c1) = self.lstm(x1) # get hidden vec
         h1 = h1.squeeze(0) # remove dimension corresponding to multiple layers / directions
