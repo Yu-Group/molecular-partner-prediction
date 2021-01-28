@@ -34,16 +34,19 @@ import mat4py
 import numpy as np
 import pandas as pd
 from matplotlib import pyplot as plt
-from skimage.external.tifffile import imread
-
+try:
+    from skimage.external.tifffile import imread
+except:
+    from skimage.io import imread
 pd.options.mode.chained_assignment = None  # default=&#39;warn&#39; - caution: this turns off setting with copy warning
 import pickle as pkl
 from viz import *
 import math
 import config
+from tqdm import tqdm
 
 
-def get_tracks(data_dir, split=None, all_data=False,
+def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
                processed_tracks_file=oj(config.DIR_TRACKS, &#39;tracks.pkl&#39;),
                dset=&#39;orig&#39;):
     &#39;&#39;&#39;Read and save tracks tracks from folders within data_dir into a dataframe
@@ -52,8 +55,8 @@ def get_tracks(data_dir, split=None, all_data=False,
     processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
     print(&#39;\t&#39;, processed_tracks_file, data_dir)
 
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
+    #if os.path.exists(processed_tracks_file):
+    #    return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split[&#39;feature_selection&#39;] is None:
@@ -147,7 +150,7 @@ def get_tracks(data_dir, split=None, all_data=False,
             data[&#39;lifetime_extended&#39;] = [len(x) for x in data[&#39;X_extended&#39;]]
 
             # pixel features
-            if all_data:
+            if pixel_data:
                 cla, aux = get_images(full_dir)
                 pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
@@ -176,6 +179,57 @@ def get_tracks(data_dir, split=None, all_data=False,
                 data[&#39;right_max&#39;] = [max(pixel_right[i]) for i in range(n)]
                 data[&#39;up_max&#39;] = [max(pixel_up[i]) for i in range(n)]
                 data[&#39;down_max&#39;] = [max(pixel_down[i]) for i in range(n)]
+                
+            if video_data:
+                
+                # load video data
+                
+                X_video = []
+                square_size = 10
+                cla, aux = get_images(full_dir)
+                for i in (range(n)):
+                    # only extract videos if lifetime &gt; 15
+                    if data[&#39;lifetime&#39;][i] &gt;= 15:
+                        
+                        # range of positions of track
+                        x_pos_max, x_pos_min = int(max(data[&#39;x_pos_seq&#39;][i])), int(min(data[&#39;x_pos_seq&#39;][i]))
+                        y_pos_max, y_pos_min = int(max(data[&#39;y_pos_seq&#39;][i])), int(min(data[&#39;y_pos_seq&#39;][i]))
+                        
+                        # crop videos to 10X10 square
+                        # e.g. if x_pos_max = 52, x_pos_min = 48, then take x_left = 45, x_right = 54, etc.
+                        if x_pos_max - x_pos_min &lt; square_size:
+                                                       
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)
+                            if x_left &lt; 0:
+                                x_left, x_right = 0, square_size - 1
+                            if x_right &gt; cla.shape[2] - 1:
+                                x_left, x_right = cla.shape[2] - square_size, cla.shape[2] - 1
+                                
+                        else:
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)                            
+
+                        if y_pos_max - y_pos_min &lt; square_size:
+                                                       
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2)
+                            if y_left &lt; 0:
+                                y_left, y_right = 0, square_size - 1
+                            if y_right &gt; cla.shape[1] - 1:
+                                y_left, y_right = cla.shape[1] - square_size, cla.shape[1] - 1
+                                
+                        else:
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2) 
+                            
+                        video = cla[int(np.nanmin(t[i])):int(np.nanmax(t[i]) + 1), :, :][:, y_left:(y_right + 1), :][:, :, x_left:(x_right + 1)]
+                        X_video.append(video)
+                    else:
+                        X_video.append(np.zeros(0))
+                data[&#39;X_video&#39;] = X_video
+                            
+                    
             
             df = pd.DataFrame.from_dict(data)
             dfs.append(deepcopy(df))
@@ -265,7 +319,7 @@ def get_images(cell_dir: str):
 </details>
 </dd>
 <dt id="src.load_tracking.get_tracks"><code class="name flex">
-<span>def <span class="ident">get_tracks</span></span>(<span>data_dir, split=None, all_data=False, processed_tracks_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/tracks/tracks.pkl', dset='orig')</span>
+<span>def <span class="ident">get_tracks</span></span>(<span>data_dir, split=None, pixel_data=False, video_data=True, processed_tracks_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/tracks/tracks.pkl', dset='orig')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Read and save tracks tracks from folders within data_dir into a dataframe
@@ -274,7 +328,7 @@ Assumes (matlab) tracking has been run</p></section>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_tracks(data_dir, split=None, all_data=False,
+<pre><code class="python">def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
                processed_tracks_file=oj(config.DIR_TRACKS, &#39;tracks.pkl&#39;),
                dset=&#39;orig&#39;):
     &#39;&#39;&#39;Read and save tracks tracks from folders within data_dir into a dataframe
@@ -283,8 +337,8 @@ Assumes (matlab) tracking has been run</p></section>
     processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
     print(&#39;\t&#39;, processed_tracks_file, data_dir)
 
-    if os.path.exists(processed_tracks_file):
-        return pd.read_pickle(processed_tracks_file)
+    #if os.path.exists(processed_tracks_file):
+    #    return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split[&#39;feature_selection&#39;] is None:
@@ -378,7 +432,7 @@ Assumes (matlab) tracking has been run</p></section>
             data[&#39;lifetime_extended&#39;] = [len(x) for x in data[&#39;X_extended&#39;]]
 
             # pixel features
-            if all_data:
+            if pixel_data:
                 cla, aux = get_images(full_dir)
                 pixel = np.array([[cla[int(t[i][j]), int(y_pos_seq[i][j]), int(x_pos_seq[i][j])]
                                    if not math.isnan(t[i][j]) else 0 for j in range(len(tracks[&#39;t&#39;][i]))]
@@ -407,6 +461,57 @@ Assumes (matlab) tracking has been run</p></section>
                 data[&#39;right_max&#39;] = [max(pixel_right[i]) for i in range(n)]
                 data[&#39;up_max&#39;] = [max(pixel_up[i]) for i in range(n)]
                 data[&#39;down_max&#39;] = [max(pixel_down[i]) for i in range(n)]
+                
+            if video_data:
+                
+                # load video data
+                
+                X_video = []
+                square_size = 10
+                cla, aux = get_images(full_dir)
+                for i in (range(n)):
+                    # only extract videos if lifetime &gt; 15
+                    if data[&#39;lifetime&#39;][i] &gt;= 15:
+                        
+                        # range of positions of track
+                        x_pos_max, x_pos_min = int(max(data[&#39;x_pos_seq&#39;][i])), int(min(data[&#39;x_pos_seq&#39;][i]))
+                        y_pos_max, y_pos_min = int(max(data[&#39;y_pos_seq&#39;][i])), int(min(data[&#39;y_pos_seq&#39;][i]))
+                        
+                        # crop videos to 10X10 square
+                        # e.g. if x_pos_max = 52, x_pos_min = 48, then take x_left = 45, x_right = 54, etc.
+                        if x_pos_max - x_pos_min &lt; square_size:
+                                                       
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)
+                            if x_left &lt; 0:
+                                x_left, x_right = 0, square_size - 1
+                            if x_right &gt; cla.shape[2] - 1:
+                                x_left, x_right = cla.shape[2] - square_size, cla.shape[2] - 1
+                                
+                        else:
+                            x_left, x_right = int((x_pos_max + x_pos_min - square_size + 1) / 2), \
+                                                int((x_pos_max + x_pos_min + square_size - 1) / 2)                            
+
+                        if y_pos_max - y_pos_min &lt; square_size:
+                                                       
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2)
+                            if y_left &lt; 0:
+                                y_left, y_right = 0, square_size - 1
+                            if y_right &gt; cla.shape[1] - 1:
+                                y_left, y_right = cla.shape[1] - square_size, cla.shape[1] - 1
+                                
+                        else:
+                            y_left, y_right = int((y_pos_max + y_pos_min - square_size + 1) / 2), \
+                                                int((y_pos_max + y_pos_min + square_size - 1) / 2) 
+                            
+                        video = cla[int(np.nanmin(t[i])):int(np.nanmax(t[i]) + 1), :, :][:, y_left:(y_right + 1), :][:, :, x_left:(x_right + 1)]
+                        X_video.append(video)
+                    else:
+                        X_video.append(np.zeros(0))
+                data[&#39;X_video&#39;] = X_video
+                            
+                    
             
             df = pd.DataFrame.from_dict(data)
             dfs.append(deepcopy(df))

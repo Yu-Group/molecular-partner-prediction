@@ -68,17 +68,20 @@ class neural_net_sklearn():
         self.torch_seed = torch_seed
         self.arch = arch
         
-        # initialize model
-        if arch == &#39;fcnn&#39;:
+        torch.manual_seed(self.torch_seed)
+        if self.arch == &#39;fcnn&#39;:
             self.model = models.FCNN(self.D_in, self.H, self.p)
-        elif &#39;lstm&#39; in arch:
+        elif &#39;lstm&#39; in self.arch:
             self.model = models.LSTMNet(self.D_in, self.H, self.p)
-        elif &#39;cnn&#39; in arch:
+        elif &#39;cnn&#39; in self.arch:
             self.model = models.CNN(self.D_in, self.H, self.p)
-        elif &#39;attention&#39; in arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)
+        elif &#39;attention&#39; in self.arch:
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+        elif &#39;video&#39; in self.arch:
+            self.model = models.VideoNet()
 
-    def fit(self, X, y, verbose=False, checkpoint_fname=None):
+
+    def fit(self, X, y, verbose=False, checkpoint_fname=None, device=&#39;cpu&#39;):
         
         &#34;&#34;&#34;
         Train model
@@ -100,7 +103,9 @@ class neural_net_sklearn():
         elif &#39;cnn&#39; in self.arch:
             self.model = models.CNN(self.D_in, self.H, self.p)
         elif &#39;attention&#39; in self.arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)        
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+        elif &#39;video&#39; in self.arch:
+            self.model = models.VideoNet()
         
         # convert input dataframe to tensors
         X_track = X[self.track_name] # track
@@ -119,7 +124,10 @@ class neural_net_sklearn():
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         
         # initialize dataloader
-        dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        if X_covariates is not None:
+            dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        else:
+            dataset = torch.utils.data.TensorDataset(X_track, y)
         train_loader = torch.utils.data.DataLoader(dataset, 
                                                    batch_size=self.batch_size,
                                                    shuffle=True) 
@@ -127,14 +135,20 @@ class neural_net_sklearn():
         
         # train fcnn
         print(&#39;fitting dnn...&#39;)
+        self.model = self.model.to(device)
         for epoch in tqdm(range(self.epochs)):
             train_loss = 0
             for batch_idx, data in enumerate(train_loader):
                 optimizer.zero_grad()
-#                 print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
-                preds = self.model(data[0], data[1])
+                # print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
+                if X_covariates is not None:
+                    preds = self.model(data[0].to(device), data[1].to(device))
+                    y = data[2].to(device)
+                else:
+                    preds = self.model(data[0].to(device))
+                    y = data[1].to(device)
                 loss_fn = torch.nn.MSELoss()
-                loss = loss_fn(preds, data[2])
+                loss = loss_fn(preds, y)
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
@@ -156,19 +170,19 @@ class neural_net_sklearn():
             X_new: pd.DataFrame
                 input new data, should contain tracks and additional covariates
         &#34;&#34;&#34; 
-        
-        # convert input dataframe to tensors
-        X_new_track = X_new[self.track_name]
-        X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
-        X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
-        X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)        
-        #X_new = torch.tensor(np.array(list(X_new.values)), dtype=torch.float)
-        
-        # make predictions
         self.model.eval()
-        with torch.no_grad():            
-            preds = self.model(X_new_track, X_new_covariates)
+        with torch.no_grad():        
+
+            # convert input dataframe to tensors
+            X_new_track = X_new[self.track_name]
+            X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
             
+            if len(X_new.columns) &gt; 1:
+                X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
+                X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)      
+                preds = self.model(X_new_track, X_new_covariates)
+            else:
+                preds = self.model(X_new_track)
         return preds.data.numpy().reshape(1, -1)[0]
         
         </code></pre>
@@ -240,17 +254,20 @@ track_name: str
         self.torch_seed = torch_seed
         self.arch = arch
         
-        # initialize model
-        if arch == &#39;fcnn&#39;:
+        torch.manual_seed(self.torch_seed)
+        if self.arch == &#39;fcnn&#39;:
             self.model = models.FCNN(self.D_in, self.H, self.p)
-        elif &#39;lstm&#39; in arch:
+        elif &#39;lstm&#39; in self.arch:
             self.model = models.LSTMNet(self.D_in, self.H, self.p)
-        elif &#39;cnn&#39; in arch:
+        elif &#39;cnn&#39; in self.arch:
             self.model = models.CNN(self.D_in, self.H, self.p)
-        elif &#39;attention&#39; in arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)
+        elif &#39;attention&#39; in self.arch:
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+        elif &#39;video&#39; in self.arch:
+            self.model = models.VideoNet()
 
-    def fit(self, X, y, verbose=False, checkpoint_fname=None):
+
+    def fit(self, X, y, verbose=False, checkpoint_fname=None, device=&#39;cpu&#39;):
         
         &#34;&#34;&#34;
         Train model
@@ -272,7 +289,9 @@ track_name: str
         elif &#39;cnn&#39; in self.arch:
             self.model = models.CNN(self.D_in, self.H, self.p)
         elif &#39;attention&#39; in self.arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)        
+            self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+        elif &#39;video&#39; in self.arch:
+            self.model = models.VideoNet()
         
         # convert input dataframe to tensors
         X_track = X[self.track_name] # track
@@ -291,7 +310,10 @@ track_name: str
         optimizer = optim.Adam(self.model.parameters(), lr=0.001)
         
         # initialize dataloader
-        dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        if X_covariates is not None:
+            dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
+        else:
+            dataset = torch.utils.data.TensorDataset(X_track, y)
         train_loader = torch.utils.data.DataLoader(dataset, 
                                                    batch_size=self.batch_size,
                                                    shuffle=True) 
@@ -299,14 +321,20 @@ track_name: str
         
         # train fcnn
         print(&#39;fitting dnn...&#39;)
+        self.model = self.model.to(device)
         for epoch in tqdm(range(self.epochs)):
             train_loss = 0
             for batch_idx, data in enumerate(train_loader):
                 optimizer.zero_grad()
-#                 print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
-                preds = self.model(data[0], data[1])
+                # print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
+                if X_covariates is not None:
+                    preds = self.model(data[0].to(device), data[1].to(device))
+                    y = data[2].to(device)
+                else:
+                    preds = self.model(data[0].to(device))
+                    y = data[1].to(device)
                 loss_fn = torch.nn.MSELoss()
-                loss = loss_fn(preds, data[2])
+                loss = loss_fn(preds, y)
                 loss.backward()
                 train_loss += loss.item()
                 optimizer.step()
@@ -328,25 +356,25 @@ track_name: str
             X_new: pd.DataFrame
                 input new data, should contain tracks and additional covariates
         &#34;&#34;&#34; 
-        
-        # convert input dataframe to tensors
-        X_new_track = X_new[self.track_name]
-        X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
-        X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
-        X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)        
-        #X_new = torch.tensor(np.array(list(X_new.values)), dtype=torch.float)
-        
-        # make predictions
         self.model.eval()
-        with torch.no_grad():            
-            preds = self.model(X_new_track, X_new_covariates)
+        with torch.no_grad():        
+
+            # convert input dataframe to tensors
+            X_new_track = X_new[self.track_name]
+            X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
             
+            if len(X_new.columns) &gt; 1:
+                X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
+                X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)      
+                preds = self.model(X_new_track, X_new_covariates)
+            else:
+                preds = self.model(X_new_track)
         return preds.data.numpy().reshape(1, -1)[0]</code></pre>
 </details>
 <h3>Methods</h3>
 <dl>
 <dt id="src.neural_networks.neural_net_sklearn.fit"><code class="name flex">
-<span>def <span class="ident">fit</span></span>(<span>self, X, y, verbose=False, checkpoint_fname=None)</span>
+<span>def <span class="ident">fit</span></span>(<span>self, X, y, verbose=False, checkpoint_fname=None, device='cpu')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Train model</p>
@@ -361,73 +389,84 @@ y: np.array
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">    def fit(self, X, y, verbose=False, checkpoint_fname=None):
-        
-        &#34;&#34;&#34;
-        Train model
-        
-        Parameters:
-        ==========================================================
-            X: pd.DataFrame
-                input data, should contain tracks and additional covariates
-                
-            y: np.array
-                input response
-        &#34;&#34;&#34;        
-        
-        torch.manual_seed(self.torch_seed)
-        if self.arch == &#39;fcnn&#39;:
-            self.model = models.FCNN(self.D_in, self.H, self.p)
-        elif &#39;lstm&#39; in self.arch:
-            self.model = models.LSTMNet(self.D_in, self.H, self.p)
-        elif &#39;cnn&#39; in self.arch:
-            self.model = models.CNN(self.D_in, self.H, self.p)
-        elif &#39;attention&#39; in self.arch:
-            self.model = models.AttentionNet(self.D_in, self.H, self.p)        
-        
-        # convert input dataframe to tensors
-        X_track = X[self.track_name] # track
-        X_track = torch.tensor(np.array(list(X_track.values)), dtype=torch.float)
-        
-        if len(X.columns) &gt; 1: # covariates
-            X_covariates = X[[c for c in X.columns if c != self.track_name]]
-            X_covariates = torch.tensor(np.array(X_covariates).astype(float), dtype=torch.float)
-        else:
-            X_covariates = None
+<pre><code class="python">def fit(self, X, y, verbose=False, checkpoint_fname=None, device=&#39;cpu&#39;):
+    
+    &#34;&#34;&#34;
+    Train model
+    
+    Parameters:
+    ==========================================================
+        X: pd.DataFrame
+            input data, should contain tracks and additional covariates
             
-        # response
-        y = torch.tensor(y.reshape(-1, 1), dtype=torch.float)
+        y: np.array
+            input response
+    &#34;&#34;&#34;        
+    
+    torch.manual_seed(self.torch_seed)
+    if self.arch == &#39;fcnn&#39;:
+        self.model = models.FCNN(self.D_in, self.H, self.p)
+    elif &#39;lstm&#39; in self.arch:
+        self.model = models.LSTMNet(self.D_in, self.H, self.p)
+    elif &#39;cnn&#39; in self.arch:
+        self.model = models.CNN(self.D_in, self.H, self.p)
+    elif &#39;attention&#39; in self.arch:
+        self.model = models.AttentionNet(self.D_in, self.H, self.p)   
+    elif &#39;video&#39; in self.arch:
+        self.model = models.VideoNet()
+    
+    # convert input dataframe to tensors
+    X_track = X[self.track_name] # track
+    X_track = torch.tensor(np.array(list(X_track.values)), dtype=torch.float)
+    
+    if len(X.columns) &gt; 1: # covariates
+        X_covariates = X[[c for c in X.columns if c != self.track_name]]
+        X_covariates = torch.tensor(np.array(X_covariates).astype(float), dtype=torch.float)
+    else:
+        X_covariates = None
         
-        # initialize optimizer
-        optimizer = optim.Adam(self.model.parameters(), lr=0.001)
-        
-        # initialize dataloader
+    # response
+    y = torch.tensor(y.reshape(-1, 1), dtype=torch.float)
+    
+    # initialize optimizer
+    optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+    
+    # initialize dataloader
+    if X_covariates is not None:
         dataset = torch.utils.data.TensorDataset(X_track, X_covariates, y)
-        train_loader = torch.utils.data.DataLoader(dataset, 
-                                                   batch_size=self.batch_size,
-                                                   shuffle=True) 
-        #train_loader = [(X1, X2, y)]
-        
-        # train fcnn
-        print(&#39;fitting dnn...&#39;)
-        for epoch in tqdm(range(self.epochs)):
-            train_loss = 0
-            for batch_idx, data in enumerate(train_loader):
-                optimizer.zero_grad()
-#                 print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
-                preds = self.model(data[0], data[1])
-                loss_fn = torch.nn.MSELoss()
-                loss = loss_fn(preds, data[2])
-                loss.backward()
-                train_loss += loss.item()
-                optimizer.step()
-            if verbose:
-                print(f&#39;Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}&#39;)
-            elif epoch % (self.epochs // 10) == 99:
-                print(f&#39;Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}&#39;)
-            if checkpoint_fname is not None:
-                pkl.dump({&#39;model_state_dict&#39;: self.model.state_dict()},
-                         open(checkpoint_fname, &#39;wb&#39;))</code></pre>
+    else:
+        dataset = torch.utils.data.TensorDataset(X_track, y)
+    train_loader = torch.utils.data.DataLoader(dataset, 
+                                               batch_size=self.batch_size,
+                                               shuffle=True) 
+    #train_loader = [(X1, X2, y)]
+    
+    # train fcnn
+    print(&#39;fitting dnn...&#39;)
+    self.model = self.model.to(device)
+    for epoch in tqdm(range(self.epochs)):
+        train_loss = 0
+        for batch_idx, data in enumerate(train_loader):
+            optimizer.zero_grad()
+            # print(&#39;shapes input&#39;, data[0].shape, data[1].shape)
+            if X_covariates is not None:
+                preds = self.model(data[0].to(device), data[1].to(device))
+                y = data[2].to(device)
+            else:
+                preds = self.model(data[0].to(device))
+                y = data[1].to(device)
+            loss_fn = torch.nn.MSELoss()
+            loss = loss_fn(preds, y)
+            loss.backward()
+            train_loss += loss.item()
+            optimizer.step()
+        if verbose:
+            print(f&#39;Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}&#39;)
+        elif epoch % (self.epochs // 10) == 99:
+            print(f&#39;Epoch: {epoch}, Average loss: {train_loss/len(X_track):.4e}&#39;)
+        if checkpoint_fname is not None:
+            pkl.dump({&#39;model_state_dict&#39;: self.model.state_dict()},
+                     open(checkpoint_fname, &#39;wb&#39;))</code></pre>
 </details>
 </dd>
 <dt id="src.neural_networks.neural_net_sklearn.predict"><code class="name flex">
@@ -453,19 +492,19 @@ y: np.array
         X_new: pd.DataFrame
             input new data, should contain tracks and additional covariates
     &#34;&#34;&#34; 
-    
-    # convert input dataframe to tensors
-    X_new_track = X_new[self.track_name]
-    X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
-    X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
-    X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)        
-    #X_new = torch.tensor(np.array(list(X_new.values)), dtype=torch.float)
-    
-    # make predictions
     self.model.eval()
-    with torch.no_grad():            
-        preds = self.model(X_new_track, X_new_covariates)
+    with torch.no_grad():        
+
+        # convert input dataframe to tensors
+        X_new_track = X_new[self.track_name]
+        X_new_track = torch.tensor(np.array(list(X_new_track.values)), dtype=torch.float)
         
+        if len(X_new.columns) &gt; 1:
+            X_new_covariates = X_new[[c for c in X_new.columns if c != self.track_name]]
+            X_new_covariates = torch.tensor(np.array(X_new_covariates).astype(float), dtype=torch.float)      
+            preds = self.model(X_new_track, X_new_covariates)
+        else:
+            preds = self.model(X_new_track)
     return preds.data.numpy().reshape(1, -1)[0]</code></pre>
 </details>
 </dd>

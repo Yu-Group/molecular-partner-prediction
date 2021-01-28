@@ -57,10 +57,11 @@ cp = &#39;#cc3399&#39;
 cy = &#39;#d8b365&#39;
 cg = &#39;#5ab4ac&#39;
 
-def savefig(s: str):
+def savefig(s: str, png=False):
 #     plt.tight_layout()
     plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))
-#     plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)
+    if png:
+        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)
     
 
 def fix_feat_name(s):
@@ -998,7 +999,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.savefig"><code class="name flex">
-<span>def <span class="ident">savefig</span></span>(<span>s)</span>
+<span>def <span class="ident">savefig</span></span>(<span>s, png=False)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
@@ -1006,9 +1007,11 @@ Params</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def savefig(s: str):
+<pre><code class="python">def savefig(s: str, png=False):
 #     plt.tight_layout()
-    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))</code></pre>
+    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))
+    if png:
+        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)</code></pre>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">

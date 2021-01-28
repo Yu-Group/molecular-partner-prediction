@@ -119,7 +119,7 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 **compare aux + dynamin**
 
-# 08_deep_learning
+# 08_fit_dnn_tracks
 
 
 ## prepare data
@@ -132,5 +132,41 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## transfer to classification
 
-## interpretation
+## plot tracks where lstm does better than gb
+
+# 09_fit_dnn_video
+
+
+## prepare data
+
+## show an example
+
+## fit the data
+
+## transfer to classification
+
+# 10_interpret_scalars
+
+
+## prepare data
+
+## prepare for interp
+
+## important features
+
+## global feat imp
+
+# 11_interpret_interactions
+
+
+## prepare data
+
+## segmentation
+
+**recalculate with normalized scores (there is some err here)**
+
+## interpret one pred
+
+# full_data_reg
+
 
