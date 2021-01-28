@@ -7,6 +7,8 @@ import seaborn as sns
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import torch
+from matplotlib.colors import LinearSegmentedColormap
+
 
 def calc_cd_score(xtrack_t, xfeats_t, start, stop, model):
     with torch.no_grad():
@@ -17,8 +19,12 @@ def calc_cd_score(xtrack_t, xfeats_t, start, stop, model):
     #return rel.item()
     return rel.data.numpy()
 
-def plot_segs(track_segs, cd_scores, xtrack, pred, y):
-    cm = sns.diverging_palette(22, 220, as_cmap=True, center='light')
+def plot_segs(track_segs, cd_scores, xtrack, pred=None, y=None):
+#     cm = sns.diverging_palette(22, 220, as_cmap=True, center='light')
+    cm = LinearSegmentedColormap.from_list(
+        name='orange-blue', 
+        colors=[(222/255, 85/255, 51/255),'lightgray', (50/255, 129/255, 168/255)]
+    )
     vabs = np.max(np.abs(cd_scores))
     #vabs = 1.2
     # plt.plot(xtrack, zorder=0, lw=2, color='#111111')
@@ -36,7 +42,8 @@ def plot_segs(track_segs, cd_scores, xtrack, pred, y):
             plt.plot(xs, xtrack[s: e], zorder=0, lw=2, color=col, alpha=0.5)
         plt.scatter(xs, xtrack[s: e],
                     c=cd_score, cmap=cm, vmin=-vabs, vmax=vabs, s=6)
-    plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
+    if pred is not None:
+        plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
     plt.colorbar(label='CD Score')
     
 def max_abs_sum_seg(scores_list, min_length=1):
