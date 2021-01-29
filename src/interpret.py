@@ -46,9 +46,13 @@ def plot_segs(track_segs, cd_scores, xtrack, pred=None, y=None):
         plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
     plt.colorbar(label='CD Score')
     
-def max_abs_sum_seg(scores_list, min_length=1):
+def max_abs_sum_seg(scores_list, min_length: int=1):
     """
     score_list[i][j] is the score for the segment from i to j (inclusive)
+    Params
+    ------
+    min_length
+        Minimum allowable length for a segment
     """
     
     n = len(scores_list[0])
