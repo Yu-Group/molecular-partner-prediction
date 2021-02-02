@@ -60,7 +60,7 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                         df = features.normalize_feature(df, feat)
 
             dfs[(dset, split)] = deepcopy(df)
-    return dfs
+    return dfs, feat_names
     
 
 def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,

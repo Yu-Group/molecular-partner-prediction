@@ -430,7 +430,7 @@ def normalize_feature(df, feat):
     """
     normalize scalar features
     """
-    df = df.astype({feat: 'float'})
+    df = df.astype({feat: 'float64'})
     for cell in set(df['cell_num']):
         cell_idx = np.where(df['cell_num'].values == cell)[0]
         y = df[feat].values[cell_idx]
