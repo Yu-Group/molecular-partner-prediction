@@ -23,6 +23,7 @@ import matplotlib.ticker as mtick
 DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 DIR_FIGS = oj(DIR_FILE, '../reports/figs')
 
+
 cb2 = '#66ccff'
 cb = '#1f77b4'
 co = '#ff7f0e'
@@ -113,7 +114,8 @@ def highlight_max(data, color='#0e5c99'):
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True):
+                     plot_x=True, plot_z=False, xlim_constant=True,
+                     text_labels=False):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -156,15 +158,17 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                             transform=ax.transAxes)
                 plt.axis('off')
                 if plot_x:
-                    plt.plot(dft["X"].iloc[i], color=cr, label='clath') # could do X_extended
-                plt.plot(dft["Y"].iloc[i], color=cb, label='aux')
+                    plt.plot(dft["X"].iloc[i], color=cr, label='clath', lw=2) # could do X_extended
+                plt.plot(dft["Y"].iloc[i], color=cg, label='aux', lw=2)
                 if plot_z:
                     plt.plot(dft["Z"].iloc[i], color=cp, label='dyn')
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color='gray', alpha=0.5)
-
+                plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
+    if text_labels:
+        plt.text(len(dft["X"].iloc[i]), dft["X"].iloc[i][-1], 'Clathrin', color=cr, fontsize=25, fontweight='bold')
+        plt.text(len(dft["Y"].iloc[i]), dft["Y"].iloc[i][-1], 'Auxilin', color=cg, fontsize=25, fontweight='bold')
     plt.tight_layout()
     return dft
 
