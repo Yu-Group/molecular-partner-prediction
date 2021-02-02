@@ -358,7 +358,7 @@ def add_dasc_features(df, bins=100, by_cell=True):
     
     return df
 
-def downsample(x, length):
+def downsample(x, length, padding='end'):
     
     """
     downsample (clathrin) track
@@ -383,8 +383,11 @@ def downsample(x, length):
         # if length of original track is greater than targeted length, downsample     
         x_ds = [x[np.int(1.0 * (n-1) * i/(length - 1))] for i in range(length)]
     else:
-        # if length of original track is smaller than targeted length, fill the track with 0s
-        x_ds = list(x) + [0]*(length - len(x))
+        # if length of original track is smaller than targeted length, fill the track with 0s        
+        if padding == 'front':
+            x_ds = [0]*(length - len(x)) + list(x)
+        else:
+            x_ds = list(x) + [0]*(length - len(x))
     return x_ds
 
 def downsample_video(x, length):
