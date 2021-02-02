@@ -59,9 +59,9 @@ cg = &#39;#5ab4ac&#39;
 
 def savefig(s: str, png=False):
 #     plt.tight_layout()
-    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))
+    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;), bbox_inches=&#39;tight&#39;)
     if png:
-        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)
+        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300, bbox_inches=&#39;tight&#39;)
     
 
 def fix_feat_name(s):
@@ -1009,9 +1009,9 @@ Params</p>
 </summary>
 <pre><code class="python">def savefig(s: str, png=False):
 #     plt.tight_layout()
-    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;))
+    plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.pdf&#39;), bbox_inches=&#39;tight&#39;)
     if png:
-        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300)</code></pre>
+        plt.savefig(oj(DIR_FIGS, &#39;fig_&#39; + s + &#39;.png&#39;), dpi=300, bbox_inches=&#39;tight&#39;)</code></pre>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">

@@ -20,6 +20,44 @@ import config
 import features
 import outcomes
 import load_tracking
+from tqdm import tqdm
+import train_reg
+
+def load_dfs_for_lstm(dsets = ['clath_aux+gak_new'], splits = ['test'], meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
+                      length = 40):
+    '''Loads dataframes preprocessed ready for LSTM
+    '''
+    dfs = {}
+    for dset in tqdm(dsets):
+        for split in splits:
+            df = data.get_data(dset=dset)
+            df = df[~(df.short | df.long | df.hotspots)]
+    #         df = df[df.valid]
+            df = df[df.lifetime > 15] # only keep hard tracks
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
+
+            # downsample tracks
+            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length)
+                                   for i in range(len(df))] # downsampling
+            # normalize tracks
+            df = features.normalize_track(df, track='X_same_length', by_time_point=False)
+
+            # regression response
+            df = train_reg.add_sig_mean(df)     
+
+            # remove extraneous feats
+            # df = df[feat_names + meta]
+    #         df = df.dropna() 
+
+            # normalize features
+            for feat in feat_names:
+                if 'X_same_length' not in feat:
+                    df = features.normalize_feature(df, feat)
+
+            dfs[(dset, split)] = deepcopy(df)
+    return dfs
+    
 
 def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
              processed_file=oj(config.DIR_PROCESSED, 'df.pkl'),

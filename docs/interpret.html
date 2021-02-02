@@ -75,11 +75,13 @@ def plot_segs(track_segs, cd_scores, xtrack,
     if pred is not None:
         plt.title(f&#34;Pred: {pred: .1f}, y: {y}&#34;, fontsize=24)
     if cbar:
-        plt.colorbar(label=&#39;CD Score&#39;)
+        cb = plt.colorbar() #label=&#39;CD Score&#39;)
+        cb.outline.set_visible(False)
     if not xticks:
         plt.xticks([])
     if not yticks:
         plt.yticks([])
+    return cb
     
     
     
@@ -221,11 +223,13 @@ Params</p>
     if pred is not None:
         plt.title(f&#34;Pred: {pred: .1f}, y: {y}&#34;, fontsize=24)
     if cbar:
-        plt.colorbar(label=&#39;CD Score&#39;)
+        cb = plt.colorbar() #label=&#39;CD Score&#39;)
+        cb.outline.set_visible(False)
     if not xticks:
         plt.xticks([])
     if not yticks:
-        plt.yticks([])</code></pre>
+        plt.yticks([])
+    return cb</code></pre>
 </details>
 </dd>
 </dl>

@@ -46,6 +46,44 @@ import config
 import features
 import outcomes
 import load_tracking
+from tqdm import tqdm
+import train_reg
+
+def load_dfs_for_lstm(dsets = [&#39;clath_aux+gak_new&#39;], splits = [&#39;test&#39;], meta = [&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      length = 40):
+    &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
+    &#39;&#39;&#39;
+    dfs = {}
+    for dset in tqdm(dsets):
+        for split in splits:
+            df = data.get_data(dset=dset)
+            df = df[~(df.short | df.long | df.hotspots)]
+    #         df = df[df.valid]
+            df = df[df.lifetime &gt; 15] # only keep hard tracks
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            feat_names = [&#39;X_same_length_normalized&#39;] + data.select_final_feats(data.get_feature_names(df))
+
+            # downsample tracks
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
+                                   for i in range(len(df))] # downsampling
+            # normalize tracks
+            df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
+
+            # regression response
+            df = train_reg.add_sig_mean(df)     
+
+            # remove extraneous feats
+            # df = df[feat_names + meta]
+    #         df = df.dropna() 
+
+            # normalize features
+            for feat in feat_names:
+                if &#39;X_same_length&#39; not in feat:
+                    df = features.normalize_feature(df, feat)
+
+            dfs[(dset, split)] = deepcopy(df)
+    return dfs
+    
 
 def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True,
              processed_file=oj(config.DIR_PROCESSED, &#39;df.pkl&#39;),
@@ -450,6 +488,51 @@ Removes metadata + time-series columns + outcomes</p></section>
     return feat_names</code></pre>
 </details>
 </dd>
+<dt id="src.data.load_dfs_for_lstm"><code class="name flex">
+<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Loads dataframes preprocessed ready for LSTM</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def load_dfs_for_lstm(dsets = [&#39;clath_aux+gak_new&#39;], splits = [&#39;test&#39;], meta = [&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      length = 40):
+    &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
+    &#39;&#39;&#39;
+    dfs = {}
+    for dset in tqdm(dsets):
+        for split in splits:
+            df = data.get_data(dset=dset)
+            df = df[~(df.short | df.long | df.hotspots)]
+    #         df = df[df.valid]
+            df = df[df.lifetime &gt; 15] # only keep hard tracks
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            feat_names = [&#39;X_same_length_normalized&#39;] + data.select_final_feats(data.get_feature_names(df))
+
+            # downsample tracks
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
+                                   for i in range(len(df))] # downsampling
+            # normalize tracks
+            df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
+
+            # regression response
+            df = train_reg.add_sig_mean(df)     
+
+            # remove extraneous feats
+            # df = df[feat_names + meta]
+    #         df = df.dropna() 
+
+            # normalize features
+            for feat in feat_names:
+                if &#39;X_same_length&#39; not in feat:
+                    df = features.normalize_feature(df, feat)
+
+            dfs[(dset, split)] = deepcopy(df)
+    return dfs</code></pre>
+</details>
+</dd>
 <dt id="src.data.process_tracks_by_lifetime"><code class="name flex">
 <span>def <span class="ident">process_tracks_by_lifetime</span></span>(<span>df, outcome_def, plot=False, acc_thresh=0.95, previous_meta_file=None)</span>
 </code></dt>
@@ -617,6 +700,7 @@ Only keep cat_idx
 <ul class="">
 <li><code><a title="src.data.get_data" href="#src.data.get_data">get_data</a></code></li>
 <li><code><a title="src.data.get_feature_names" href="#src.data.get_feature_names">get_feature_names</a></code></li>
+<li><code><a title="src.data.load_dfs_for_lstm" href="#src.data.load_dfs_for_lstm">load_dfs_for_lstm</a></code></li>
 <li><code><a title="src.data.process_tracks_by_lifetime" href="#src.data.process_tracks_by_lifetime">process_tracks_by_lifetime</a></code></li>
 <li><code><a title="src.data.remove_invalid_tracks" href="#src.data.remove_invalid_tracks">remove_invalid_tracks</a></code></li>
 <li><code><a title="src.data.select_final_feats" href="#src.data.select_final_feats">select_final_feats</a></code></li>

@@ -33,36 +33,7 @@ if __name__ == '__main__':
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
     meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
-    dfs = {}
-    for dset in tqdm(dsets):
-        for split in splits:
-            df = data.get_data(dset=dset)
-            df = df[~(df.short | df.long | df.hotspots)]
-    #         df = df[df.valid]
-            df = df[df.lifetime > 15] # only keep hard tracks
-            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
-            feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
-
-            # downsample tracks
-            length = 40
-            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length)
-                                   for i in range(len(df))] # downsampling
-            # normalize tracks
-            df = features.normalize_track(df, track='X_same_length')
-
-            # regression response
-            df = train_reg.add_sig_mean(df)     
-
-            # remove extraneous feats
-            # df = df[feat_names + meta]
-    #         df = df.dropna() 
-
-            # normalize features
-            for feat in feat_names:
-                if 'X_same_length' not in feat:
-                    df = features.normalize_feature(df, feat)
-
-            dfs[(dset, split)] = deepcopy(df)
+    dfs = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta)
 
     df_full = pd.concat([dfs[(k, s)]
                      for (k, s) in dfs
