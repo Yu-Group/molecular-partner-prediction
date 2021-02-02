@@ -23,8 +23,11 @@ import load_tracking
 from tqdm import tqdm
 import train_reg
 
-def load_dfs_for_lstm(dsets = ['clath_aux+gak_new'], splits = ['test'], meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
-                      length = 40):
+def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
+                      splits=['test'],
+                      meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
+                      length=40,
+                      normalize=True):
     '''Loads dataframes preprocessed ready for LSTM
     '''
     dfs = {}
@@ -51,9 +54,10 @@ def load_dfs_for_lstm(dsets = ['clath_aux+gak_new'], splits = ['test'], meta = [
     #         df = df.dropna() 
 
             # normalize features
-            for feat in feat_names:
-                if 'X_same_length' not in feat:
-                    df = features.normalize_feature(df, feat)
+            if normalize:
+                for feat in feat_names:
+                    if 'X_same_length' not in feat:
+                        df = features.normalize_feature(df, feat)
 
             dfs[(dset, split)] = deepcopy(df)
     return dfs
