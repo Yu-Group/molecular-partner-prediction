@@ -33,9 +33,9 @@ cg = '#5ab4ac'
 
 def savefig(s: str, png=False):
 #     plt.tight_layout()
-    plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.pdf'))
+    plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.pdf'), bbox_inches='tight')
     if png:
-        plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.png'), dpi=300)
+        plt.savefig(oj(DIR_FIGS, 'fig_' + s + '.png'), dpi=300, bbox_inches='tight')
     
 
 def fix_feat_name(s):

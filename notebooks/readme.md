@@ -163,9 +163,11 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## segmentation
 
+**make simple illustrative plot**
+
 **recalculate with normalized scores (there is some err here)**
 
-## interpret one pred
+## interpret one pred at multiple scales
 
 # full_data_reg
 

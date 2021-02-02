@@ -19,13 +19,18 @@ def calc_cd_score(xtrack_t, xfeats_t, start, stop, model):
     #return rel.item()
     return rel.data.numpy()
 
-def plot_segs(track_segs, cd_scores, xtrack, pred=None, y=None):
+def plot_segs(track_segs, cd_scores, xtrack,
+              pred=None, y=None, vabs=None, cbar=True, xticks=True, yticks=True):
+    '''Plot a single segmentation plot
+    '''
 #     cm = sns.diverging_palette(22, 220, as_cmap=True, center='light')
     cm = LinearSegmentedColormap.from_list(
         name='orange-blue', 
         colors=[(222/255, 85/255, 51/255),'lightgray', (50/255, 129/255, 168/255)]
     )
-    vabs = np.max(np.abs(cd_scores))
+    if vabs is None:
+        vabs = np.max(np.abs(cd_scores))
+    norm = matplotlib.colors.Normalize(vmin=-vabs, vmax=vabs)
     #vabs = 1.2
     # plt.plot(xtrack, zorder=0, lw=2, color='#111111')
     for i in range(len(track_segs)):
@@ -33,7 +38,6 @@ def plot_segs(track_segs, cd_scores, xtrack, pred=None, y=None):
         cd_score = cd_scores[i]
         seq_len = e - s
         xs = np.arange(s, e)
-        norm = matplotlib.colors.Normalize(vmin=-vabs, vmax=vabs)
         if seq_len > 1:
             cd_score = [cd_score] * seq_len
             col = cm(norm(cd_score[0]))
@@ -44,7 +48,16 @@ def plot_segs(track_segs, cd_scores, xtrack, pred=None, y=None):
                     c=cd_score, cmap=cm, vmin=-vabs, vmax=vabs, s=6)
     if pred is not None:
         plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
-    plt.colorbar(label='CD Score')
+    if cbar:
+        cb = plt.colorbar() #label='CD Score')
+        cb.outline.set_visible(False)
+    if not xticks:
+        plt.xticks([])
+    if not yticks:
+        plt.yticks([])
+    return cb
+    
+    
     
 def max_abs_sum_seg(scores_list, min_length: int=1):
     """
