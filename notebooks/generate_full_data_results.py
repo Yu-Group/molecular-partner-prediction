@@ -4,6 +4,7 @@ import sys
 sys.path.append('../src')
 import numpy as np
 import torch
+import scipy
 from matplotlib import pyplot as plt
 from sklearn import metrics
 import data
@@ -26,43 +27,19 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.svm import SVR
 from collections import defaultdict
 
+scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score, 'roc_auc': metrics.roc_auc_score, 'r2': metrics.r2_score,
+          'corr': scipy.stats.pearsonr}
+
 if __name__ == '__main__':
     
+    
+    print("loading data")
     dsets = ['clath_aux+gak_a7d2', 'clath_aux+gak', 'clath_aux+gak_a7d2_new', 'clath_aux+gak_new', 'clath_gak']
     splits = ['train', 'test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
-    dfs = {}
-    for dset in tqdm(dsets):
-        for split in splits:
-            df = data.get_data(dset=dset)
-            df = df[~(df.short | df.long | df.hotspots)]
-    #         df = df[df.valid]
-            df = df[df.lifetime > 15] # only keep hard tracks
-            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
-            feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
-
-            # downsample tracks
-            length = 40
-            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length)
-                                   for i in range(len(df))] # downsampling
-            # normalize tracks
-            df = features.normalize_track(df, track='X_same_length', by_time_point=False)
-
-            # regression response
-            df = train_reg.add_sig_mean(df)     
-
-            # remove extraneous feats
-            # df = df[feat_names + meta]
-    #         df = df.dropna() 
-
-            # normalize features
-            for feat in feat_names:
-                if 'X_same_length' not in feat:
-                    df = features.normalize_feature(df, feat)
-
-            dfs[(dset, split)] = deepcopy(df)
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh']
+    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta)
 
     df_full = pd.concat([dfs[(k, s)]
                      for (k, s) in dfs
@@ -72,9 +49,11 @@ if __name__ == '__main__':
           for (k, v) in sorted(dfs.keys(), key=lambda x: x[1] + x[0])
           #if not k == 'clath_aux+gak_a7d2_new'
          }
-    corr_res = defaultdict(list)
+    res = defaultdict(list)
     models = []
     np.random.seed(42)
+    
+    print("computing predictions for gb + rf + svm")
     
     for model_type in ['gb', 'rf', 'ridge', 'svm']:
         
@@ -107,30 +86,45 @@ if __name__ == '__main__':
                         df = df.dropna()
                     X = df[feat_set]
                     #y = df['Y_sig_mean_normalized']
+                    y_reg = df['Y_sig_mean_normalized'].values
                     y = df['y_consec_thresh']
-                    preds = m.predict(X)
-                    acc = np.mean((preds > 0) == y)
-                    #acc = np.corrcoef(preds, y)[0, 1]
-                    corr_res[k].append(100*acc)
+                    preds = m.predict(X)                   
+                    for metric in scorers:
+                        if 'accuracy' in metric:
+                            acc = scorers[metric](y, (preds > 0))                   
+                            res[f'{k}_{metric}'].append(acc)
+                        elif metric == 'roc_auc':
+                            res[f'{k}_{metric}'].append(scorers[metric](y, preds))
+                        elif metric == 'r2':
+                            res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds))
+                        else:
+                            res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds)[0])
+                            
+    print("computing predictions for lstm")                 
                     
     models.append('lstm')
     results = pkl.load(open('../models/dnn_full_long_normalized_across_track_1_feat.pkl', 'rb'))
-# results = pkl.load(open('../models/clath_aux+gak_a7d2_new_Y_sig_mean_normalized_nn_lstm_100_40.pkl', 'rb'))
     dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
     dnn.model.load_state_dict(results['model_state_dict'])
     for i, (k, v) in enumerate(ds.keys()):
         if v == 'test':
-            print(k)
             df = ds[(k, v)]
             X = df[feat_names[:1]]
-                    #y = df['Y_sig_mean_normalized']
+            y_reg = df['Y_sig_mean_normalized'].values
             y = df['y_consec_thresh'].values
             preds = dnn.predict(X)
-            acc = np.mean((preds > 0).astype(int) == y)
-            #acc = np.corrcoef(preds, y)[0, 1]
-            corr_res[k].append(100*acc)    
+            for metric in scorers:
+                if 'accuracy' in metric:
+                    acc = scorers[metric](y, (preds > 0))                   
+                    res[f'{k}_{metric}'].append(acc)
+                elif metric == 'roc_auc':
+                    res[f'{k}_{metric}'].append(scorers[metric](y, preds))
+                elif metric == 'r2':
+                    res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds))
+                else:
+                    res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds)[0])
                     
-    corr_res = pd.DataFrame(corr_res, index=models)
-    corr_res.to_csv("../reports/classification_results.csv")
+    res = pd.DataFrame(res, index=models)
+    res.to_csv("../reports/classification_results.csv")
                 #print(k, v, acc)
                 #plt.title(f'{k} {v} {100*acc:0.1f}', fontsize=10)    
