@@ -30,6 +30,35 @@ from collections import defaultdict
 scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score, 'roc_auc': metrics.roc_auc_score, 'r2': metrics.r2_score,
           'corr': scipy.stats.pearsonr}
 
+def get_all_scores(y, preds, y_reg, df):
+    
+    for metric in scorers:
+        if 'accuracy' in metric:
+            acc = scorers[metric](y, (preds > 0))                   
+            dataset_level_res[f'{k}_{metric}'].append(acc)
+        elif metric == 'roc_auc':
+            dataset_level_res[f'{k}_{metric}'].append(scorers[metric](y, preds))
+        elif metric == 'r2':
+            dataset_level_res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds))
+        else:
+            dataset_level_res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds)[0])
+                            
+    for cell in set(df['cell_num']):
+        cell_idx = np.where(df['cell_num'].values == cell)[0]
+        y_cell = y[cell_idx]
+        y_reg_cell = y_reg[cell_idx]
+        preds_cell = preds[cell_idx]
+        for metric in scorers:
+            if 'accuracy' in metric:
+                acc = scorers[metric](y_cell, (preds_cell > 0))                   
+                cell_level_res[f'{cell}_{metric}'].append(acc)
+            elif metric == 'roc_auc':
+                cell_level_res[f'{cell}_{metric}'].append(scorers[metric](y_cell, preds_cell))
+            elif metric == 'r2':
+                cell_level_res[f'{cell}_{metric}'].append(scorers[metric](y_reg_cell, preds_cell))
+            else:
+                cell_level_res[f'{cell}_{metric}'].append(scorers[metric](y_reg_cell, preds_cell)[0])                       
+
 if __name__ == '__main__':
     
     
@@ -43,13 +72,14 @@ if __name__ == '__main__':
 
     df_full = pd.concat([dfs[(k, s)]
                      for (k, s) in dfs
-                     if s == 'train'])[feat_names + ['Y_sig_mean_normalized', 'y_consec_sig', 'y_consec_thresh']]
+                     if s == 'train'])[feat_names + meta]
     df_full = df_full.dropna()
     ds = {(k, v): dfs[(k, v)]
           for (k, v) in sorted(dfs.keys(), key=lambda x: x[1] + x[0])
           #if not k == 'clath_aux+gak_a7d2_new'
          }
-    res = defaultdict(list)
+    dataset_level_res = defaultdict(list)
+    cell_level_res = defaultdict(list)
     models = []
     np.random.seed(42)
     
@@ -87,18 +117,9 @@ if __name__ == '__main__':
                     X = df[feat_set]
                     #y = df['Y_sig_mean_normalized']
                     y_reg = df['Y_sig_mean_normalized'].values
-                    y = df['y_consec_thresh']
-                    preds = m.predict(X)                   
-                    for metric in scorers:
-                        if 'accuracy' in metric:
-                            acc = scorers[metric](y, (preds > 0))                   
-                            res[f'{k}_{metric}'].append(acc)
-                        elif metric == 'roc_auc':
-                            res[f'{k}_{metric}'].append(scorers[metric](y, preds))
-                        elif metric == 'r2':
-                            res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds))
-                        else:
-                            res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds)[0])
+                    y = df['y_consec_thresh'].values
+                    preds = m.predict(X)
+                    get_all_scores(y, preds, y_reg, df)                        
                             
     print("computing predictions for lstm")                 
                     
@@ -113,18 +134,12 @@ if __name__ == '__main__':
             y_reg = df['Y_sig_mean_normalized'].values
             y = df['y_consec_thresh'].values
             preds = dnn.predict(X)
-            for metric in scorers:
-                if 'accuracy' in metric:
-                    acc = scorers[metric](y, (preds > 0))                   
-                    res[f'{k}_{metric}'].append(acc)
-                elif metric == 'roc_auc':
-                    res[f'{k}_{metric}'].append(scorers[metric](y, preds))
-                elif metric == 'r2':
-                    res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds))
-                else:
-                    res[f'{k}_{metric}'].append(scorers[metric](y_reg, preds)[0])
+            get_all_scores(y, preds, y_reg, df)
                     
-    res = pd.DataFrame(res, index=models)
-    res.to_csv("../reports/classification_results.csv")
-                #print(k, v, acc)
-                #plt.title(f'{k} {v} {100*acc:0.1f}', fontsize=10)    
+                    
+    dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
+    dataset_level_res.to_csv("../reports/dataset_level_res.csv")
+    
+    cell_level_res = pd.DataFrame(cell_level_res, index=models)
+    cell_level_res.to_csv("../reports/cell_level_res.csv")
+
