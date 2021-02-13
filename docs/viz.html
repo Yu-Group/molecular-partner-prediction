@@ -49,6 +49,7 @@ import matplotlib.ticker as mtick
 DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
 
+
 cb2 = &#39;#66ccff&#39;
 cb = &#39;#1f77b4&#39;
 co = &#39;#ff7f0e&#39;
@@ -139,7 +140,8 @@ def highlight_max(data, color=&#39;#0e5c99&#39;):
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True):
+                     plot_x=True, plot_z=False, xlim_constant=True,
+                     text_labels=False):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -182,15 +184,17 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
                 if plot_x:
-                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;) # could do X_extended
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb, label=&#39;aux&#39;)
+                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cg, label=&#39;aux&#39;, lw=2)
                 if plot_z:
                     plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
-
+                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+    if text_labels:
+        plt.text(len(dft[&#34;X&#34;].iloc[i]), dft[&#34;X&#34;].iloc[i][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(dft[&#34;Y&#34;].iloc[i]), dft[&#34;Y&#34;].iloc[i][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft
 
@@ -1015,7 +1019,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, plot_x=True, plot_z=False, xlim_constant=True)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, plot_x=True, plot_z=False, xlim_constant=True, text_labels=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -1034,7 +1038,8 @@ Params</p>
 <pre><code class="python">def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True):
+                     plot_x=True, plot_z=False, xlim_constant=True,
+                     text_labels=False):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -1077,15 +1082,17 @@ Params</p>
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
                 if plot_x:
-                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;) # could do X_extended
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cb, label=&#39;aux&#39;)
+                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cg, label=&#39;aux&#39;, lw=2)
                 if plot_z:
                     plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5)
-
+                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+    if text_labels:
+        plt.text(len(dft[&#34;X&#34;].iloc[i]), dft[&#34;X&#34;].iloc[i][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(dft[&#34;Y&#34;].iloc[i]), dft[&#34;Y&#34;].iloc[i][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft</code></pre>
 </details>

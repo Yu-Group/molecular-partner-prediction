@@ -49,19 +49,26 @@ import load_tracking
 from tqdm import tqdm
 import train_reg
 
-def load_dfs_for_lstm(dsets = [&#39;clath_aux+gak_new&#39;], splits = [&#39;test&#39;], meta = [&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
-                      length = 40):
+def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
+                      splits=[&#39;test&#39;],
+                      meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      length=40,
+                      normalize=True,
+                      filter_short=True):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
     &#39;&#39;&#39;
     dfs = {}
     for dset in tqdm(dsets):
         for split in splits:
-            df = data.get_data(dset=dset)
-            df = df[~(df.short | df.long | df.hotspots)]
-    #         df = df[df.valid]
-            df = df[df.lifetime &gt; 15] # only keep hard tracks
+            df = get_data(dset=dset)
+            if filter_short:
+                df = df[~(df.short | df.long | df.hotspots)]
+        #         df = df[df.valid]
+                df = df[df.lifetime &gt; 15] # only keep hard tracks
+            else:
+                df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
-            feat_names = [&#39;X_same_length_normalized&#39;] + data.select_final_feats(data.get_feature_names(df))
+            feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
             df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
@@ -77,12 +84,13 @@ def load_dfs_for_lstm(dsets = [&#39;clath_aux+gak_new&#39;], splits = [&#39;test
     #         df = df.dropna() 
 
             # normalize features
-            for feat in feat_names:
-                if &#39;X_same_length&#39; not in feat:
-                    df = features.normalize_feature(df, feat)
+            if normalize:
+                for feat in feat_names:
+                    if &#39;X_same_length&#39; not in feat:
+                        df = features.normalize_feature(df, feat)
 
             dfs[(dset, split)] = deepcopy(df)
-    return dfs
+    return dfs, feat_names
     
 
 def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_processed=True,
@@ -489,7 +497,7 @@ Removes metadata + time-series columns + outcomes</p></section>
 </details>
 </dd>
 <dt id="src.data.load_dfs_for_lstm"><code class="name flex">
-<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40)</span>
+<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40, normalize=True, filter_short=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Loads dataframes preprocessed ready for LSTM</p></section>
@@ -497,19 +505,26 @@ Removes metadata + time-series columns + outcomes</p></section>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def load_dfs_for_lstm(dsets = [&#39;clath_aux+gak_new&#39;], splits = [&#39;test&#39;], meta = [&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
-                      length = 40):
+<pre><code class="python">def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
+                      splits=[&#39;test&#39;],
+                      meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      length=40,
+                      normalize=True,
+                      filter_short=True):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
     &#39;&#39;&#39;
     dfs = {}
     for dset in tqdm(dsets):
         for split in splits:
-            df = data.get_data(dset=dset)
-            df = df[~(df.short | df.long | df.hotspots)]
-    #         df = df[df.valid]
-            df = df[df.lifetime &gt; 15] # only keep hard tracks
+            df = get_data(dset=dset)
+            if filter_short:
+                df = df[~(df.short | df.long | df.hotspots)]
+        #         df = df[df.valid]
+                df = df[df.lifetime &gt; 15] # only keep hard tracks
+            else:
+                df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
-            feat_names = [&#39;X_same_length_normalized&#39;] + data.select_final_feats(data.get_feature_names(df))
+            feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
             df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
@@ -525,12 +540,13 @@ Removes metadata + time-series columns + outcomes</p></section>
     #         df = df.dropna() 
 
             # normalize features
-            for feat in feat_names:
-                if &#39;X_same_length&#39; not in feat:
-                    df = features.normalize_feature(df, feat)
+            if normalize:
+                for feat in feat_names:
+                    if &#39;X_same_length&#39; not in feat:
+                        df = features.normalize_feature(df, feat)
 
             dfs[(dset, split)] = deepcopy(df)
-    return dfs</code></pre>
+    return dfs, feat_names</code></pre>
 </details>
 </dd>
 <dt id="src.data.process_tracks_by_lifetime"><code class="name flex">

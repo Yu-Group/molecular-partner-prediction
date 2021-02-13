@@ -27,18 +27,22 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                       splits=['test'],
                       meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
                       length=40,
-                      normalize=True):
+                      normalize=True,
+                      filter_short=True):
     '''Loads dataframes preprocessed ready for LSTM
     '''
     dfs = {}
     for dset in tqdm(dsets):
         for split in splits:
-            df = data.get_data(dset=dset)
-            df = df[~(df.short | df.long | df.hotspots)]
-    #         df = df[df.valid]
-            df = df[df.lifetime > 15] # only keep hard tracks
+            df = get_data(dset=dset)
+            if filter_short:
+                df = df[~(df.short | df.long | df.hotspots)]
+        #         df = df[df.valid]
+                df = df[df.lifetime > 15] # only keep hard tracks
+            else:
+                df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
-            feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
+            feat_names = ['X_same_length_normalized'] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
             df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length)

@@ -169,6 +169,19 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## interpret one pred at multiple scales
 
-# full_data_reg
+# 12_interpret_pred_plots
+
+
+## prepare data
+
+## prediction plots
+
+## scatter plots
+
+## viz errs
+
+## viz total acc
+
+# generate_full_data_results
 
 

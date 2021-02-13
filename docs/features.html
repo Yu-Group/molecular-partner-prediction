@@ -456,7 +456,7 @@ def normalize_feature(df, feat):
     &#34;&#34;&#34;
     normalize scalar features
     &#34;&#34;&#34;
-    
+    df = df.astype({feat: &#39;float64&#39;})
     for cell in set(df[&#39;cell_num&#39;]):
         cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
         y = df[feat].values[cell_idx]
@@ -1021,7 +1021,7 @@ Width of matrix is length of longest lifetime</p></section>
     &#34;&#34;&#34;
     normalize scalar features
     &#34;&#34;&#34;
-    
+    df = df.astype({feat: &#39;float64&#39;})
     for cell in set(df[&#39;cell_num&#39;]):
         cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
         y = df[feat].values[cell_idx]
