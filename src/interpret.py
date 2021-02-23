@@ -7,7 +7,7 @@ import seaborn as sns
 import matplotlib.colors
 import matplotlib.pyplot as plt
 import torch
-from matplotlib.colors import LinearSegmentedColormap
+import viz
 
 
 def calc_cd_score(xtrack_t, xfeats_t, start, stop, model):
@@ -24,10 +24,10 @@ def plot_segs(track_segs, cd_scores, xtrack,
     '''Plot a single segmentation plot
     '''
 #     cm = sns.diverging_palette(22, 220, as_cmap=True, center='light')
-    cm = LinearSegmentedColormap.from_list(
-        name='orange-blue', 
-        colors=[(222/255, 85/255, 51/255),'lightgray', (50/255, 129/255, 168/255)]
-    )
+#     cm = LinearSegmentedColormap.from_list(
+#         name='orange-blue', 
+#         colors=[(222/255, 85/255, 51/255),'lightgray', (50/255, 129/255, 168/255)]
+#     )
     if vabs is None:
         vabs = np.max(np.abs(cd_scores))
     norm = matplotlib.colors.Normalize(vmin=-vabs, vmax=vabs)
@@ -40,12 +40,12 @@ def plot_segs(track_segs, cd_scores, xtrack,
         xs = np.arange(s, e)
         if seq_len > 1:
             cd_score = [cd_score] * seq_len
-            col = cm(norm(cd_score[0]))
+            col = viz.cmap(norm(cd_score[0]))
             while len(col) == 1:
                 col = col[0]
             plt.plot(xs, xtrack[s: e], zorder=0, lw=2, color=col, alpha=0.5)
         plt.scatter(xs, xtrack[s: e],
-                    c=cd_score, cmap=cm, vmin=-vabs, vmax=vabs, s=6)
+                    c=cd_score, cmap=viz.cmap, vmin=-vabs, vmax=vabs, s=6)
     if pred is not None:
         plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
     if cbar:

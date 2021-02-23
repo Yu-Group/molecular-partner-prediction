@@ -19,9 +19,10 @@ from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
 import os
 import matplotlib.ticker as mtick
-
-DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
-DIR_FIGS = oj(DIR_FILE, '../reports/figs')
+from config import DIR_FIGS
+from matplotlib.colors import LinearSegmentedColormap
+# DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
+# DIR_FIGS = oj(DIR_FILE, '../reports/figs')
 
 
 cb2 = '#66ccff'
@@ -31,6 +32,12 @@ cr = '#cc0000'
 cp = '#cc3399'
 cy = '#d8b365'
 cg = '#5ab4ac'
+cmap = LinearSegmentedColormap.from_list(
+    name='orange-blue', 
+    colors=[(205/255, 85/255, 51/255),
+            'lightgray',
+            (50/255, 129/255, 168/255)]
+)
 
 def savefig(s: str, png=False):
 #     plt.tight_layout()
@@ -114,7 +121,11 @@ def highlight_max(data, color='#0e5c99'):
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20, aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True,
+                     plot_x=True,
+                     plot_y=True,
+                     plot_z=False,
+                     xlim_constant=True,
+                     lifetime_max=None,
                      text_labels=False):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
@@ -140,7 +151,8 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
     residuals = np.abs(Y_test - preds_proba)
     args = np.argsort(residuals)[::-1]
     dft = df.iloc[args]
-    lifetime_max = np.max(dft.lifetime.values)
+    if lifetime_max is None:
+        lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
@@ -157,18 +169,22 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                             horizontalalignment='right',
                             transform=ax.transAxes)
                 plt.axis('off')
+                row = dft.iloc[i]
                 if plot_x:
-                    plt.plot(dft["X"].iloc[i], color=cr, label='clath', lw=2) # could do X_extended
-                plt.plot(dft["Y"].iloc[i], color=cg, label='aux', lw=2)
+                    plt.plot(row["X"], color=cr, label='clath', lw=2) # could do X_extended
+                if plot_y:
+                    plt.plot(row["Y"], color=cg, label='aux', lw=2)
                 if plot_z:
-                    plt.plot(dft["Z"].iloc[i], color=cp, label='dyn')
+                    plt.plot(row["Z"], color='gray', label='dyn')
                 i += 1
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
     if text_labels:
-        plt.text(len(dft["X"].iloc[i]), dft["X"].iloc[i][-1], 'Clathrin', color=cr, fontsize=25, fontweight='bold')
-        plt.text(len(dft["Y"].iloc[i]), dft["Y"].iloc[i][-1], 'Auxilin', color=cg, fontsize=25, fontweight='bold')
+        plt.text(len(row["X"]), row["X"][-1], 'Clathrin', color=cr, fontsize=25, fontweight='bold')
+        plt.text(len(row["Y"]), row["Y"][-1], 'Auxilin', color=cg, fontsize=25, fontweight='bold')
+        if plot_z:
+            plt.text(len(row["Z"]), row["Z"][-1], 'Dynamin', color='gray', fontsize=25, fontweight='bold')
     plt.tight_layout()
     return dft
 
@@ -217,7 +233,8 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
     plt.show()
 
 
-def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
+def plot_curves(df, extra_key=None, extra_key_label=None,
+                hline=True, R=5, C=8,
                 fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     '''Plot time-series curves from df
     '''
@@ -231,12 +248,16 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
             row = df.iloc[i]
             if plot_x:
                 plt.plot(row.X, color=cr, label='Clathrin')
-            if extra_key is not None:
-                plt.plot(row[extra_key], color='gray', label=extra_key)
-            else:
                 plt.plot(row.Y, color=cg, label='Auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+            if extra_key is not None:
+                if extra_key_label is None:
+                    if extra_key == 'Z':
+                        extra_key_label = 'Dynamin'
+                    else:
+                        extra_key_label = extra_key
+                plt.plot(row[extra_key], color='gray', label=extra_key_label)
             if xlim_constant:
                 plt.xlim([-1, lifetime_max + 1])
             if ylim_constant:
