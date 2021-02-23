@@ -119,8 +119,10 @@ def highlight_max(data, color='#0e5c99'):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642,
+                     num_to_plot=20,
+                     aux_thresh=642,
                      show_track_num=True,
+                     sort_by_residuals=True,
                      plot_x=True,
                      plot_y=True,
                      plot_z=False,
@@ -148,9 +150,12 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by
-    residuals = np.abs(Y_test - preds_proba)
-    args = np.argsort(residuals)[::-1]
-    dft = df.iloc[args]
+    if sort_by_residuals:
+        residuals = np.abs(Y_test - preds_proba)
+        args = np.argsort(residuals)[::-1]
+        dft = df.iloc[args]
+    else:
+        dft = df
     if lifetime_max is None:
         lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
@@ -163,23 +168,26 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
     for r in range(R):
         for c in range(C):
             if i < dft.shape[0]:
+                row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
                 if show_track_num:
-                    ax.text(.5, .9, f'{dft.pid.iloc[i]}',
+                    ax.text(.5, .9, f'{i}', # row.pid
                             horizontalalignment='right',
                             transform=ax.transAxes)
                 plt.axis('off')
-                row = dft.iloc[i]
+                
                 if plot_x:
                     plt.plot(row["X"], color=cr, label='clath', lw=2) # could do X_extended
                 if plot_y:
                     plt.plot(row["Y"], color=cg, label='aux', lw=2)
                 if plot_z:
                     plt.plot(row["Z"], color='gray', label='dyn')
-                i += 1
+
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
+                i += 1
+                
     if text_labels:
         plt.text(len(row["X"]), row["X"][-1], 'Clathrin', color=cr, fontsize=25, fontweight='bold')
         plt.text(len(row["Y"]), row["Y"][-1], 'Auxilin', color=cg, fontsize=25, fontweight='bold')
