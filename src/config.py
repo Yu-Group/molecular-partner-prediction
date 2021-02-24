@@ -13,7 +13,7 @@ DIR_PROCESSED = oj(DIR_REPO, '..', 'data', 'processed')
 DIR_INTERIM = oj(DIR_REPO, '..', 'data', 'interim')
 DIR_FIGS = oj(DIR_REPO, '..', 'auxilin-paper', 'figs')
 DIR_RESULTS = '/scratch/users/vision/chandan/abc'
-FINAL_MODEL = oj(DIR_REPO, 'models/dnn_full_long_normalized_across_track_1_feat_dynamin.pkl')
+FINAL_MODEL = oj(DIR_REPO, '..', 'models/dnn_full_long_normalized_across_track_1_feat_dynamin.pkl')
 
 # raw data ################################################################################
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'

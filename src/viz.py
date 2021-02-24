@@ -482,53 +482,43 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.show()
 
 
-def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
+def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
+                            outcome_def='y_consec_thresh',
                             plot_vert_line_for_high_lifetimes=False, show=True):
-    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs = (preds == y_full_cv)[args]
-    n = accs.size
-    accs = np.cumsum(accs) / np.arange(1, n + 1)
-
     plt.figure(dpi=500)
     ax = plt.subplot(111)
-    TRAIN_CV_CELLS = config.DSETS['clath_aux+gak_a7d2']['train']
-    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) & (~df.hotspots)]
-    ds = dv[dv.short]
+    
+    # full (no model)
+    argsf = np.argsort(df.lifetime.values)
+    accsf = (1 - df[outcome_def]).values[argsf]
+    n = df.shape[0]
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label='No model')
+    print('accsf', np.sum(accsf))
+    
+    # short
+    ds = df[df.short]
     argss = np.argsort(ds.lifetime.values)
-    accs_s = (1 - ds[outcome_def]).values[argss]
-
-    dl = dv[dv.long]
-    argsl = np.argsort(dl.lifetime.values)
-    accs_l = (dl[outcome_def]).values[argsl]
-
-    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs_h = (preds == y_full_cv)[argsh]
-
+    accss = (1 - ds[outcome_def]).values[argss]
+    ns = ds.shape[0]
+    # hard
+    dh = df[~df.short]
+    argsh = np.argsort(np.abs(dh[pred_key])) #[::-1]
+    accsh = ((dh[pred_key].values > 0) == dh[outcome_def].values)[argsh]
     # put things together
-    accs = np.hstack((accs_s, accs_l, accs_h))
-    args2 = np.argsort(dv.lifetime.values)
-    accs2 = (1 - dv[outcome_def]).values[args2]
-
-    ns = accs_s.size
-    nl = accs_l.size
-    if plot_vert_line_for_high_lifetimes:
-        plt.axvline(ns, lw=0.5, color='gray')
-    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color='black')
-    nums = np.arange(1, accs.size + 1) 
-    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label='No model', color='gray')
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label='With model', color=cb)
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color='gray')
+    accs = np.hstack((accss, accsh))
+    print(accsf.shape, accss.shape, accsh.shape, accs.shape)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model')
+    print(accs)
+    plt.axvline(ns, lw=2.5, color='black')
+    
+    
     plt.xlabel('Percentage of tracks included (sorted by uncertainty)')
     plt.ylabel('Accuracy')
-    fmt = '%.0f%%' # Format you want the ticks, e.g. '40%'
-    xticks = mtick.FormatStrFormatter(fmt)
-    ax.xaxis.set_major_formatter(xticks)
-
+    ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
+    ax.xaxis.set_ticklabels([str(int(x)) + '%' for x in np.arange(0, 101, 100/5)])
     plt.legend(fontsize='x-large', frameon=False)
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    print('total acc', (np.cumsum(accs)[ns:] / nums[ns:])[-1])
-
 
 def plot_example(ex):
     '''ex - row of the dataframe
