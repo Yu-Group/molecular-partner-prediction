@@ -29,8 +29,9 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
     processed_tracks_file = processed_tracks_file[:-4] + '_' + dset + '.pkl'
     print('\t', processed_tracks_file, data_dir)
 
-    #if os.path.exists(processed_tracks_file):
-    #    return pd.read_pickle(processed_tracks_file)
+    if os.path.exists(processed_tracks_file):
+        print('\tusing cached tracks!')
+        return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split['feature_selection'] is None:
@@ -233,6 +234,7 @@ def get_images(cell_dir: str):
     for name in os.listdir(oj(cell_dir, 'EGFP')):
         if 'tif' in name:
             fname2 = name
+    print(cell_dir)
     X = imread(oj(cell_dir, 'TagRFP', fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
     Y = imread(oj(cell_dir, 'EGFP', fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
     return X, Y

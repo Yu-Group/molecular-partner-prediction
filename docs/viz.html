@@ -45,9 +45,10 @@ from sklearn.svm import OneClassSVM
 from sklearn.utils.multiclass import unique_labels
 import os
 import matplotlib.ticker as mtick
-
-DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
-DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
+from config import DIR_FIGS
+from matplotlib.colors import LinearSegmentedColormap
+# DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
+# DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
 
 
 cb2 = &#39;#66ccff&#39;
@@ -57,6 +58,12 @@ cr = &#39;#cc0000&#39;
 cp = &#39;#cc3399&#39;
 cy = &#39;#d8b365&#39;
 cg = &#39;#5ab4ac&#39;
+cmap = LinearSegmentedColormap.from_list(
+    name=&#39;orange-blue&#39;, 
+    colors=[(205/255, 85/255, 51/255),
+            &#39;lightgray&#39;,
+            (50/255, 129/255, 168/255)]
+)
 
 def savefig(s: str, png=False):
 #     plt.tight_layout()
@@ -138,9 +145,15 @@ def highlight_max(data, color=&#39;#0e5c99&#39;):
 
 # visualize biggest errs
 def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642,
+                     num_to_plot=20,
+                     aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True,
+                     sort_by_residuals=True,
+                     plot_x=True,
+                     plot_y=True,
+                     plot_z=False,
+                     xlim_constant=True,
+                     lifetime_max=None,
                      text_labels=False):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
@@ -163,10 +176,14 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by
-    residuals = np.abs(Y_test - preds_proba)
-    args = np.argsort(residuals)[::-1]
-    dft = df.iloc[args]
-    lifetime_max = np.max(dft.lifetime.values)
+    if sort_by_residuals:
+        residuals = np.abs(Y_test - preds_proba)
+        args = np.argsort(residuals)[::-1]
+        dft = df.iloc[args]
+    else:
+        dft = df
+    if lifetime_max is None:
+        lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
@@ -177,24 +194,31 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
     for r in range(R):
         for c in range(C):
             if i &lt; dft.shape[0]:
+                row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
                 if show_track_num:
-                    ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                    ax.text(.5, .9, f&#39;{i}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
+                
                 if plot_x:
-                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cg, label=&#39;aux&#39;, lw=2)
+                    plt.plot(row[&#34;X&#34;], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                if plot_y:
+                    plt.plot(row[&#34;Y&#34;], color=cg, label=&#39;aux&#39;, lw=2)
                 if plot_z:
-                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
-                i += 1
+                    plt.plot(row[&#34;Z&#34;], color=&#39;gray&#39;, label=&#39;dyn&#39;)
+
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                i += 1
+                
     if text_labels:
-        plt.text(len(dft[&#34;X&#34;].iloc[i]), dft[&#34;X&#34;].iloc[i][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
-        plt.text(len(dft[&#34;Y&#34;].iloc[i]), dft[&#34;Y&#34;].iloc[i][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        if plot_z:
+            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1], &#39;Dynamin&#39;, color=&#39;gray&#39;, fontsize=25, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft
 
@@ -243,7 +267,8 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39
     plt.show()
 
 
-def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
+def plot_curves(df, extra_key=None, extra_key_label=None,
+                hline=True, R=5, C=8,
                 fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
@@ -257,12 +282,16 @@ def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
             row = df.iloc[i]
             if plot_x:
                 plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
-            if extra_key is not None:
-                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
-            else:
                 plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+            if extra_key is not None:
+                if extra_key_label is None:
+                    if extra_key == &#39;Z&#39;:
+                        extra_key_label = &#39;Dynamin&#39;
+                    else:
+                        extra_key_label = extra_key
+                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key_label)
             if xlim_constant:
                 plt.xlim([-1, lifetime_max + 1])
             if ylim_constant:
@@ -821,7 +850,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.plot_curves"><code class="name flex">
-<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True)</span>
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, extra_key_label=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Plot time-series curves from df</p></section>
@@ -829,7 +858,8 @@ Params</p>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def plot_curves(df, extra_key=None, hline=True, R=5, C=8,
+<pre><code class="python">def plot_curves(df, extra_key=None, extra_key_label=None,
+                hline=True, R=5, C=8,
                 fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
@@ -843,12 +873,16 @@ Params</p>
             row = df.iloc[i]
             if plot_x:
                 plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
-            if extra_key is not None:
-                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key)
-            else:
                 plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+            if extra_key is not None:
+                if extra_key_label is None:
+                    if extra_key == &#39;Z&#39;:
+                        extra_key_label = &#39;Dynamin&#39;
+                    else:
+                        extra_key_label = extra_key
+                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key_label)
             if xlim_constant:
                 plt.xlim([-1, lifetime_max + 1])
             if ylim_constant:
@@ -1019,7 +1053,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, plot_x=True, plot_z=False, xlim_constant=True, text_labels=False)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, sort_by_residuals=True, plot_x=True, plot_y=True, plot_z=False, xlim_constant=True, lifetime_max=None, text_labels=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -1036,9 +1070,15 @@ Params</p>
 <span>Expand source code</span>
 </summary>
 <pre><code class="python">def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
-                     num_to_plot=20, aux_thresh=642,
+                     num_to_plot=20,
+                     aux_thresh=642,
                      show_track_num=True,
-                     plot_x=True, plot_z=False, xlim_constant=True,
+                     sort_by_residuals=True,
+                     plot_x=True,
+                     plot_y=True,
+                     plot_z=False,
+                     xlim_constant=True,
+                     lifetime_max=None,
                      text_labels=False):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
@@ -1061,10 +1101,14 @@ Params</p>
         df = df.iloc[idxs_cv][idxs]
     
     # get args to sort by
-    residuals = np.abs(Y_test - preds_proba)
-    args = np.argsort(residuals)[::-1]
-    dft = df.iloc[args]
-    lifetime_max = np.max(dft.lifetime.values)
+    if sort_by_residuals:
+        residuals = np.abs(Y_test - preds_proba)
+        args = np.argsort(residuals)[::-1]
+        dft = df.iloc[args]
+    else:
+        dft = df
+    if lifetime_max is None:
+        lifetime_max = np.max(dft.lifetime.values)
     if num_to_plot is None:
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
@@ -1075,24 +1119,31 @@ Params</p>
     for r in range(R):
         for c in range(C):
             if i &lt; dft.shape[0]:
+                row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
                 if show_track_num:
-                    ax.text(.5, .9, f&#39;{dft.pid.iloc[i]}&#39;,
+                    ax.text(.5, .9, f&#39;{i}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
+                
                 if plot_x:
-                    plt.plot(dft[&#34;X&#34;].iloc[i], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
-                plt.plot(dft[&#34;Y&#34;].iloc[i], color=cg, label=&#39;aux&#39;, lw=2)
+                    plt.plot(row[&#34;X&#34;], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                if plot_y:
+                    plt.plot(row[&#34;Y&#34;], color=cg, label=&#39;aux&#39;, lw=2)
                 if plot_z:
-                    plt.plot(dft[&#34;Z&#34;].iloc[i], color=cp, label=&#39;dyn&#39;)
-                i += 1
+                    plt.plot(row[&#34;Z&#34;], color=&#39;gray&#39;, label=&#39;dyn&#39;)
+
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
                 plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                i += 1
+                
     if text_labels:
-        plt.text(len(dft[&#34;X&#34;].iloc[i]), dft[&#34;X&#34;].iloc[i][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
-        plt.text(len(dft[&#34;Y&#34;].iloc[i]), dft[&#34;Y&#34;].iloc[i][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        if plot_z:
+            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1], &#39;Dynamin&#39;, color=&#39;gray&#39;, fontsize=25, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft</code></pre>
 </details>

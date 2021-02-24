@@ -13,13 +13,14 @@ DIR_PROCESSED = oj(DIR_REPO, '..', 'data', 'processed')
 DIR_INTERIM = oj(DIR_REPO, '..', 'data', 'interim')
 DIR_FIGS = oj(DIR_REPO, '..', 'auxilin-paper', 'figs')
 DIR_RESULTS = '/scratch/users/vision/chandan/abc'
-
+FINAL_MODEL = oj(DIR_REPO, 'models/dnn_full_long_normalized_across_track_1_feat_dynamin.pkl')
 
 # raw data ################################################################################
 data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'
 dynamin_folder = 'CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646'
+
 
 # data splitting
 s_orig = 'A7D2'

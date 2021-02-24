@@ -180,7 +180,18 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## viz errs
 
-## viz total acc
+## correcting labels
+
+# 13_dynamin_errs
+
+
+## load dynamin tracks directly
+
+**look at lifetimes**
+
+**look at clath curves**
+
+**compare aux + dynamin**
 
 # generate_full_data_results
 

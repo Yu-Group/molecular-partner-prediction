@@ -55,8 +55,9 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
     processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
     print(&#39;\t&#39;, processed_tracks_file, data_dir)
 
-    #if os.path.exists(processed_tracks_file):
-    #    return pd.read_pickle(processed_tracks_file)
+    if os.path.exists(processed_tracks_file):
+        print(&#39;\tusing cached tracks!&#39;)
+        return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split[&#39;feature_selection&#39;] is None:
@@ -259,6 +260,7 @@ def get_images(cell_dir: str):
     for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
         if &#39;tif&#39; in name:
             fname2 = name
+    print(cell_dir)
     X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
     Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
     return X, Y</code></pre>
@@ -313,6 +315,7 @@ def get_images(cell_dir: str):
     for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
         if &#39;tif&#39; in name:
             fname2 = name
+    print(cell_dir)
     X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
     Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
     return X, Y</code></pre>
@@ -337,8 +340,9 @@ Assumes (matlab) tracking has been run</p></section>
     processed_tracks_file = processed_tracks_file[:-4] + &#39;_&#39; + dset + &#39;.pkl&#39;
     print(&#39;\t&#39;, processed_tracks_file, data_dir)
 
-    #if os.path.exists(processed_tracks_file):
-    #    return pd.read_pickle(processed_tracks_file)
+    if os.path.exists(processed_tracks_file):
+        print(&#39;\tusing cached tracks!&#39;)
+        return pd.read_pickle(processed_tracks_file)
     dfs = []
 
     if split[&#39;feature_selection&#39;] is None:
