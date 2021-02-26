@@ -48,6 +48,7 @@ def plot_segs(track_segs, cd_scores, xtrack,
                     c=cd_score, cmap=viz.cmap, vmin=-vabs, vmax=vabs, s=6)
     if pred is not None:
         plt.title(f"Pred: {pred: .1f}, y: {y}", fontsize=24)
+    cb = None
     if cbar:
         cb = plt.colorbar() #label='CD Score')
         cb.outline.set_visible(False)

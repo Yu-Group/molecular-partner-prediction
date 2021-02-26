@@ -122,6 +122,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20,
                      aux_thresh=642,
                      show_track_num=True,
+                     show_track_pid=False,
                      sort_by_residuals=True,
                      plot_x=True,
                      plot_y=True,
@@ -170,8 +171,13 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
             if i < dft.shape[0]:
                 row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
+                # show nums on tracks
                 if show_track_num:
                     ax.text(.5, .9, f'{i}', # row.pid
+                            horizontalalignment='right',
+                            transform=ax.transAxes)
+                elif show_track_pid:
+                    ax.text(.5, .9, f'{row.pid}', # row.pid
                             horizontalalignment='right',
                             transform=ax.transAxes)
                 plt.axis('off')
@@ -492,7 +498,7 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     argsf = np.argsort(df.lifetime.values)
     accsf = (1 - df[outcome_def]).values[argsf]
     n = df.shape[0]
-    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label='No model')
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label='No model', color='gray')
     print('accsf', np.sum(accsf))
     
     # short
@@ -507,7 +513,7 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model')
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model', color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color='black')
     
