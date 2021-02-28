@@ -28,7 +28,8 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                       meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
                       length=40,
                       normalize=True,
-                      filter_short=True):
+                      filter_short=True,
+                      padding='end'):
     '''Loads dataframes preprocessed ready for LSTM
     '''
     dfs = {}
@@ -45,13 +46,13 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
             feat_names = ['X_same_length_normalized'] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length)
+            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length, padding=padding)
                                    for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track='X_same_length', by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df)     
+            df = train_reg.add_sig_mean(df, resp_tracks=['Y'])     
 
             # remove extraneous feats
             # df = df[feat_names + meta]
