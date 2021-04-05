@@ -21,8 +21,14 @@ import os
 import matplotlib.ticker as mtick
 from config import DIR_FIGS
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 # DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 # DIR_FIGS = oj(DIR_FILE, '../reports/figs')
+try:
+    from skimage.external.tifffile import imread
+except:
+    from skimage.io import imread
 
 
 cb2 = '#66ccff'
@@ -535,3 +541,121 @@ def plot_example(ex):
     plt.xlabel('Time')
     plt.ylabel('Amplitude')
     plt.legend()
+    
+def get_images(cell_dir: str):
+    '''Loads in X and Y for one cell
+    
+    Params
+    ------
+    cell_dir
+        Path to directory for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    '''
+    for name in os.listdir(oj(cell_dir, 'TagRFP')):
+        #print(f"filename: {name}")
+        if 'tif' in name:
+            fname1 = name
+    for name in os.listdir(oj(cell_dir, 'EGFP')):
+        if 'tif' in name:
+            fname2 = name
+    #print(cell_dir)
+    X = imread(oj(cell_dir, 'TagRFP', fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(cell_dir, 'EGFP', fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    return X, Y
+    
+def get_dynamin_images(cells):
+    
+    cla, aux = {}, {}
+    upper_dir = oj('/scratch/users/vision/data/abc_data/dynamin_data_with_ims/',
+               'CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646')
+    for cell_num in cells:
+        cell_dir = cell_num[:-6] + 'Cell1_1.5s'
+        full_dir = oj(upper_dir, cell_dir)
+        cla[cell_num], aux[cell_num] = get_images(full_dir)
+    return cla, aux
+
+def plot_kymographs(df, pids, add_px=2):
+    
+    """
+    plot kymographs of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    Returns:
+    ------
+    cla_traces: np.array
+        clathrin traces from raw images
+    aux_traces: np.array
+        auxilin traces from raw images
+    rgb_image: 3d np.array
+        3d array (RGB values) of kymographs (viridis color palette)
+    """
+    
+    df = df[df.pid.isin(pids)]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    viridis = cm.get_cmap('viridis', 12)
+    
+    lmax = 300
+    width = 2 * add_px + 1
+    cla_traces, aux_traces = {}, {}
+    
+    # use one frame as background 
+    background = Y[df.cell_num.iloc[0]][0,:,:][200:300,:][:,200:300]
+    xmin = X[df.cell_num.iloc[0]].min()
+    ymin = Y[df.cell_num.iloc[0]].min()
+    background = (background - ymin)/(6237 - ymin)
+    background = background.reshape(1, -1)[0]
+    #background = np.random.choice(background, 1000)
+    
+    for i in range(len(df)):
+        cla_traces[i], aux_traces[i] = np.zeros((lmax, width)),  np.zeros((lmax, width))
+        #xmean = X[df.cell_num.iloc[i]].mean()
+        cell_num = df.cell_num.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))        
+        
+        for k in range(-add_px, add_px + 1):
+            cla_traces[i][:,k] = [xmin] * int(t) + [X[cell_num][int((t+j)/1.5), int(y_pos[j]), int(x_pos[j] + k)] \
+                         for j in range(lt)] + [xmin]*(lmax - lt - int(t))
+            aux_trace = []
+            for j in range(lt):
+                aux_trace.append(max(Y[cell_num][int((t+j)/1.5), \
+                                             range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                             int(x_pos[j] + k)]))
+            aux_traces[i][:,k] = [ymin] * int(t) + aux_trace + [ymin]*(lmax - lt - int(t))
+            
+        cla_traces[i] = (cla_traces[i] - xmin)/(15351 - xmin)
+        aux_traces[i] = (aux_traces[i] - ymin)/(6237 - ymin)
+    
+    ncol = 4 * width * len(df)
+    cla_sparse = np.zeros((lmax, ncol))
+    aux_sparse = np.zeros((lmax, ncol))
+    for i in range(len(df)):
+        cla_sparse[:, (4 * width * i):(4 * width * i + width)] = cla_traces[i]
+        aux_sparse[:, (4 * width * i + width):(4 * width * i + 2 * width)] = aux_traces[i]
+    
+    rgb_image = np.array([[[1, 1 - cla_sparse[i][j], 1 - cla_sparse[i][j]] \
+                      if 0 < cla_sparse[i][j] < 1 \
+                      else \
+                      list(viridis(aux_sparse[i][j])[:3]) \
+                      if 0 < aux_sparse[i][j] < 1 \
+                      else list(viridis(np.random.choice(background, 1)[0])[:3])\
+                      #else (1, 1, 1)
+                      for i in range(lmax)] \
+                      for j in range(ncol)])
+    #cla_sparse = np.transpose(cla_sparse)
+    #aux_sparse = np.transpose(aux_sparse)
+    return cla_traces, aux_traces, rgb_image
