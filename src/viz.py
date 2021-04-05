@@ -599,7 +599,9 @@ def get_dynamin_data_video(df, pids, add_px=2):
         
     Returns:
     ------
-    cla_videos, aux_videos: list of np.2darray
+    cla_videos, aux_videos: dictionary
+        Indexed by pid
+        For each pid, the value is an np.2darray
         Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
         Range is [0, 1]
     
