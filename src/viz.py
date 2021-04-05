@@ -607,7 +607,8 @@ def get_dynamin_data_video(df, pids, add_px=2):
     
     """
     
-    df = df[df.pid.isin(pids)]
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
     cells = set(df.cell_num.values)
     X, Y = get_dynamin_images(cells)
     
@@ -667,7 +668,8 @@ def plot_kymographs(df, pids, add_px=2):
         3d array (RGB values) of kymographs
     """
     
-    df = df[df.pid.isin(pids)]
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
     cells = set(df.cell_num.values)
     X, Y = get_dynamin_images(cells)
     viridis = cm.get_cmap('viridis', 12)
