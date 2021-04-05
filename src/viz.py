@@ -580,6 +580,64 @@ def get_dynamin_images(cells):
         cla[cell_num], aux[cell_num] = get_images(full_dir)
     return cla, aux
 
+def get_dynamin_data_video(df, pids, add_px=2):
+    
+    """
+    extract videos of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
+    Returns:
+    ------
+    cla_videos, aux_videos: list of np.2darray
+        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
+        Range is [0, 1]
+    
+    """
+    
+    df = df[df.pid.isin(pids)]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    
+    cla_videos, aux_videos = {}, {}
+    
+    for i in range(len(df)):
+        cla, aux = [], []
+        cell_num = df.cell_num.iloc[i]
+        pid = df.pid.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
+
+        for j in range(lt):
+            aux.append(Y[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+            
+            # normalize by the min/max intensities
+            vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+            aux[j] = (aux[j] - vmin)/(vmax - vmin)
+            
+            cla.append(X[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)]) 
+            vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+            cla[j] = (cla[j] - vmin)/(vmax - vmin)
+            
+        cla_videos[pid], aux_videos[pid] = cla, aux
+    
+    return cla_videos, aux_videos
+    
+
 def plot_kymographs(df, pids, add_px=2):
     
     """
@@ -593,6 +651,10 @@ def plot_kymographs(df, pids, add_px=2):
     pids: list
         list of pids to plot
         
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
     Returns:
     ------
     cla_traces: np.array
@@ -600,60 +662,58 @@ def plot_kymographs(df, pids, add_px=2):
     aux_traces: np.array
         auxilin traces from raw images
     rgb_image: 3d np.array
-        3d array (RGB values) of kymographs (viridis color palette)
+        3d array (RGB values) of kymographs
     """
     
     df = df[df.pid.isin(pids)]
     cells = set(df.cell_num.values)
     X, Y = get_dynamin_images(cells)
     viridis = cm.get_cmap('viridis', 12)
+    reds = cm.get_cmap('Reds', 12) # red palette for clathrin
+    greens = cm.get_cmap('Greens', 12) # green palette for auxilin
     
-    lmax = 300
+    lmax = max([len(df.x_pos_seq.iloc[i]) for i in range(len(df))]) + 2
     width = 2 * add_px + 1
     cla_traces, aux_traces = {}, {}
     
-    # use one frame as background 
-    background = Y[df.cell_num.iloc[0]][0,:,:][200:300,:][:,200:300]
-    xmin = X[df.cell_num.iloc[0]].min()
-    ymin = Y[df.cell_num.iloc[0]].min()
-    background = (background - ymin)/(6237 - ymin)
-    background = background.reshape(1, -1)[0]
-    #background = np.random.choice(background, 1000)
-    
     for i in range(len(df)):
-        cla_traces[i], aux_traces[i] = np.zeros((lmax, width)),  np.zeros((lmax, width))
+        cla_traces[i], aux_traces[i] = np.zeros((lmax, width)), np.zeros((lmax, width))
         #xmean = X[df.cell_num.iloc[i]].mean()
         cell_num = df.cell_num.iloc[i]
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
         t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))        
         
         for k in range(-add_px, add_px + 1):
-            cla_traces[i][:,k] = [xmin] * int(t) + [X[cell_num][int((t+j)/1.5), int(y_pos[j]), int(x_pos[j] + k)] \
-                         for j in range(lt)] + [xmin]*(lmax - lt - int(t))
-            aux_trace = []
             for j in range(lt):
-                aux_trace.append(max(Y[cell_num][int((t+j)/1.5), \
-                                             range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
-                                             int(x_pos[j] + k)]))
-            aux_traces[i][:,k] = [ymin] * int(t) + aux_trace + [ymin]*(lmax - lt - int(t))
-            
-        cla_traces[i] = (cla_traces[i] - xmin)/(15351 - xmin)
-        aux_traces[i] = (aux_traces[i] - ymin)/(6237 - ymin)
+                cla_traces[i][j, k] = max(X[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                
+                aux_traces[i][j, k] = max(Y[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
     
-    ncol = 4 * width * len(df)
+    ncol = 3 * width * len(df)
     cla_sparse = np.zeros((lmax, ncol))
     aux_sparse = np.zeros((lmax, ncol))
     for i in range(len(df)):
-        cla_sparse[:, (4 * width * i):(4 * width * i + width)] = cla_traces[i]
-        aux_sparse[:, (4 * width * i + width):(4 * width * i + 2 * width)] = aux_traces[i]
+        start_index = 3 * width * i
+        cla_sparse[:, (start_index):(start_index + width)] = cla_traces[i]
+        aux_sparse[:, (start_index + width):(start_index + 2 * width)] = aux_traces[i]
     
-    rgb_image = np.array([[[1, 1 - cla_sparse[i][j], 1 - cla_sparse[i][j]] \
+    rgb_image = np.array([[list(reds(cla_sparse[i][j])[:3])
+                      #[1, 1 - cla_sparse[i][j], 1 - cla_sparse[i][j]] \
                       if 0 < cla_sparse[i][j] < 1 \
                       else \
-                      list(viridis(aux_sparse[i][j])[:3]) \
+                      list(greens(aux_sparse[i][j])[:3]) \
+                      #[1 - aux_sparse[i][j], 1, 1 - aux_sparse[i][j]] \
                       if 0 < aux_sparse[i][j] < 1 \
-                      else list(viridis(np.random.choice(background, 1)[0])[:3])\
-                      #else (1, 1, 1)
+                      #else list(viridis(np.random.choice(background, 1)[0])[:3])\
+                      else (1, 1, 1)
                       for i in range(lmax)] \
                       for j in range(ncol)])
     #cla_sparse = np.transpose(cla_sparse)
