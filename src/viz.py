@@ -23,6 +23,7 @@ from config import DIR_FIGS
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
+import dvu
 # DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 # DIR_FIGS = oj(DIR_FILE, '../reports/figs')
 try:
@@ -133,7 +134,9 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      plot_x=True,
                      plot_y=True,
                      plot_z=False,
+                     plot_axhline=True,
                      xlim_constant=True,
+                     ylim: tuple=None,
                      lifetime_max=None,
                      text_labels=False):
     '''Visualize X and Y where the top examples are the most wrong / least confident
@@ -145,7 +148,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     '''
-
+    DIFF = 1000 # use this to ensure values are all positive
     
     # deal with idxs
     if idxs is not None:
@@ -186,25 +189,38 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                     ax.text(.5, .9, f'{row.pid}', # row.pid
                             horizontalalignment='right',
                             transform=ax.transAxes)
-                plt.axis('off')
+
+#                 plt.axis('off')
                 
                 if plot_x:
-                    plt.plot(row["X"], color=cr, label='clath', lw=2) # could do X_extended
+                    plt.plot(np.array(row["X"]) + DIFF, color=cr, label='clath', lw=2) # could do X_extended
                 if plot_y:
-                    plt.plot(row["Y"], color=cg, label='aux', lw=2)
+                    plt.plot(np.array(row["Y"]) + DIFF, color=cg, label='aux', lw=2)
                 if plot_z:
-                    plt.plot(row["Z"], color='gray', label='dyn')
-
+                    plt.plot(np.array(row["Z"]) + DIFF, color='gray', label='dyn')               
+                    
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
+                
+                if plot_axhline:
+                    plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
+                
+                plt.yscale('log')
+                if ylim is not None:
+                    plt.ylim((ylim[0] + DIFF, ylim[1] + DIFF))
+                    
+                if not r == R - 1:
+                    plt.xticks([])
+                if not c == 0:
+                    plt.yticks([])     
+
                 i += 1
                 
     if text_labels:
-        plt.text(len(row["X"]), row["X"][-1], 'Clathrin', color=cr, fontsize=25, fontweight='bold')
-        plt.text(len(row["Y"]), row["Y"][-1], 'Auxilin', color=cg, fontsize=25, fontweight='bold')
+        plt.text(len(row["X"]), row["X"][-1] + DIFF, 'Clathrin', color=cr, fontsize=25, fontweight='bold')
+        plt.text(len(row["Y"]), row["Y"][-1] + DIFF, 'Auxilin', color=cg, fontsize=25, fontweight='bold')
         if plot_z:
-            plt.text(len(row["Z"]), row["Z"][-1], 'Dynamin', color='gray', fontsize=25, fontweight='bold')
+            plt.text(len(row["Z"]), row["Z"][-1] + DIFF, 'Dynamin', color='gray', fontsize=25, fontweight='bold')
     plt.tight_layout()
     return dft
 
@@ -255,9 +271,12 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
 
 def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
+                xlim=None,
+                fig=None, ylim_constant=False, ylim=None,
+                xlim_constant=True, legend=True, plot_x=True):
     '''Plot time-series curves from df
     '''
+    DIFF = 1000
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200, facecolor='white')
     lifetime_max = np.max(df.lifetime.values[:R * C])
@@ -267,8 +286,8 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
             if plot_x:
-                plt.plot(row.X, color=cr, label='Clathrin')
-                plt.plot(row.Y, color=cg, label='Auxilin')
+                plt.plot(np.array(row.X) + DIFF, color=cr, label='Clathrin')
+                plt.plot(np.array(row.Y) + DIFF, color=cg, label='Auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             if extra_key is not None:
@@ -277,14 +296,28 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                         extra_key_label = 'Dynamin'
                     else:
                         extra_key_label = extra_key
-                plt.plot(row[extra_key], color='gray', label=extra_key_label)
+                plt.plot(np.array(row[extra_key]) + DIFF, color='gray', label=extra_key_label)
             if xlim_constant:
-                plt.xlim([-1, lifetime_max + 1])
+                if xlim is None:
+                    plt.xlim([-1, lifetime_max + 1])
+                else:
+                    print(xlim)
+                    plt.xlim(xlim)
+                
+                
+            plt.yscale('log')                  
             if ylim_constant:
-                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                if ylim is None:
+                    plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                else:
+                    plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
     #     plt.axi('off')
+
+                  
     if legend:
-        plt.legend()
+        dvu.line_legend()
+            
+#         plt.legend()
     plt.tight_layout()
     if fig is None:
         plt.show()
