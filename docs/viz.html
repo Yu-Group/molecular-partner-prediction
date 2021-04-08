@@ -47,8 +47,14 @@ import os
 import matplotlib.ticker as mtick
 from config import DIR_FIGS
 from matplotlib.colors import LinearSegmentedColormap
+from matplotlib import cm
+from matplotlib.colors import ListedColormap
 # DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 # DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
+try:
+    from skimage.external.tifffile import imread
+except:
+    from skimage.io import imread
 
 
 cb2 = &#39;#66ccff&#39;
@@ -148,6 +154,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      num_to_plot=20,
                      aux_thresh=642,
                      show_track_num=True,
+                     show_track_pid=False,
                      sort_by_residuals=True,
                      plot_x=True,
                      plot_y=True,
@@ -196,8 +203,13 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
             if i &lt; dft.shape[0]:
                 row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
+                # show nums on tracks
                 if show_track_num:
                     ax.text(.5, .9, f&#39;{i}&#39;, # row.pid
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)
+                elif show_track_pid:
+                    ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
@@ -508,53 +520,43 @@ def cumulative_acc_plot_hard(preds_proba, preds, y_full_cv):
     plt.show()
 
 
-def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
+def cumulative_acc_plot_all(df, pred_proba_key=&#39;preds_proba&#39;, pred_key=&#39;preds&#39;,
+                            outcome_def=&#39;y_consec_thresh&#39;,
                             plot_vert_line_for_high_lifetimes=False, show=True):
-    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs = (preds == y_full_cv)[args]
-    n = accs.size
-    accs = np.cumsum(accs) / np.arange(1, n + 1)
-
     plt.figure(dpi=500)
     ax = plt.subplot(111)
-    TRAIN_CV_CELLS = config.DSETS[&#39;clath_aux+gak_a7d2&#39;][&#39;train&#39;]
-    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) &amp; (~df.hotspots)]
-    ds = dv[dv.short]
+    
+    # full (no model)
+    argsf = np.argsort(df.lifetime.values)
+    accsf = (1 - df[outcome_def]).values[argsf]
+    n = df.shape[0]
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;No model&#39;, color=&#39;gray&#39;)
+    print(&#39;accsf&#39;, np.sum(accsf))
+    
+    # short
+    ds = df[df.short]
     argss = np.argsort(ds.lifetime.values)
-    accs_s = (1 - ds[outcome_def]).values[argss]
-
-    dl = dv[dv.long]
-    argsl = np.argsort(dl.lifetime.values)
-    accs_l = (dl[outcome_def]).values[argsl]
-
-    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs_h = (preds == y_full_cv)[argsh]
-
+    accss = (1 - ds[outcome_def]).values[argss]
+    ns = ds.shape[0]
+    # hard
+    dh = df[~df.short]
+    argsh = np.argsort(np.abs(dh[pred_key])) #[::-1]
+    accsh = ((dh[pred_key].values &gt; 0) == dh[outcome_def].values)[argsh]
     # put things together
-    accs = np.hstack((accs_s, accs_l, accs_h))
-    args2 = np.argsort(dv.lifetime.values)
-    accs2 = (1 - dv[outcome_def]).values[args2]
-
-    ns = accs_s.size
-    nl = accs_l.size
-    if plot_vert_line_for_high_lifetimes:
-        plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
-    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color=&#39;black&#39;)
-    nums = np.arange(1, accs.size + 1) 
-    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label=&#39;No model&#39;, color=&#39;gray&#39;)
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label=&#39;With model&#39;, color=cb)
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=&#39;gray&#39;)
+    accs = np.hstack((accss, accsh))
+    print(accsf.shape, accss.shape, accsh.shape, accs.shape)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;With model&#39;, color=cb)
+    print(accs)
+    plt.axvline(ns, lw=2.5, color=&#39;black&#39;)
+    
+    
     plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
     plt.ylabel(&#39;Accuracy&#39;)
-    fmt = &#39;%.0f%%&#39; # Format you want the ticks, e.g. &#39;40%&#39;
-    xticks = mtick.FormatStrFormatter(fmt)
-    ax.xaxis.set_major_formatter(xticks)
-
+    ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
+    ax.xaxis.set_ticklabels([str(int(x)) + &#39;%&#39; for x in np.arange(0, 101, 100/5)])
     plt.legend(fontsize=&#39;x-large&#39;, frameon=False)
     plt.grid(alpha=0.2)
     plt.tight_layout()
-    print(&#39;total acc&#39;, (np.cumsum(accs)[ns:] / nums[ns:])[-1])
-
 
 def plot_example(ex):
     &#39;&#39;&#39;ex - row of the dataframe
@@ -564,7 +566,189 @@ def plot_example(ex):
     plt.plot(ex[&#39;Y&#39;], color=&#39;green&#39;, label=&#39;auxilin&#39;)
     plt.xlabel(&#39;Time&#39;)
     plt.ylabel(&#39;Amplitude&#39;)
-    plt.legend()</code></pre>
+    plt.legend()
+    
+def get_images(cell_dir: str):
+    &#39;&#39;&#39;Loads in X and Y for one cell
+    
+    Params
+    ------
+    cell_dir
+        Path to directory for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    &#39;&#39;&#39;
+    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
+        #print(f&#34;filename: {name}&#34;)
+        if &#39;tif&#39; in name:
+            fname1 = name
+    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
+        if &#39;tif&#39; in name:
+            fname2 = name
+    #print(cell_dir)
+    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    return X, Y
+    
+def get_dynamin_images(cells):
+    
+    cla, aux = {}, {}
+    upper_dir = oj(&#39;/scratch/users/vision/data/abc_data/dynamin_data_with_ims/&#39;,
+               &#39;CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646&#39;)
+    for cell_num in cells:
+        cell_dir = cell_num[:-6] + &#39;Cell1_1.5s&#39;
+        full_dir = oj(upper_dir, cell_dir)
+        cla[cell_num], aux[cell_num] = get_images(full_dir)
+    return cla, aux
+
+def get_dynamin_data_video(df, pids, add_px=2):
+    
+    &#34;&#34;&#34;
+    extract videos of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
+    Returns:
+    ------
+    cla_videos, aux_videos: dictionary
+        Indexed by pid
+        For each pid, the value is an np.2darray
+        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
+        Range is [0, 1]
+    
+    &#34;&#34;&#34;
+    
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    
+    cla_videos, aux_videos = {}, {}
+    
+    for i in range(len(df)):
+        cla, aux = [], []
+        cell_num = df.cell_num.iloc[i]
+        pid = df.pid.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
+
+        for j in range(lt):
+            aux.append(Y[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+            
+            # normalize by the min/max intensities
+            vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+            aux[j] = (aux[j] - vmin)/(vmax - vmin)
+            
+            cla.append(X[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)]) 
+            vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+            cla[j] = (cla[j] - vmin)/(vmax - vmin)
+            
+        cla_videos[pid], aux_videos[pid] = cla, aux
+    
+    return cla_videos, aux_videos
+    
+
+def plot_kymographs(df, pids, add_px=2):
+    
+    &#34;&#34;&#34;
+    plot kymographs of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
+    Returns:
+    ------
+    cla_traces: np.array
+        clathrin traces from raw images
+    aux_traces: np.array
+        auxilin traces from raw images
+    rgb_image: 3d np.array
+        3d array (RGB values) of kymographs
+    &#34;&#34;&#34;
+    
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    viridis = cm.get_cmap(&#39;viridis&#39;, 12)
+    reds = cm.get_cmap(&#39;Reds&#39;, 12) # red palette for clathrin
+    greens = cm.get_cmap(&#39;Greens&#39;, 12) # green palette for auxilin
+    
+    lmax = max([len(df.x_pos_seq.iloc[i]) for i in range(len(df))]) + 2
+    width = 2 * add_px + 1
+    cla_traces, aux_traces = {}, {}
+    
+    for i in range(len(df)):
+        cla_traces[i], aux_traces[i] = np.zeros((lmax, width)), np.zeros((lmax, width))
+        #xmean = X[df.cell_num.iloc[i]].mean()
+        cell_num = df.cell_num.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))        
+        
+        for k in range(-add_px, add_px + 1):
+            for j in range(lt):
+                cla_traces[i][j, k] = max(X[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                
+                aux_traces[i][j, k] = max(Y[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
+    
+    ncol = 3 * width * len(df)
+    cla_sparse = np.zeros((lmax, ncol))
+    aux_sparse = np.zeros((lmax, ncol))
+    for i in range(len(df)):
+        start_index = 3 * width * i
+        cla_sparse[:, (start_index):(start_index + width)] = cla_traces[i]
+        aux_sparse[:, (start_index + width):(start_index + 2 * width)] = aux_traces[i]
+    
+    rgb_image = np.array([[list(reds(cla_sparse[i][j])[:3])
+                      #[1, 1 - cla_sparse[i][j], 1 - cla_sparse[i][j]] \
+                      if 0 &lt; cla_sparse[i][j] &lt; 1 \
+                      else \
+                      list(greens(aux_sparse[i][j])[:3]) \
+                      #[1 - aux_sparse[i][j], 1, 1 - aux_sparse[i][j]] \
+                      if 0 &lt; aux_sparse[i][j] &lt; 1 \
+                      #else list(viridis(np.random.choice(background, 1)[0])[:3])\
+                      else (1, 1, 1)
+                      for i in range(lmax)] \
+                      for j in range(ncol)])
+    #cla_sparse = np.transpose(cla_sparse)
+    #aux_sparse = np.transpose(aux_sparse)
+    return cla_traces, aux_traces, rgb_image</code></pre>
 </details>
 </section>
 <section>
@@ -575,7 +759,7 @@ def plot_example(ex):
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="src.viz.cumulative_acc_plot_all"><code class="name flex">
-<span>def <span class="ident">cumulative_acc_plot_all</span></span>(<span>preds_proba, preds, y_full_cv, df, outcome_def, plot_vert_line_for_high_lifetimes=False, show=True)</span>
+<span>def <span class="ident">cumulative_acc_plot_all</span></span>(<span>df, pred_proba_key='preds_proba', pred_key='preds', outcome_def='y_consec_thresh', plot_vert_line_for_high_lifetimes=False, show=True)</span>
 </code></dt>
 <dd>
 <section class="desc"></section>
@@ -583,52 +767,43 @@ def plot_example(ex):
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def cumulative_acc_plot_all(preds_proba, preds, y_full_cv, df, outcome_def,
+<pre><code class="python">def cumulative_acc_plot_all(df, pred_proba_key=&#39;preds_proba&#39;, pred_key=&#39;preds&#39;,
+                            outcome_def=&#39;y_consec_thresh&#39;,
                             plot_vert_line_for_high_lifetimes=False, show=True):
-    args = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs = (preds == y_full_cv)[args]
-    n = accs.size
-    accs = np.cumsum(accs) / np.arange(1, n + 1)
-
     plt.figure(dpi=500)
     ax = plt.subplot(111)
-    TRAIN_CV_CELLS = config.DSETS[&#39;clath_aux+gak_a7d2&#39;][&#39;train&#39;]
-    dv = df[(df.cell_num.isin(TRAIN_CV_CELLS)) &amp; (~df.hotspots)]
-    ds = dv[dv.short]
+    
+    # full (no model)
+    argsf = np.argsort(df.lifetime.values)
+    accsf = (1 - df[outcome_def]).values[argsf]
+    n = df.shape[0]
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;No model&#39;, color=&#39;gray&#39;)
+    print(&#39;accsf&#39;, np.sum(accsf))
+    
+    # short
+    ds = df[df.short]
     argss = np.argsort(ds.lifetime.values)
-    accs_s = (1 - ds[outcome_def]).values[argss]
-
-    dl = dv[dv.long]
-    argsl = np.argsort(dl.lifetime.values)
-    accs_l = (dl[outcome_def]).values[argsl]
-
-    argsh = np.argsort(np.abs(preds_proba - 0.5))[::-1]
-    accs_h = (preds == y_full_cv)[argsh]
-
+    accss = (1 - ds[outcome_def]).values[argss]
+    ns = ds.shape[0]
+    # hard
+    dh = df[~df.short]
+    argsh = np.argsort(np.abs(dh[pred_key])) #[::-1]
+    accsh = ((dh[pred_key].values &gt; 0) == dh[outcome_def].values)[argsh]
     # put things together
-    accs = np.hstack((accs_s, accs_l, accs_h))
-    args2 = np.argsort(dv.lifetime.values)
-    accs2 = (1 - dv[outcome_def]).values[args2]
-
-    ns = accs_s.size
-    nl = accs_l.size
-    if plot_vert_line_for_high_lifetimes:
-        plt.axvline(ns, lw=0.5, color=&#39;gray&#39;)
-    plt.axvline((ns + nl) / accs.size * 100, lw=2.5, color=&#39;black&#39;)
-    nums = np.arange(1, accs.size + 1) 
-    plt.plot(nums[20:ns]/ nums.size * 100, np.cumsum(accs)[20:ns] / nums[20:ns], lw=2.5, label=&#39;No model&#39;, color=&#39;gray&#39;)
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs)[ns:] / nums[ns:], lw=2.5, label=&#39;With model&#39;, color=cb)
-    plt.plot(nums[ns:]/ nums.size * 100, np.cumsum(accs2)[ns:] / nums[ns:], lw=2.5, color=&#39;gray&#39;)
+    accs = np.hstack((accss, accsh))
+    print(accsf.shape, accss.shape, accsh.shape, accs.shape)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;With model&#39;, color=cb)
+    print(accs)
+    plt.axvline(ns, lw=2.5, color=&#39;black&#39;)
+    
+    
     plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
     plt.ylabel(&#39;Accuracy&#39;)
-    fmt = &#39;%.0f%%&#39; # Format you want the ticks, e.g. &#39;40%&#39;
-    xticks = mtick.FormatStrFormatter(fmt)
-    ax.xaxis.set_major_formatter(xticks)
-
+    ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
+    ax.xaxis.set_ticklabels([str(int(x)) + &#39;%&#39; for x in np.arange(0, 101, 100/5)])
     plt.legend(fontsize=&#39;x-large&#39;, frameon=False)
     plt.grid(alpha=0.2)
-    plt.tight_layout()
-    print(&#39;total acc&#39;, (np.cumsum(accs)[ns:] / nums[ns:])[-1])</code></pre>
+    plt.tight_layout()</code></pre>
 </details>
 </dd>
 <dt id="src.viz.cumulative_acc_plot_hard"><code class="name flex">
@@ -667,6 +842,160 @@ def plot_example(ex):
 </summary>
 <pre><code class="python">def fix_feat_name(s):
     return s.replace(&#39;_&#39;, &#39; &#39;).replace(&#39;X&#39;, &#39;Clath&#39;).capitalize()</code></pre>
+</details>
+</dd>
+<dt id="src.viz.get_dynamin_data_video"><code class="name flex">
+<span>def <span class="ident">get_dynamin_data_video</span></span>(<span>df, pids, add_px=2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>extract videos of dynamin traces </p>
+<h2 id="params">Params:</h2>
+<p>df: pd.DataFrame
+dataframe</p>
+<p>pids: list
+list of pids to plot</p>
+<p>add_px: int
+number of additional pixels in each direction
+add_px=1 means 3<em>3 pixels around the center, add_px=2 means 5</em>5, etc.</p>
+<h2 id="returns">Returns:</h2>
+<p>cla_videos, aux_videos: dictionary
+Indexed by pid
+For each pid, the value is an np.2darray
+Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
+Range is [0, 1]</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_dynamin_data_video(df, pids, add_px=2):
+    
+    &#34;&#34;&#34;
+    extract videos of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
+    Returns:
+    ------
+    cla_videos, aux_videos: dictionary
+        Indexed by pid
+        For each pid, the value is an np.2darray
+        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
+        Range is [0, 1]
+    
+    &#34;&#34;&#34;
+    
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    
+    cla_videos, aux_videos = {}, {}
+    
+    for i in range(len(df)):
+        cla, aux = [], []
+        cell_num = df.cell_num.iloc[i]
+        pid = df.pid.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
+
+        for j in range(lt):
+            aux.append(Y[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+            
+            # normalize by the min/max intensities
+            vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+            aux[j] = (aux[j] - vmin)/(vmax - vmin)
+            
+            cla.append(X[cell_num][int((t+j)/1.5),:,:] \
+                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)]) 
+            vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+            cla[j] = (cla[j] - vmin)/(vmax - vmin)
+            
+        cla_videos[pid], aux_videos[pid] = cla, aux
+    
+    return cla_videos, aux_videos</code></pre>
+</details>
+</dd>
+<dt id="src.viz.get_dynamin_images"><code class="name flex">
+<span>def <span class="ident">get_dynamin_images</span></span>(<span>cells)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_dynamin_images(cells):
+    
+    cla, aux = {}, {}
+    upper_dir = oj(&#39;/scratch/users/vision/data/abc_data/dynamin_data_with_ims/&#39;,
+               &#39;CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646&#39;)
+    for cell_num in cells:
+        cell_dir = cell_num[:-6] + &#39;Cell1_1.5s&#39;
+        full_dir = oj(upper_dir, cell_dir)
+        cla[cell_num], aux[cell_num] = get_images(full_dir)
+    return cla, aux</code></pre>
+</details>
+</dd>
+<dt id="src.viz.get_images"><code class="name flex">
+<span>def <span class="ident">get_images</span></span>(<span>cell_dir)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>Loads in X and Y for one cell</p>
+<h2 id="params">Params</h2>
+<dl>
+<dt><strong><code>cell_dir</code></strong></dt>
+<dd>Path to directory for one cell</dd>
+</dl>
+<h2 id="returns">Returns</h2>
+<dl>
+<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (W, H, num_images)</dd>
+<dt><strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
+<dd>has shape (W, H, num_images)</dd>
+</dl></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_images(cell_dir: str):
+    &#39;&#39;&#39;Loads in X and Y for one cell
+    
+    Params
+    ------
+    cell_dir
+        Path to directory for one cell
+    
+    Returns
+    -------
+    X : np.ndarray
+        has shape (W, H, num_images)
+    Y : np.ndarray
+        has shape (W, H, num_images)
+    &#39;&#39;&#39;
+    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
+        #print(f&#34;filename: {name}&#34;)
+        if &#39;tif&#39; in name:
+            fname1 = name
+    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
+        if &#39;tif&#39; in name:
+            fname2 = name
+    #print(cell_dir)
+    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
+    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
+    return X, Y</code></pre>
 </details>
 </dd>
 <dt id="src.viz.highlight_max"><code class="name flex">
@@ -947,6 +1276,114 @@ Params</p>
     plt.legend()</code></pre>
 </details>
 </dd>
+<dt id="src.viz.plot_kymographs"><code class="name flex">
+<span>def <span class="ident">plot_kymographs</span></span>(<span>df, pids, add_px=2)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>plot kymographs of dynamin traces </p>
+<h2 id="params">Params:</h2>
+<p>df: pd.DataFrame
+dataframe</p>
+<p>pids: list
+list of pids to plot</p>
+<p>add_px: int
+number of additional pixels in each direction
+add_px=1 means 3<em>3 pixels around the center, add_px=2 means 5</em>5, etc.</p>
+<h2 id="returns">Returns:</h2>
+<p>cla_traces: np.array
+clathrin traces from raw images
+aux_traces: np.array
+auxilin traces from raw images
+rgb_image: 3d np.array
+3d array (RGB values) of kymographs</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_kymographs(df, pids, add_px=2):
+    
+    &#34;&#34;&#34;
+    plot kymographs of dynamin traces 
+    
+    Params:
+    ------
+    df: pd.DataFrame
+        dataframe
+    
+    pids: list
+        list of pids to plot
+        
+    add_px: int
+        number of additional pixels in each direction
+        add_px=1 means 3*3 pixels around the center, add_px=2 means 5*5, etc.
+        
+    Returns:
+    ------
+    cla_traces: np.array
+        clathrin traces from raw images
+    aux_traces: np.array
+        auxilin traces from raw images
+    rgb_image: 3d np.array
+        3d array (RGB values) of kymographs
+    &#34;&#34;&#34;
+    
+    indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
+    df = df.iloc[indices]
+    cells = set(df.cell_num.values)
+    X, Y = get_dynamin_images(cells)
+    viridis = cm.get_cmap(&#39;viridis&#39;, 12)
+    reds = cm.get_cmap(&#39;Reds&#39;, 12) # red palette for clathrin
+    greens = cm.get_cmap(&#39;Greens&#39;, 12) # green palette for auxilin
+    
+    lmax = max([len(df.x_pos_seq.iloc[i]) for i in range(len(df))]) + 2
+    width = 2 * add_px + 1
+    cla_traces, aux_traces = {}, {}
+    
+    for i in range(len(df)):
+        cla_traces[i], aux_traces[i] = np.zeros((lmax, width)), np.zeros((lmax, width))
+        #xmean = X[df.cell_num.iloc[i]].mean()
+        cell_num = df.cell_num.iloc[i]
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))        
+        
+        for k in range(-add_px, add_px + 1):
+            for j in range(lt):
+                cla_traces[i][j, k] = max(X[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
+                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                
+                aux_traces[i][j, k] = max(Y[cell_num][int((t+j)/1.5), \
+                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                                                      int(x_pos[j] + k)])
+                vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
+                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
+    
+    ncol = 3 * width * len(df)
+    cla_sparse = np.zeros((lmax, ncol))
+    aux_sparse = np.zeros((lmax, ncol))
+    for i in range(len(df)):
+        start_index = 3 * width * i
+        cla_sparse[:, (start_index):(start_index + width)] = cla_traces[i]
+        aux_sparse[:, (start_index + width):(start_index + 2 * width)] = aux_traces[i]
+    
+    rgb_image = np.array([[list(reds(cla_sparse[i][j])[:3])
+                      #[1, 1 - cla_sparse[i][j], 1 - cla_sparse[i][j]] \
+                      if 0 &lt; cla_sparse[i][j] &lt; 1 \
+                      else \
+                      list(greens(aux_sparse[i][j])[:3]) \
+                      #[1 - aux_sparse[i][j], 1, 1 - aux_sparse[i][j]] \
+                      if 0 &lt; aux_sparse[i][j] &lt; 1 \
+                      #else list(viridis(np.random.choice(background, 1)[0])[:3])\
+                      else (1, 1, 1)
+                      for i in range(lmax)] \
+                      for j in range(ncol)])
+    #cla_sparse = np.transpose(cla_sparse)
+    #aux_sparse = np.transpose(aux_sparse)
+    return cla_traces, aux_traces, rgb_image</code></pre>
+</details>
+</dd>
 <dt id="src.viz.plot_pcs"><code class="name flex">
 <span>def <span class="ident">plot_pcs</span></span>(<span>pca, X)</span>
 </code></dt>
@@ -1053,7 +1490,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, sort_by_residuals=True, plot_x=True, plot_y=True, plot_z=False, xlim_constant=True, lifetime_max=None, text_labels=False)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, show_track_pid=False, sort_by_residuals=True, plot_x=True, plot_y=True, plot_z=False, xlim_constant=True, lifetime_max=None, text_labels=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -1073,6 +1510,7 @@ Params</p>
                      num_to_plot=20,
                      aux_thresh=642,
                      show_track_num=True,
+                     show_track_pid=False,
                      sort_by_residuals=True,
                      plot_x=True,
                      plot_y=True,
@@ -1121,8 +1559,13 @@ Params</p>
             if i &lt; dft.shape[0]:
                 row = dft.iloc[i]
                 ax = plt.subplot(R, C, i + 1)
+                # show nums on tracks
                 if show_track_num:
                     ax.text(.5, .9, f&#39;{i}&#39;, # row.pid
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)
+                elif show_track_pid:
+                    ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
                 plt.axis(&#39;off&#39;)
@@ -1273,12 +1716,16 @@ Params</p>
 <li><code><a title="src.viz.cumulative_acc_plot_all" href="#src.viz.cumulative_acc_plot_all">cumulative_acc_plot_all</a></code></li>
 <li><code><a title="src.viz.cumulative_acc_plot_hard" href="#src.viz.cumulative_acc_plot_hard">cumulative_acc_plot_hard</a></code></li>
 <li><code><a title="src.viz.fix_feat_name" href="#src.viz.fix_feat_name">fix_feat_name</a></code></li>
+<li><code><a title="src.viz.get_dynamin_data_video" href="#src.viz.get_dynamin_data_video">get_dynamin_data_video</a></code></li>
+<li><code><a title="src.viz.get_dynamin_images" href="#src.viz.get_dynamin_images">get_dynamin_images</a></code></li>
+<li><code><a title="src.viz.get_images" href="#src.viz.get_images">get_images</a></code></li>
 <li><code><a title="src.viz.highlight_max" href="#src.viz.highlight_max">highlight_max</a></code></li>
 <li><code><a title="src.viz.jointplot_grouped" href="#src.viz.jointplot_grouped">jointplot_grouped</a></code></li>
 <li><code><a title="src.viz.plot_confusion_matrix" href="#src.viz.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
 <li><code><a title="src.viz.plot_curves" href="#src.viz.plot_curves">plot_curves</a></code></li>
 <li><code><a title="src.viz.plot_decision_boundary" href="#src.viz.plot_decision_boundary">plot_decision_boundary</a></code></li>
 <li><code><a title="src.viz.plot_example" href="#src.viz.plot_example">plot_example</a></code></li>
+<li><code><a title="src.viz.plot_kymographs" href="#src.viz.plot_kymographs">plot_kymographs</a></code></li>
 <li><code><a title="src.viz.plot_pcs" href="#src.viz.plot_pcs">plot_pcs</a></code></li>
 <li><code><a title="src.viz.print_metadata" href="#src.viz.print_metadata">print_metadata</a></code></li>
 <li><code><a title="src.viz.savefig" href="#src.viz.savefig">savefig</a></code></li>

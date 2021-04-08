@@ -1,112 +1,49 @@
 This is an overview of the markdown contents of all the notebooks / scripts in this directory.
 
-# 00_eda_images
+# 00_intro_figs
 
 
-#### TP/FP videos
+**plot curves (for intro fig)**
 
-## kymographs
+**plot curves (for examples fig)**
 
-# 00_eda_tracks
+#### extract and plot videos
 
+## viz hists
 
-## look at tracks themselves
+## dset sizes
 
-## visualize a single example
-
-## basic eda
-
-## look at displacement features
-
-## look at learned dictionaries
-
-## viz tracks where auxilin peaks first
-
-## visualize splines
-
-## feats centered around peak
-**gets the clathrin traces aligned by their maximum, padded by zeros when necessary**
-
-## pairplot of most relevant feats
-
-## spike-times plot
-
-## spike magnitude plot
-
-###### Random projections
-
-# 01_reg
+# 01_full_data_results
 
 
-# 01_reg_amplitude
+# 02_data_summaries
 
 
-#### compare with DASC
+## prepare data
 
-###### Max strength prediction
+## prediction plots
 
-# 01_reg_timing
+## look at different dsets
 
+**summarize dsets**
 
-# 02_defn_y_manual
+**look at preds**
 
+**calculate predictions on diff datasets**
 
-## unsure tracks
+**show metrics on different dsets**
 
-## visualize outcomes
-- take mean, take sigma, define events with a threshold
+## lower res data
 
-## viz curves
-
-**compare as a func of aux_max**
-
-## look at hotspots
-
-## compare different outcome defs
-
-## analyze aux+ p-value / amplitude defs
-
-## label checking
-
-# 02_defn_y_rules
+# 03_match_tracks_dtw
 
 
-## unsure tracks
+## look at closest pairs
 
-## rest of nb is finding rules to define outcome
-
-# 02_run_data_pipeline
-
-
-## process original data
-
-## process new data
-
-## check data stats
-
-## visualize differences
-
-# 03_classify
-
-
-# 04_analyze_results
-
-
-**baseline stats**
-
-**look at prediction metrics**
-
-**look at feat importances**
+## single example
 
 # 05_calc_dists
 
-
-# 06_eda_limits
-
-
-**binarize features**
-
-**acc predicting majority class for every bucket**
 
 # 07_eda_dynamin
 
@@ -174,11 +111,17 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## prepare data
 
-## prediction plots
+## calibration plot
 
 ## scatter plots
 
+## colored scatter plot (deprecated)
+
 ## viz errs
+
+#### kymographs
+
+## cumulative errs
 
 ## correcting labels
 

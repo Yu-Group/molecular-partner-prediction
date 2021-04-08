@@ -54,7 +54,8 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
                       meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
                       length=40,
                       normalize=True,
-                      filter_short=True):
+                      filter_short=True,
+                      padding=&#39;end&#39;):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
     &#39;&#39;&#39;
     dfs = {}
@@ -71,13 +72,13 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
             feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
                                    for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df)     
+            df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
 
             # remove extraneous feats
             # df = df[feat_names + meta]
@@ -497,7 +498,7 @@ Removes metadata + time-series columns + outcomes</p></section>
 </details>
 </dd>
 <dt id="src.data.load_dfs_for_lstm"><code class="name flex">
-<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40, normalize=True, filter_short=True)</span>
+<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40, normalize=True, filter_short=True, padding='end')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Loads dataframes preprocessed ready for LSTM</p></section>
@@ -510,7 +511,8 @@ Removes metadata + time-series columns + outcomes</p></section>
                       meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
                       length=40,
                       normalize=True,
-                      filter_short=True):
+                      filter_short=True,
+                      padding=&#39;end&#39;):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
     &#39;&#39;&#39;
     dfs = {}
@@ -527,13 +529,13 @@ Removes metadata + time-series columns + outcomes</p></section>
             feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length)
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
                                    for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df)     
+            df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
 
             # remove extraneous feats
             # df = df[feat_names + meta]
