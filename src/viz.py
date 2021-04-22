@@ -137,6 +137,8 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      plot_axhline=True,
                      xlim_constant=True,
                      ylim: tuple=None,
+                     yticks=None,
+                     yticklabels=None,
                      lifetime_max=None,
                      text_labels=False):
     '''Visualize X and Y where the top examples are the most wrong / least confident
@@ -213,6 +215,8 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                     plt.xticks([])
                 if not c == 0:
                     plt.yticks([])     
+                elif yticks is not None:
+                    plt.yticks(yticks, labels=yticklabels)
 
                 i += 1
                 
@@ -273,7 +277,8 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
                 xlim=None,
                 fig=None, ylim_constant=False, ylim=None,
-                xlim_constant=True, legend=True, plot_x=True):
+                xlim_constant=True, legend=True, plot_x=True,
+                yticks=None, yticklabels=None):
     '''Plot time-series curves from df
     '''
     DIFF = 1000
@@ -311,6 +316,9 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
                 else:
                     plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
+            if yticks is not None:
+                    plt.yticks(yticks, labels=yticklabels)
+
     #     plt.axi('off')
 
                   
