@@ -657,19 +657,19 @@ def get_dynamin_data_videos(df, pids, add_px=2):
         cell_num = df.cell_num.iloc[i]
         pid = df.pid.iloc[i]
         videos[pid] = {}
-        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        x_pos, y_pos = np.array(df.x_pos_seq.iloc[i]), np.array(df.y_pos_seq.iloc[i])
         t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
         for m in ['cla', 'aux', 'dyn']:
             videos[pid][m] = []
             
         for j in range(lt):
             for m in ['cla', 'aux', 'dyn']:
-                videos[pid][m].append(raw_videos[cell_num][m][int((t+j)/1.5),:,:] \
+                videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
                             [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
                             [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
             
             # normalize by the min/max intensities
-                vmin, vmax = raw_videos[cell_num][m][int((t+j)/1.5),:,:].min(), raw_videos[cell_num][m][int((t+j)/1.5),:,:].max()
+                vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].min(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
                 videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
             
     return videos
@@ -724,18 +724,18 @@ def plot_kymographs(df, pids, add_px=2):
         for k in range(-add_px, add_px + 1):
             for j in range(lt):
                 video = raw_videos[cell_num]['cla']
-                cla_traces[i][j, k] = max(video[int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                cla_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = video[int((t+j)/1.5),:,:].min(), video[int((t+j)/1.5),:,:].max()
-                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                cla_traces[i][j, k + add_px] = (cla_traces[i][j, k + add_px] - vmin)/(vmax - vmin)
                 
                 video = raw_videos[cell_num]['aux']
-                aux_traces[i][j, k] = max(video[int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                aux_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = video[int((t+j)/1.5),:,:].min(), video[int((t+j)/1.5),:,:].max()
-                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                aux_traces[i][j, k + add_px] = (aux_traces[i][j, k + add_px] - vmin)/(vmax - vmin)                
     
     ncol = 3 * width * len(df)
     cla_sparse = np.zeros((lmax, ncol))
