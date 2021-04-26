@@ -131,6 +131,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      show_track_num=True,
                      show_track_pid=False,
                      sort_by_residuals=True,
+                     width_mult=3,
                      plot_x=True,
                      plot_y=True,
                      plot_z=False,
@@ -140,7 +141,8 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      yticks=None,
                      yticklabels=None,
                      lifetime_max=None,
-                     text_labels=False):
+                     text_labels=False,
+                     text_label_size=25):
     '''Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -174,7 +176,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
     C = num_to_plot // R  # + 1
-    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
+    plt.figure(figsize=(C * width_mult, R * 2.5), dpi=200)
 
     i = 0
     for r in range(R):
@@ -221,10 +223,13 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                 i += 1
                 
     if text_labels:
-        plt.text(len(row["X"]), row["X"][-1] + DIFF, 'Clathrin', color=cr, fontsize=25, fontweight='bold')
-        plt.text(len(row["Y"]), row["Y"][-1] + DIFF, 'Auxilin', color=cg, fontsize=25, fontweight='bold')
+        plt.text(len(row["X"]), row["X"][-1] + DIFF, 'Clathrin', color=cr,
+                 fontsize=text_label_size, fontweight='bold')
+        plt.text(len(row["Y"]), row["Y"][-1] + DIFF, 'Auxilin', color=cg,
+                 fontsize=text_label_size, fontweight='bold')
         if plot_z:
-            plt.text(len(row["Z"]), row["Z"][-1] + DIFF, 'Dynamin', color='gray', fontsize=25, fontweight='bold')
+            plt.text(len(row["Z"]), row["Z"][-1] + DIFF, 'Dynamin', color='gray',
+                     fontsize=text_label_size, fontweight='bold')
     plt.tight_layout()
     return dft
 
