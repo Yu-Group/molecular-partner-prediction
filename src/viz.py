@@ -566,7 +566,7 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model', color=cb)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With LSTM', color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color='black')
     

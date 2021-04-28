@@ -103,7 +103,7 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=False,
             num_channels = len(tracks['A'][0])
             for idx_channel, prefix in zip(range(num_channels),
                                            ['X', 'Y', 'Z'][:num_channels]):
-                print(tracks.keys())
+#                 print(tracks.keys())
                 track = np.array([tracks['A'][i][idx_channel] for i in range(n)])
                 cs = np.array([tracks['c'][i][idx_channel] for i in range(n)])
 #                 print('track keys', tracks.keys())
