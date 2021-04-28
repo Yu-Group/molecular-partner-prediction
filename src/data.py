@@ -75,7 +75,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
              compute_dictionary_learning=False,
              outcome_def='y_consec_thresh',
              pixel_data: bool=False,
-             video_data: bool=True,
+             video_data: bool=False,
              acc_thresh=0.95,
              previous_meta_file: str=None):
     '''

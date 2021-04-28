@@ -20,7 +20,7 @@ import config
 from tqdm import tqdm
 
 
-def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
+def get_tracks(data_dir, split=None, pixel_data=False, video_data=False, 
                processed_tracks_file=oj(config.DIR_TRACKS, 'tracks.pkl'),
                dset='orig'):
     '''Read and save tracks tracks from folders within data_dir into a dataframe
@@ -103,23 +103,42 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
             num_channels = len(tracks['A'][0])
             for idx_channel, prefix in zip(range(num_channels),
                                            ['X', 'Y', 'Z'][:num_channels]):
+                print(tracks.keys())
                 track = np.array([tracks['A'][i][idx_channel] for i in range(n)])
-                data[prefix + '_pvals'] = np.array([tracks['pval_Ar'][i][idx_channel] for i in range(n)])
+                cs = np.array([tracks['c'][i][idx_channel] for i in range(n)])
+#                 print('track keys', tracks.keys())
+                pvals = np.array([tracks['pval_Ar'][i][idx_channel] for i in range(n)])
+                data[prefix + '_pvals'] = pvals
                 starts = []
+                starts_p = []
+                starts_c = []
                 for d in tracks['startBuffer']:
                     if len(d) == 0:
                         starts.append([])
+                        starts_p.append([])
+                        starts_c.append([])
                     else:
+#                         print('buffkeys', d.keys())
                         starts.append(d['A'][idx_channel])
+                        starts_p.append(d['pval_Ar'][idx_channel])
+                        starts_c.append(d['c'][idx_channel])
                 ends = []
+                ends_p = []
+                ends_c = []
                 for d in tracks['endBuffer']:
                     if len(d) == 0:
                         ends.append([])
+                        ends_p.append([])
+                        ends_c.append([])
                     else:
                         ends.append(d['A'][idx_channel])
-                if prefix == 'X':
-                    data[prefix + '_extended'] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                        ends_p.append(d['pval_Ar'][idx_channel])
+                        ends_c.append(d['c'][idx_channel])
+#                 if prefix == 'X':
+                data[prefix + '_extended'] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                data[prefix + '_pvals_extended'] = [starts_p[i] + pvals[i] + ends_p[i] for i in range(n)]
                 data[prefix] = track
+                data[prefix + '_c_extended'] = [starts_c[i] + cs[i] + ends_c[i] for i in range(n)]
                 data[prefix + '_starts'] = starts
                 data[prefix + '_ends'] = ends 
             data['lifetime_extended'] = [len(x) for x in data['X_extended']]
