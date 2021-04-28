@@ -152,7 +152,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     '''
-    DIFF = 1000 # use this to ensure values are all positive
+    DIFF = 0 # use this to ensure values are all positive
     
     # deal with idxs
     if idxs is not None:
@@ -195,13 +195,16 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                             transform=ax.transAxes)
 
 #                 plt.axis('off')
-                
+                if '1.5s' in row['cell_num']:
+                    interval = 1.5
+                else:
+                    interval = 1
                 if plot_x:
-                    plt.plot(np.array(row["X"]) + DIFF, color=cr, label='clath', lw=2) # could do X_extended
+                    plt.plot(interval * np.arange(len(row["X"])), np.array(row["X"]) + DIFF, color=cr, label='clath', lw=2) # could do X_extended
                 if plot_y:
-                    plt.plot(np.array(row["Y"]) + DIFF, color=cg, label='aux', lw=2)
+                    plt.plot(interval * np.arange(len(row["Y"])), np.array(row["Y"]) + DIFF, color=cg, label='aux', lw=2)
                 if plot_z:
-                    plt.plot(np.array(row["Z"]) + DIFF, color='gray', label='dyn')               
+                    plt.plot(interval * np.arange(len(row["Z"])), np.array(row["Z"]) + DIFF, color='gray', label='dyn')               
                     
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
@@ -209,7 +212,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                 if plot_axhline:
                     plt.axhline(aux_thresh, color='gray', alpha=0.5, lw=2)
                 
-                plt.yscale('log')
+                #plt.yscale('log')
                 if ylim is not None:
                     plt.ylim((ylim[0] + DIFF, ylim[1] + DIFF))
                     
@@ -223,13 +226,13 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                 i += 1
                 
     if text_labels:
-        plt.text(len(row["X"]), row["X"][-1] + DIFF, 'Clathrin', color=cr,
+        plt.text(len(row["X"]), row["X"][-1] + DIFF, 'Clathrin', color=cr, 
                  fontsize=text_label_size, fontweight='bold')
-        plt.text(len(row["Y"]), row["Y"][-1] + DIFF, 'Auxilin', color=cg,
+        plt.text(len(row["Y"]), row["Y"][-1] + DIFF, 'Auxilin', color=cg, 
                  fontsize=text_label_size, fontweight='bold')
         if plot_z:
-            plt.text(len(row["Z"]), row["Z"][-1] + DIFF, 'Dynamin', color='gray',
-                     fontsize=text_label_size, fontweight='bold')
+            plt.text(len(row["Z"]), row["Z"][-1] + DIFF, 'Dynamin', 
+                     fontsize=text_label_size, color='gray', fontweight='bold')
     plt.tight_layout()
     return dft
 
@@ -296,8 +299,8 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
             if plot_x:
-                plt.plot(np.array(row.X) + DIFF, color=cr, label='Clathrin')
-                plt.plot(np.array(row.Y) + DIFF, color=cg, label='Auxilin')
+                plt.plot(1.5 * np.arange(len(row.X)), np.array(row.X) + DIFF, color=cr, label='Clathrin')
+                plt.plot(1.5 * np.arange(len(row.Y)), np.array(row.Y) + DIFF, color=cg, label='Auxilin')
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             if extra_key is not None:
@@ -306,7 +309,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                         extra_key_label = 'Dynamin'
                     else:
                         extra_key_label = extra_key
-                plt.plot(np.array(row[extra_key]) + DIFF, color='gray', label=extra_key_label)
+                plt.plot(1.5 * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, color='gray', label=extra_key_label)
             if xlim_constant:
                 if xlim is None:
                     plt.xlim([-1, lifetime_max + 1])
@@ -315,7 +318,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     plt.xlim(xlim)
                 
                 
-            plt.yscale('log')                  
+            #plt.yscale('log')                  
             if ylim_constant:
                 if ylim is None:
                     plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
@@ -674,7 +677,7 @@ def get_dynamin_data_videos(df, pids, add_px=2):
                             [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
             
             # normalize by the min/max intensities
-                vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].min(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
+                vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
                 videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
             
     return videos
