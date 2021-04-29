@@ -654,11 +654,7 @@ def get_dynamin_data_videos(df, pids, add_px=2):
         
     Returns:
     ------
-    cla_videos, aux_videos: dictionary
-        Indexed by pid
-        For each pid, the value is an np.2darray
-        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
-        Range is [0, 1]
+    videos
     
     """
     
@@ -687,9 +683,25 @@ def get_dynamin_data_videos(df, pids, add_px=2):
                             [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
                             [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
             
-            # normalize by the min/max intensities
-                vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
-                videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
+                # normalize by the min/max intensities
+                #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
+                #videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
+    
+    # normalization
+    
+    norm = {}
+    for m in ['cla', 'aux', 'dyn']:
+        norm[m] = [1e9, -1e9]
+        for pid in videos:
+            for j in range(len(videos[pid][m])):
+                norm[m][0] = min(norm[m][0], videos[pid][m][j].min())
+                norm[m][1] = max(norm[m][1], videos[pid][m][j].max())
+            
+    for pid in videos:
+        for m in ['cla', 'aux', 'dyn']:
+            for j in range(len(videos[pid][m])):
+                videos[pid][m][j] = (videos[pid][m][j] - norm[m][0])/(norm[m][1] - norm[m][0])
+            
             
     return videos
     
