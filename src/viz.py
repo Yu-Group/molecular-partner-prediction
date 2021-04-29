@@ -289,7 +289,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 yticks=None, yticklabels=None):
     '''Plot time-series curves from df
     '''
-    DIFF = 1000
+    DIFF = 0
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200, facecolor='white')
     lifetime_max = np.max(df.lifetime.values[:R * C])
@@ -298,9 +298,17 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
         if i < df.shape[0]:
             plt.subplot(R, C, i + 1)
             row = df.iloc[i]
+            if '1.5s' in row['cell_num']:
+                interval = 1.5
+            else:
+                interval = 1
             if plot_x:
-                plt.plot(1.5 * np.arange(len(row.X)), np.array(row.X) + DIFF, color=cr, label='Clathrin')
-                plt.plot(1.5 * np.arange(len(row.Y)), np.array(row.Y) + DIFF, color=cg, label='Auxilin')
+                plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
+                plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
+                plt.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')
+                plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
+                #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
+                #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
                 if hline:
                     plt.axhline(642.3754691658837, color='gray', alpha=0.5)
             if extra_key is not None:
@@ -309,7 +317,8 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                         extra_key_label = 'Dynamin'
                     else:
                         extra_key_label = extra_key
-                plt.plot(1.5 * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, color='gray', label=extra_key_label)
+                plt.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
+                plt.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)
             if xlim_constant:
                 if xlim is None:
                     plt.xlim([-1, lifetime_max + 1])
@@ -569,7 +578,7 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With LSTM', color=cb)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model', color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color='black')
     
@@ -665,8 +674,10 @@ def get_dynamin_data_videos(df, pids, add_px=2):
         cell_num = df.cell_num.iloc[i]
         pid = df.pid.iloc[i]
         videos[pid] = {}
-        x_pos, y_pos = np.array(df.x_pos_seq.iloc[i]), np.array(df.y_pos_seq.iloc[i])
-        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
+        x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
+        x_pos = [x_pos[0]]*5 + x_pos + [x_pos[-1]]*5
+        y_pos = [y_pos[0]]*5 + y_pos + [y_pos[-1]]*5
+        t, lt = df.t.iloc[i] - 5*1.5, min(len(x_pos), len(y_pos))                
         for m in ['cla', 'aux', 'dyn']:
             videos[pid][m] = []
             
