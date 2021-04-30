@@ -635,7 +635,7 @@ def get_all_dynamin_videos(cells):
         all_videos[cell_num] = get_videos(full_dir)
     return all_videos
 
-def get_dynamin_data_videos(df, pids, add_px=2):
+def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
     
     """
     extract videos of dynamin traces 
@@ -688,22 +688,22 @@ def get_dynamin_data_videos(df, pids, add_px=2):
                 #videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
     
     # normalization
-    
     norm = {}
     for m in ['cla', 'aux', 'dyn']:
-        norm[m] = [1e9, -1e9]
+        norm[m] = [1e9, -1e9] # min, max
         for pid in videos:
             for j in range(len(videos[pid][m])):
                 norm[m][0] = min(norm[m][0], videos[pid][m][j].min())
                 norm[m][1] = max(norm[m][1], videos[pid][m][j].max())
+    
+    if apply_norm:
+        for pid in videos:
+            for m in ['cla', 'aux', 'dyn']:
+                for j in range(len(videos[pid][m])):
+                    videos[pid][m][j] = (videos[pid][m][j] - norm[m][0])/(norm[m][1] - norm[m][0])
             
-    for pid in videos:
-        for m in ['cla', 'aux', 'dyn']:
-            for j in range(len(videos[pid][m])):
-                videos[pid][m][j] = (videos[pid][m][j] - norm[m][0])/(norm[m][1] - norm[m][0])
             
-            
-    return videos
+    return videos, norm
     
 
 def plot_kymographs(df, pids, add_px=2):
