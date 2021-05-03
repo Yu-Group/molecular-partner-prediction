@@ -286,7 +286,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 xlim=None,
                 fig=None, ylim_constant=False, ylim=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None):
+                yticks=None, yticklabels=None, three_axes=True):
     '''Plot time-series curves from df
     '''
     DIFF = 0
@@ -296,45 +296,85 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
     df = df.iloc[range(R * C)]
     for i in range(R * C):
         if i < df.shape[0]:
-            plt.subplot(R, C, i + 1)
+            ax = plt.subplot(R, C, i + 1)
             row = df.iloc[i]
             if '1.5s' in row['cell_num']:
                 interval = 1.5
             else:
                 interval = 1
-            if plot_x:
-                plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
-                plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
-                plt.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')
-                plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
-                #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
-                #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
-                if hline:
-                    plt.axhline(642.3754691658837, color='gray', alpha=0.5)
-            if extra_key is not None:
-                if extra_key_label is None:
-                    if extra_key == 'Z':
-                        extra_key_label = 'Dynamin'
+                
+            if not three_axes:
+                if plot_x:
+                    plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
+                    plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
+                    plt.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')
+                    plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
+                    if hline:
+                        plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == 'Z':
+                            extra_key_label = 'Dynamin'
+                        else:
+                            extra_key_label = extra_key
+                    plt.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
+                    plt.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
                     else:
-                        extra_key_label = extra_key
-                plt.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
-                plt.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)
-            if xlim_constant:
-                if xlim is None:
-                    plt.xlim([-1, lifetime_max + 1])
-                else:
-                    print(xlim)
-                    plt.xlim(xlim)
+                        print(xlim)
+                        plt.xlim(xlim)
+                        
+                if ylim_constant:
+                    if ylim is None:
+                        plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                    else:
+                        plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
+                if yticks is not None:
+                        plt.yticks(yticks, labels=yticklabels)
+                    
+            elif three_axes:
+                twin1 = ax.twinx()
+                twin2 = ax.twinx()
+                twin2.spines.right.set_position(("axes", 1.4))
+                
+                if plot_x:
+                    ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
+                    p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')
+                    
+                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
+                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
+                    if hline:
+                        ax.axhline(642.3754691658837, color='gray', alpha=0.5)
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == 'Z':
+                            extra_key_label = 'Dynamin'
+                        else:
+                            extra_key_label = extra_key
+                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
+                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)
+                    
+                tkw = dict(size=4, width=1.5)
+                ax.tick_params(axis='y', colors=p1.get_color(), **tkw)
+                twin1.tick_params(axis='y', colors=p2.get_color(), **tkw)
+                twin2.tick_params(axis='y', colors=p3.get_color(), **tkw)
+                ax.tick_params(axis='x', **tkw)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
+                    else:
+                        print(xlim)
+                        plt.xlim(xlim)
                 
                 
             #plt.yscale('log')                  
-            if ylim_constant:
-                if ylim is None:
-                    plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
-                else:
-                    plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
-            if yticks is not None:
-                    plt.yticks(yticks, labels=yticklabels)
+            
 
     #     plt.axi('off')
 
