@@ -284,7 +284,8 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key='lifetime'):
 def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
                 xlim=None,
-                fig=None, ylim_constant=False, ylim=None,
+                fig=None, ylim_constant=False, background=False, ylim_cla=None,
+                ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
                 yticks=None, yticklabels=None, three_axes=True):
     '''Plot time-series curves from df
@@ -311,8 +312,17 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
                     #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
-                    if hline:
-                        plt.axhline(642.3754691658837, color='gray', alpha=0.5)
+                if background:
+                    ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_c_extended), 
+                        color=cr, linewidth=.8)                
+                ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                 np.array(row.X_extended) - np.array(row.X_std_extended),
+                                 np.array(row.X_extended) + np.array(row.X_std_extended),
+                                 alpha=.2,
+                                 color=cr
+                                 )                    
+                if hline:
+                    plt.axhline(642.3754691658837, color='gray', alpha=0.5)
                 if extra_key is not None:
                     if extra_key_label is None:
                         if extra_key == 'Z':
@@ -337,16 +347,41 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                         plt.yticks(yticks, labels=yticklabels)
                     
             elif three_axes:
+                ax.spines['right'].set_visible(True)
                 twin1 = ax.twinx()
                 twin2 = ax.twinx()
-                twin2.spines.right.set_position(("axes", 1.4))
+                twin2.spines['right'].set_visible(True)
+                twin2.spines['right'].set_position(("axes", 1.2))
                 
                 if plot_x:
                     ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
                     p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')
+                    if i == 0 and legend:
+                        dvu.line_legend()
+                    if background:
+                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_c_extended), 
+                            color=cr, linewidth=.8)                
+                    ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                     np.array(row.X_extended) - np.array(row.X_std_extended),
+                                     np.array(row.X_extended) + np.array(row.X_std_extended),
+                                     alpha=.2,
+                                     color=cr
+                                     )  
+
                     
                     twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
                     p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
+                    if i == 0 and legend:
+                        dvu.line_legend()                    
+                    if background:
+                        twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_c_extended), 
+                            color=cg, linewidth=.8)                 
+                    twin1.fill_between(interval * np.arange(len(row.Y_extended)),
+                                     np.array(row.Y_extended) - np.array(row.Y_std_extended),
+                                     np.array(row.Y_extended) + np.array(row.Y_std_extended),
+                                     alpha=.2,
+                                     color=cg
+                                     )                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
                     #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
                     if hline:
@@ -359,11 +394,28 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                             extra_key_label = extra_key
                     twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
                     p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)
-                    
+                    if background:
+                        twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_c_extended), 
+                            color='gray', linewidth=.8)                 
+                    twin2.fill_between(interval * np.arange(len(row.Z_extended)),
+                                     np.array(row.Z_extended) - np.array(row.Z_std_extended),
+                                     np.array(row.Z_extended) + np.array(row.Z_std_extended),
+                                     alpha=.2,
+                                     color='gray'
+                                     ) 
+                    #if i == 0 and legend:
+                    #    dvu.line_legend()                    
                 tkw = dict(size=4, width=1.5)
-                ax.tick_params(axis='y', colors=p1.get_color(), **tkw)
-                twin1.tick_params(axis='y', colors=p2.get_color(), **tkw)
-                twin2.tick_params(axis='y', colors=p3.get_color(), **tkw)
+                ax.tick_params(axis='y', colors=p1.get_color(), labelsize=6, **tkw)
+                ax.spines['left'].set_color(cr)
+                twin1.spines['right'].set_color(p2.get_color())  
+                twin2.spines['right'].set_color(p3.get_color())  
+                if ylim_constant:
+                    ax.set_ylim(ylim_cla)
+                    twin1.set_ylim(ylim_aux)
+                    twin2.set_ylim(ylim_dyn)
+                twin1.tick_params(axis='y', colors=p2.get_color(), labelsize=6, **tkw)
+                twin2.tick_params(axis='y', colors=p3.get_color(), labelsize=6, **tkw)
                 ax.tick_params(axis='x', **tkw)
                 if xlim_constant:
                     if xlim is None:
@@ -378,9 +430,6 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
 
     #     plt.axi('off')
 
-                  
-    if legend:
-        dvu.line_legend()
             
 #         plt.legend()
     plt.tight_layout()
