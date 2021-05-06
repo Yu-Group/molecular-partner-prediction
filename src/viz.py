@@ -288,15 +288,37 @@ def plot_above_threshold(x1, y1, b1, x2, y2, b2, ax, color, lsty):
     if y1 >= b1 and y2 >= b2:
         ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=1)
     elif y1 < b1 and y2 < b2:
-        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.2) 
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.1) 
     elif y1 >= b1 and y2 < b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
         ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=1)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.2)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.1)
     elif y1 < b1 and y2 >= b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
-        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.2)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1)        
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.1)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1) 
+        
+def plot_background(interval, bg, trace, color, ax):
+    ax.fill_between(interval * np.arange(len(bg)), 
+                                        [0] * len(bg),
+                                        2 * np.array(bg), 
+                                        alpha=.1,
+                                        color=color) 
+                        
+    x, y, lt = np.arange(len(trace)), np.array(trace), len(trace)
+    #ax.plot(interval * x, y, linestyle='--', color=cr, alpha=.2)
+    bg = 2 * np.array(bg)
+    for f in range(lt - 1):
+        lsty = '--' if f < 5 or f >= lt - 5 else '-'
+        plot_above_threshold(x1=interval*x[f], 
+                             y1=y[f], 
+                                                 b1=bg[f], 
+                                                 x2=interval*x[f+1], 
+                                                 y2=y[f+1], 
+                                                 b2=bg[f+1], 
+                                                 ax=ax, 
+                                                 color=color,
+                                                 lsty=lsty)
 
 
 def plot_curves(df, extra_key=None, extra_key_label=None,
@@ -372,32 +394,12 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 twin2.spines['right'].set_position(("axes", 1.2))
                 
                 if plot_x:
-
+                    p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr, alpha=.1, label='Clathrin')
                     if background:
-                        ax.fill_between(interval * np.arange(len(row.X_sigma_extended)), 
-                                        [0] * len(row.X_sigma_extended),
-                                        2 * np.array(row.X_sigma_extended), 
-                                        alpha=.2,
-                                        color=cr) 
-                        
-                        x, y, lt = np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, len(row.X_extended)
-                        p1, = ax.plot(interval * x, y, linestyle='--', color=cr, alpha=.2)
-                        bg = 2 * np.array(row.X_sigma_extended)
-                        for f in range(lt - 1):
-                            lsty = '--' if f < 5 or f >= lt - 5 else '-'
-                            plot_above_threshold(x1=interval*x[f], 
-                                                 y1=y[f], 
-                                                 b1=bg[f], 
-                                                 x2=interval*x[f+1], 
-                                                 y2=y[f+1], 
-                                                 b2=bg[f+1], 
-                                                 ax=ax, 
-                                                 color=cr,
-                                                 lsty=lsty)
+                        plot_background(interval, row.X_sigma_extended, row.X_extended, color=cr, ax=ax)
                                
                     else:
-                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr, linewidth=2)
-                        p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label='Clathrin')  
+                        ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr)  
                     if i == 0 and legend:
                         dvu.line_legend()                        
                     ax.fill_between(interval * np.arange(len(row.X_extended)),
@@ -408,14 +410,19 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                                      )  
 
                     
-                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
-                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')
+                    p2, = twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg, alpha=.1, label='Auxilin')
+                    
+                    if background:
+                        plot_background(interval, row.Y_sigma_extended, row.Y_extended, color=cg, ax=twin1)
+                               
+                    else:
+                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')                     
                     if i == 0 and legend:
                         dvu.line_legend()                                     
                     twin1.fill_between(interval * np.arange(len(row.Y_extended)),
                                      np.array(row.Y_extended) - np.array(row.Y_std_extended),
                                      np.array(row.Y_extended) + np.array(row.Y_std_extended),
-                                     alpha=.2,
+                                     alpha=.1,
                                      color=cg
                                      )                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
@@ -428,14 +435,19 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                             extra_key_label = 'Dynamin'
                         else:
                             extra_key_label = extra_key
-                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle='--', color='gray')
-                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color='gray', label=extra_key_label)               
+                    p3, = twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_extended) + DIFF, linestyle='--', color='gray', alpha=.1, label='Dynamin')
+                    
+                    if background:
+                        plot_background(interval, row.Z_sigma_extended, row.Z_extended, color='gray', ax=twin2)
+                               
+                    else:
+                        twin2.plot(interval * np.arange(5, len(row.Z_extended)-5), np.array(row.Z_extended)[5:(-5)] + DIFF, color='gray', label='Dynamin')
                     twin2.fill_between(interval * np.arange(len(row.Z_extended)),
                                      np.array(row.Z_extended) - np.array(row.Z_std_extended),
                                      np.array(row.Z_extended) + np.array(row.Z_std_extended),
-                                     alpha=.2,
+                                     alpha=.1,
                                      color='gray'
-                                     ) 
+                                     )                           
                     #if i == 0 and legend:
                     #    dvu.line_legend()                    
                 tkw = dict(size=4, width=1.5)
@@ -451,16 +463,24 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     twin1.set_ylim(ylim_aux)
                     twin2.set_ylim(ylim_dyn)
                 else:
-                    p2_ylim = twin1.get_ylim()
-                    twin1.set_ylim((p2_ylim[0], 2*p2_ylim[1]))
+                    #p1_ylim = ax.get_ylim()
+                    p2_ylim = twin1.get_ylim()                    
                     p3_ylim = twin2.get_ylim()
-                    twin2.set_ylim((p3_ylim[0], 2*p3_ylim[1]))                    
+                    ylim_min = min(p2_ylim[0], p3_ylim[0])
+                    twin1.set_ylim((ylim_min, 2*p2_ylim[1]))
+                    twin2.set_ylim((ylim_min, 2*p3_ylim[1]))                
                 twin1.tick_params(axis='y', colors=cg, labelsize=6, **tkw)
                 twin2.tick_params(axis='y', colors=p3.get_color(), labelsize=6, **tkw)
                 ax.tick_params(axis='x', **tkw)
+                yticks = twin1.get_yticks()
+                #if len(yticks) > 5:
+                twin1.set_yticks(yticks[np.arange(1, len(yticks), 2)])
+                yticks = twin2.get_yticks()
+                if len(yticks) > 5:
+                    twin2.set_yticks(yticks[np.arange(1, len(yticks), 2)])                   
                 if xlim_constant:
                     if xlim is None:
-                        plt.xlim([-1, lifetime_max + 1])
+                        plt.xlim([-1, lifetime_max + 16])
                     else:
                         print(xlim)
                         plt.xlim(xlim)
