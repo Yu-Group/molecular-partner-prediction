@@ -49,6 +49,7 @@ from config import DIR_FIGS
 from matplotlib.colors import LinearSegmentedColormap
 from matplotlib import cm
 from matplotlib.colors import ListedColormap
+import dvu
 # DIR_FILE = os.path.dirname(os.path.realpath(__file__)) # directory of this file
 # DIR_FIGS = oj(DIR_FILE, &#39;../reports/figs&#39;)
 try:
@@ -156,12 +157,18 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                      show_track_num=True,
                      show_track_pid=False,
                      sort_by_residuals=True,
+                     width_mult=3,
                      plot_x=True,
                      plot_y=True,
                      plot_z=False,
+                     plot_axhline=True,
                      xlim_constant=True,
+                     ylim: tuple=None,
+                     yticks=None,
+                     yticklabels=None,
                      lifetime_max=None,
-                     text_labels=False):
+                     text_labels=False,
+                     text_label_size=25):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -171,7 +178,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         subset of points to plot
     
     &#39;&#39;&#39;
-
+    DIFF = 0 # use this to ensure values are all positive
     
     # deal with idxs
     if idxs is not None:
@@ -195,7 +202,7 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
     C = num_to_plot // R  # + 1
-    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
+    plt.figure(figsize=(C * width_mult, R * 2.5), dpi=200)
 
     i = 0
     for r in range(R):
@@ -212,25 +219,46 @@ def viz_biggest_errs(df, idxs_cv, idxs, Y_test, preds, preds_proba,
                     ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
-                plt.axis(&#39;off&#39;)
-                
-                if plot_x:
-                    plt.plot(row[&#34;X&#34;], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
-                if plot_y:
-                    plt.plot(row[&#34;Y&#34;], color=cg, label=&#39;aux&#39;, lw=2)
-                if plot_z:
-                    plt.plot(row[&#34;Z&#34;], color=&#39;gray&#39;, label=&#39;dyn&#39;)
 
+#                 plt.axis(&#39;off&#39;)
+                if &#39;1.5s&#39; in row[&#39;cell_num&#39;]:
+                    interval = 1.5
+                else:
+                    interval = 1
+                if plot_x:
+                    plt.plot(interval * np.arange(len(row[&#34;X&#34;])), np.array(row[&#34;X&#34;]) + DIFF, color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                if plot_y:
+                    plt.plot(interval * np.arange(len(row[&#34;Y&#34;])), np.array(row[&#34;Y&#34;]) + DIFF, color=cg, label=&#39;aux&#39;, lw=2)
+                if plot_z:
+                    plt.plot(interval * np.arange(len(row[&#34;Z&#34;])), np.array(row[&#34;Z&#34;]) + DIFF, color=&#39;gray&#39;, label=&#39;dyn&#39;)               
+                    
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                
+                if plot_axhline:
+                    plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                
+                #plt.yscale(&#39;log&#39;)
+                if ylim is not None:
+                    plt.ylim((ylim[0] + DIFF, ylim[1] + DIFF))
+                    
+                if not r == R - 1:
+                    plt.xticks([])
+                if not c == 0:
+                    plt.yticks([])     
+                elif yticks is not None:
+                    plt.yticks(yticks, labels=yticklabels)
+
                 i += 1
                 
     if text_labels:
-        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
-        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1] + DIFF, &#39;Clathrin&#39;, color=cr, 
+                 fontsize=text_label_size, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1] + DIFF, &#39;Auxilin&#39;, color=cg, 
+                 fontsize=text_label_size, fontweight=&#39;bold&#39;)
         if plot_z:
-            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1], &#39;Dynamin&#39;, color=&#39;gray&#39;, fontsize=25, fontweight=&#39;bold&#39;)
+            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1] + DIFF, &#39;Dynamin&#39;, 
+                     fontsize=text_label_size, color=&#39;gray&#39;, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft
 
@@ -277,43 +305,204 @@ def viz_errs_1d(X_test, preds, preds_proba, Y_test, norms, key=&#39;lifetime&#39
     plt.ylabel(&#39;predicted probability&#39;)
     plt.legend()
     plt.show()
+    
+    
+def plot_above_threshold(x1, y1, b1, x2, y2, b2, ax, color, lsty):
+    
+    sl1 = (y2 - y1)/(x2 - x1)
+    sl2 = (b2 - b1)/(x2 - x1)
+    if y1 &gt;= b1 and y2 &gt;= b2:
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=1)
+    elif y1 &lt; b1 and y2 &lt; b2:
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.2) 
+    elif y1 &gt;= b1 and y2 &lt; b2:
+        crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=1)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.2)
+    elif y1 &lt; b1 and y2 &gt;= b2:
+        crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.2)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1)        
 
 
 def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
+                xlim=None,
+                fig=None, ylim_constant=False, background=False, ylim_cla=None,
+                ylim_aux=None, ylim_dyn=None,
+                xlim_constant=True, legend=True, plot_x=True,
+                yticks=None, yticklabels=None, three_axes=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
+    DIFF = 0
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200, facecolor=&#39;white&#39;)
     lifetime_max = np.max(df.lifetime.values[:R * C])
     df = df.iloc[range(R * C)]
     for i in range(R * C):
         if i &lt; df.shape[0]:
-            plt.subplot(R, C, i + 1)
+            ax = plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            if plot_x:
-                plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
-                plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
+            if &#39;1.5s&#39; in row[&#39;cell_num&#39;]:
+                interval = 1.5
+            else:
+                interval = 1
+                
+            if not three_axes:
+                if plot_x:
+                    plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr)
+                    plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
+                    plt.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)
+                    plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
+                if background:
+                    ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_c_extended), 
+                        color=cr, linewidth=.8)                
+                ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                 np.array(row.X_extended) - np.array(row.X_std_extended),
+                                 np.array(row.X_extended) + np.array(row.X_std_extended),
+                                 alpha=.2,
+                                 color=cr
+                                 )                    
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
-            if extra_key is not None:
-                if extra_key_label is None:
-                    if extra_key == &#39;Z&#39;:
-                        extra_key_label = &#39;Dynamin&#39;
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == &#39;Z&#39;:
+                            extra_key_label = &#39;Dynamin&#39;
+                        else:
+                            extra_key_label = extra_key
+                    plt.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
+                    plt.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
                     else:
-                        extra_key_label = extra_key
-                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key_label)
-            if xlim_constant:
-                plt.xlim([-1, lifetime_max + 1])
-            if ylim_constant:
-                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                        print(xlim)
+                        plt.xlim(xlim)
+                        
+                if ylim_constant:
+                    if ylim is None:
+                        plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                    else:
+                        plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
+                if yticks is not None:
+                        plt.yticks(yticks, labels=yticklabels)
+                    
+            elif three_axes:
+                ax.spines[&#39;right&#39;].set_visible(True)
+                twin1 = ax.twinx()
+                twin2 = ax.twinx()
+                twin2.spines[&#39;right&#39;].set_visible(True)
+                twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
+                
+                if plot_x:
+
+                    if background:
+                        ax.fill_between(interval * np.arange(len(row.X_sigma_extended)), 
+                                        [0] * len(row.X_sigma_extended),
+                                        2 * np.array(row.X_sigma_extended), 
+                                        alpha=.2,
+                                        color=cr) 
+                        
+                        x, y, lt = np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, len(row.X_extended)
+                        p1, = ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
+                        bg = 2 * np.array(row.X_sigma_extended)
+                        for f in range(lt - 1):
+                            lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
+                            plot_above_threshold(x1=interval*x[f], 
+                                                 y1=y[f], 
+                                                 b1=bg[f], 
+                                                 x2=interval*x[f+1], 
+                                                 y2=y[f+1], 
+                                                 b2=bg[f+1], 
+                                                 ax=ax, 
+                                                 color=cr,
+                                                 lsty=lsty)
+                               
+                    else:
+                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, linewidth=2)
+                        p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)  
+                    if i == 0 and legend:
+                        dvu.line_legend()                        
+                    ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                     np.array(row.X_extended) - np.array(row.X_std_extended),
+                                     np.array(row.X_extended) + np.array(row.X_std_extended),
+                                     alpha=.2,
+                                     color=cr
+                                     )  
+
+                    
+                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
+                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    if i == 0 and legend:
+                        dvu.line_legend()                                     
+                    twin1.fill_between(interval * np.arange(len(row.Y_extended)),
+                                     np.array(row.Y_extended) - np.array(row.Y_std_extended),
+                                     np.array(row.Y_extended) + np.array(row.Y_std_extended),
+                                     alpha=.2,
+                                     color=cg
+                                     )                    
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
+                    if hline:
+                        ax.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == &#39;Z&#39;:
+                            extra_key_label = &#39;Dynamin&#39;
+                        else:
+                            extra_key_label = extra_key
+                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
+                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)               
+                    twin2.fill_between(interval * np.arange(len(row.Z_extended)),
+                                     np.array(row.Z_extended) - np.array(row.Z_std_extended),
+                                     np.array(row.Z_extended) + np.array(row.Z_std_extended),
+                                     alpha=.2,
+                                     color=&#39;gray&#39;
+                                     ) 
+                    #if i == 0 and legend:
+                    #    dvu.line_legend()                    
+                tkw = dict(size=4, width=1.5)
+                ax.spines[&#39;right&#39;].set_color(cg)
+                ax.tick_params(axis=&#39;y&#39;, colors=cr, labelsize=6, **tkw)
+                twin1.spines[&#39;left&#39;].set_color(cr)
+                twin2.spines[&#39;left&#39;].set_color(cr)
+                ax.spines[&#39;left&#39;].set_color(cr)
+                #twin1.spines[&#39;left&#39;].set_color(cg)  
+                twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                if ylim_constant:
+                    ax.set_ylim(ylim_cla)
+                    twin1.set_ylim(ylim_aux)
+                    twin2.set_ylim(ylim_dyn)
+                else:
+                    p2_ylim = twin1.get_ylim()
+                    twin1.set_ylim((p2_ylim[0], 2*p2_ylim[1]))
+                    p3_ylim = twin2.get_ylim()
+                    twin2.set_ylim((p3_ylim[0], 2*p3_ylim[1]))                    
+                twin1.tick_params(axis=&#39;y&#39;, colors=cg, labelsize=6, **tkw)
+                twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
+                ax.tick_params(axis=&#39;x&#39;, **tkw)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
+                    else:
+                        print(xlim)
+                        plt.xlim(xlim)
+                
+                
+            #plt.yscale(&#39;log&#39;)                  
+            
+
     #     plt.axi(&#39;off&#39;)
-    if legend:
-        plt.legend()
+
+            
+#         plt.legend()
     plt.tight_layout()
     if fig is None:
         plt.show()
+
 
 
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
@@ -568,7 +757,7 @@ def plot_example(ex):
     plt.ylabel(&#39;Amplitude&#39;)
     plt.legend()
     
-def get_images(cell_dir: str):
+def get_videos(cell_dir: str):
     &#39;&#39;&#39;Loads in X and Y for one cell
     
     Params
@@ -578,35 +767,31 @@ def get_images(cell_dir: str):
     
     Returns
     -------
-    X : np.ndarray
-        has shape (W, H, num_images)
-    Y : np.ndarray
-        has shape (W, H, num_images)
+    videos
     &#39;&#39;&#39;
-    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
+    fname = {&#39;cla&#39;: &#39;TagRFP&#39;, &#39;aux&#39;: &#39;EGFP&#39;, &#39;dyn&#39;: &#39;JF646&#39;}
+    videos = {}
+    
+    for m in fname:
+        for name in os.listdir(oj(cell_dir, fname[m])):
         #print(f&#34;filename: {name}&#34;)
-        if &#39;tif&#39; in name:
-            fname1 = name
-    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname2 = name
-    #print(cell_dir)
-    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
-    return X, Y
+            if &#39;tif&#39; in name:
+                videos[m] = imread(oj(cell_dir, fname[m], name))
+
+    return videos
     
-def get_dynamin_images(cells):
+def get_all_dynamin_videos(cells):
     
-    cla, aux = {}, {}
+    all_videos = {}
     upper_dir = oj(&#39;/scratch/users/vision/data/abc_data/dynamin_data_with_ims/&#39;,
                &#39;CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646&#39;)
     for cell_num in cells:
         cell_dir = cell_num[:-6] + &#39;Cell1_1.5s&#39;
         full_dir = oj(upper_dir, cell_dir)
-        cla[cell_num], aux[cell_num] = get_images(full_dir)
-    return cla, aux
+        all_videos[cell_num] = get_videos(full_dir)
+    return all_videos
 
-def get_dynamin_data_video(df, pids, add_px=2):
+def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
     
     &#34;&#34;&#34;
     extract videos of dynamin traces 
@@ -625,46 +810,56 @@ def get_dynamin_data_video(df, pids, add_px=2):
         
     Returns:
     ------
-    cla_videos, aux_videos: dictionary
-        Indexed by pid
-        For each pid, the value is an np.2darray
-        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
-        Range is [0, 1]
+    videos
     
     &#34;&#34;&#34;
     
     indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
     df = df.iloc[indices]
     cells = set(df.cell_num.values)
-    X, Y = get_dynamin_images(cells)
+    raw_videos = get_all_dynamin_videos(cells)
     
-    cla_videos, aux_videos = {}, {}
+    videos = {}
     
     for i in range(len(df)):
-        cla, aux = [], []
+        
         cell_num = df.cell_num.iloc[i]
         pid = df.pid.iloc[i]
+        videos[pid] = {}
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
-        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
-
+        x_pos = [x_pos[0]]*5 + x_pos + [x_pos[-1]]*5
+        y_pos = [y_pos[0]]*5 + y_pos + [y_pos[-1]]*5
+        t, lt = df.t.iloc[i] - 5*1.5, min(len(x_pos), len(y_pos))                
+        for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+            videos[pid][m] = []
+            
         for j in range(lt):
-            aux.append(Y[cell_num][int((t+j)/1.5),:,:] \
-                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+            for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
+                            [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                            [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
             
-            # normalize by the min/max intensities
-            vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
-            aux[j] = (aux[j] - vmin)/(vmax - vmin)
-            
-            cla.append(X[cell_num][int((t+j)/1.5),:,:] \
-                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)]) 
-            vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
-            cla[j] = (cla[j] - vmin)/(vmax - vmin)
-            
-        cla_videos[pid], aux_videos[pid] = cla, aux
+                # normalize by the min/max intensities
+                #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
+                #videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
     
-    return cla_videos, aux_videos
+    # normalization
+    norm = {}
+    for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+        norm[m] = [1e9, -1e9] # min, max
+        for pid in videos:
+            for j in range(len(videos[pid][m])):
+                norm[m][0] = min(norm[m][0], videos[pid][m][j].min())
+                norm[m][1] = max(norm[m][1], videos[pid][m][j].max())
+    
+    if apply_norm:
+        for pid in videos:
+            for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                for j in range(len(videos[pid][m])):
+                    videos[pid][m][j] = (videos[pid][m][j] - norm[m][0])/(norm[m][1] - norm[m][0])
+            
+            
+    return videos, norm
     
 
 def plot_kymographs(df, pids, add_px=2):
@@ -697,7 +892,7 @@ def plot_kymographs(df, pids, add_px=2):
     indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
     df = df.iloc[indices]
     cells = set(df.cell_num.values)
-    X, Y = get_dynamin_images(cells)
+    raw_videos = get_all_dynamin_videos(cells)
     viridis = cm.get_cmap(&#39;viridis&#39;, 12)
     reds = cm.get_cmap(&#39;Reds&#39;, 12) # red palette for clathrin
     greens = cm.get_cmap(&#39;Greens&#39;, 12) # green palette for auxilin
@@ -715,17 +910,19 @@ def plot_kymographs(df, pids, add_px=2):
         
         for k in range(-add_px, add_px + 1):
             for j in range(lt):
-                cla_traces[i][j, k] = max(X[cell_num][int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                video = raw_videos[cell_num][&#39;cla&#39;]
+                cla_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
-                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                cla_traces[i][j, k + add_px] = (cla_traces[i][j, k + add_px] - vmin)/(vmax - vmin)
                 
-                aux_traces[i][j, k] = max(Y[cell_num][int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                video = raw_videos[cell_num][&#39;aux&#39;]
+                aux_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
-                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                aux_traces[i][j, k + add_px] = (aux_traces[i][j, k + add_px] - vmin)/(vmax - vmin)                
     
     ncol = 3 * width * len(df)
     cla_sparse = np.zeros((lmax, ncol))
@@ -844,8 +1041,29 @@ def plot_kymographs(df, pids, add_px=2):
     return s.replace(&#39;_&#39;, &#39; &#39;).replace(&#39;X&#39;, &#39;Clath&#39;).capitalize()</code></pre>
 </details>
 </dd>
-<dt id="src.viz.get_dynamin_data_video"><code class="name flex">
-<span>def <span class="ident">get_dynamin_data_video</span></span>(<span>df, pids, add_px=2)</span>
+<dt id="src.viz.get_all_dynamin_videos"><code class="name flex">
+<span>def <span class="ident">get_all_dynamin_videos</span></span>(<span>cells)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def get_all_dynamin_videos(cells):
+    
+    all_videos = {}
+    upper_dir = oj(&#39;/scratch/users/vision/data/abc_data/dynamin_data_with_ims/&#39;,
+               &#39;CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646&#39;)
+    for cell_num in cells:
+        cell_dir = cell_num[:-6] + &#39;Cell1_1.5s&#39;
+        full_dir = oj(upper_dir, cell_dir)
+        all_videos[cell_num] = get_videos(full_dir)
+    return all_videos</code></pre>
+</details>
+</dd>
+<dt id="src.viz.get_dynamin_data_videos"><code class="name flex">
+<span>def <span class="ident">get_dynamin_data_videos</span></span>(<span>df, pids, add_px=2, apply_norm=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>extract videos of dynamin traces </p>
@@ -858,16 +1076,12 @@ list of pids to plot</p>
 number of additional pixels in each direction
 add_px=1 means 3<em>3 pixels around the center, add_px=2 means 5</em>5, etc.</p>
 <h2 id="returns">Returns:</h2>
-<p>cla_videos, aux_videos: dictionary
-Indexed by pid
-For each pid, the value is an np.2darray
-Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
-Range is [0, 1]</p></section>
+<p>videos</p></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_dynamin_data_video(df, pids, add_px=2):
+<pre><code class="python">def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
     
     &#34;&#34;&#34;
     extract videos of dynamin traces 
@@ -886,71 +1100,60 @@ Range is [0, 1]</p></section>
         
     Returns:
     ------
-    cla_videos, aux_videos: dictionary
-        Indexed by pid
-        For each pid, the value is an np.2darray
-        Each element in the list is one frame of (2 * add_px + 1) * (2 * add_px + 1) image around the center
-        Range is [0, 1]
+    videos
     
     &#34;&#34;&#34;
     
     indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
     df = df.iloc[indices]
     cells = set(df.cell_num.values)
-    X, Y = get_dynamin_images(cells)
+    raw_videos = get_all_dynamin_videos(cells)
     
-    cla_videos, aux_videos = {}, {}
+    videos = {}
     
     for i in range(len(df)):
-        cla, aux = [], []
+        
         cell_num = df.cell_num.iloc[i]
         pid = df.pid.iloc[i]
+        videos[pid] = {}
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
-        t, lt = df.t.iloc[i], min(len(x_pos), len(y_pos))                
-
+        x_pos = [x_pos[0]]*5 + x_pos + [x_pos[-1]]*5
+        y_pos = [y_pos[0]]*5 + y_pos + [y_pos[-1]]*5
+        t, lt = df.t.iloc[i] - 5*1.5, min(len(x_pos), len(y_pos))                
+        for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+            videos[pid][m] = []
+            
         for j in range(lt):
-            aux.append(Y[cell_num][int((t+j)/1.5),:,:] \
-                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+            for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
+                            [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
+                            [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
             
-            # normalize by the min/max intensities
-            vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
-            aux[j] = (aux[j] - vmin)/(vmax - vmin)
-            
-            cla.append(X[cell_num][int((t+j)/1.5),:,:] \
-                                  [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                                  [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)]) 
-            vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
-            cla[j] = (cla[j] - vmin)/(vmax - vmin)
-            
-        cla_videos[pid], aux_videos[pid] = cla, aux
+                # normalize by the min/max intensities
+                #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
+                #videos[pid][m][-1] = (videos[pid][m][-1] - vmin)/(vmax - vmin)
     
-    return cla_videos, aux_videos</code></pre>
+    # normalization
+    norm = {}
+    for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+        norm[m] = [1e9, -1e9] # min, max
+        for pid in videos:
+            for j in range(len(videos[pid][m])):
+                norm[m][0] = min(norm[m][0], videos[pid][m][j].min())
+                norm[m][1] = max(norm[m][1], videos[pid][m][j].max())
+    
+    if apply_norm:
+        for pid in videos:
+            for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                for j in range(len(videos[pid][m])):
+                    videos[pid][m][j] = (videos[pid][m][j] - norm[m][0])/(norm[m][1] - norm[m][0])
+            
+            
+    return videos, norm</code></pre>
 </details>
 </dd>
-<dt id="src.viz.get_dynamin_images"><code class="name flex">
-<span>def <span class="ident">get_dynamin_images</span></span>(<span>cells)</span>
-</code></dt>
-<dd>
-<section class="desc"></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def get_dynamin_images(cells):
-    
-    cla, aux = {}, {}
-    upper_dir = oj(&#39;/scratch/users/vision/data/abc_data/dynamin_data_with_ims/&#39;,
-               &#39;CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646&#39;)
-    for cell_num in cells:
-        cell_dir = cell_num[:-6] + &#39;Cell1_1.5s&#39;
-        full_dir = oj(upper_dir, cell_dir)
-        cla[cell_num], aux[cell_num] = get_images(full_dir)
-    return cla, aux</code></pre>
-</details>
-</dd>
-<dt id="src.viz.get_images"><code class="name flex">
-<span>def <span class="ident">get_images</span></span>(<span>cell_dir)</span>
+<dt id="src.viz.get_videos"><code class="name flex">
+<span>def <span class="ident">get_videos</span></span>(<span>cell_dir)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Loads in X and Y for one cell</p>
@@ -961,16 +1164,14 @@ Range is [0, 1]</p></section>
 </dl>
 <h2 id="returns">Returns</h2>
 <dl>
-<dt><strong><code>X</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>has shape (W, H, num_images)</dd>
-<dt><strong><code>Y</code></strong> :&ensp;<code>np.ndarray</code></dt>
-<dd>has shape (W, H, num_images)</dd>
+<dt><code>videos</code></dt>
+<dd>&nbsp;</dd>
 </dl></section>
 <details class="source">
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_images(cell_dir: str):
+<pre><code class="python">def get_videos(cell_dir: str):
     &#39;&#39;&#39;Loads in X and Y for one cell
     
     Params
@@ -980,22 +1181,18 @@ Range is [0, 1]</p></section>
     
     Returns
     -------
-    X : np.ndarray
-        has shape (W, H, num_images)
-    Y : np.ndarray
-        has shape (W, H, num_images)
+    videos
     &#39;&#39;&#39;
-    for name in os.listdir(oj(cell_dir, &#39;TagRFP&#39;)):
+    fname = {&#39;cla&#39;: &#39;TagRFP&#39;, &#39;aux&#39;: &#39;EGFP&#39;, &#39;dyn&#39;: &#39;JF646&#39;}
+    videos = {}
+    
+    for m in fname:
+        for name in os.listdir(oj(cell_dir, fname[m])):
         #print(f&#34;filename: {name}&#34;)
-        if &#39;tif&#39; in name:
-            fname1 = name
-    for name in os.listdir(oj(cell_dir, &#39;EGFP&#39;)):
-        if &#39;tif&#39; in name:
-            fname2 = name
-    #print(cell_dir)
-    X = imread(oj(cell_dir, &#39;TagRFP&#39;, fname1))  # .astype(np.float32) # X = RFP(clathrin) (num_images x H x W)
-    Y = imread(oj(cell_dir, &#39;EGFP&#39;, fname2))  # .astype(np.float32) # Y = EGFP (auxilin) (num_image x H x W)
-    return X, Y</code></pre>
+            if &#39;tif&#39; in name:
+                videos[m] = imread(oj(cell_dir, fname[m], name))
+
+    return videos</code></pre>
 </details>
 </dd>
 <dt id="src.viz.highlight_max"><code class="name flex">
@@ -1108,6 +1305,33 @@ Params</p>
     plt.legend(legends)</code></pre>
 </details>
 </dd>
+<dt id="src.viz.plot_above_threshold"><code class="name flex">
+<span>def <span class="ident">plot_above_threshold</span></span>(<span>x1, y1, b1, x2, y2, b2, ax, color, lsty)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_above_threshold(x1, y1, b1, x2, y2, b2, ax, color, lsty):
+    
+    sl1 = (y2 - y1)/(x2 - x1)
+    sl2 = (b2 - b1)/(x2 - x1)
+    if y1 &gt;= b1 and y2 &gt;= b2:
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=1)
+    elif y1 &lt; b1 and y2 &lt; b2:
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.2) 
+    elif y1 &gt;= b1 and y2 &lt; b2:
+        crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=1)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.2)
+    elif y1 &lt; b1 and y2 &gt;= b2:
+        crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.2)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1)        </code></pre>
+</details>
+</dd>
 <dt id="src.viz.plot_confusion_matrix"><code class="name flex">
 <span>def <span class="ident">plot_confusion_matrix</span></span>(<span>y_true, y_pred, classes, normalize=False, title=None, cmap=&lt;matplotlib.colors.LinearSegmentedColormap object&gt;)</span>
 </code></dt>
@@ -1179,7 +1403,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.plot_curves"><code class="name flex">
-<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, extra_key_label=None, hline=True, R=5, C=8, fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True)</span>
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, extra_key_label=None, hline=True, R=5, C=8, xlim=None, fig=None, ylim_constant=False, background=False, ylim_cla=None, ylim_aux=None, ylim_dyn=None, xlim_constant=True, legend=True, plot_x=True, yticks=None, yticklabels=None, three_axes=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Plot time-series curves from df</p></section>
@@ -1189,36 +1413,178 @@ Params</p>
 </summary>
 <pre><code class="python">def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
-                fig=None, ylim_constant=False, xlim_constant=True, legend=True, plot_x=True):
+                xlim=None,
+                fig=None, ylim_constant=False, background=False, ylim_cla=None,
+                ylim_aux=None, ylim_dyn=None,
+                xlim_constant=True, legend=True, plot_x=True,
+                yticks=None, yticklabels=None, three_axes=True):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
+    DIFF = 0
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200, facecolor=&#39;white&#39;)
     lifetime_max = np.max(df.lifetime.values[:R * C])
     df = df.iloc[range(R * C)]
     for i in range(R * C):
         if i &lt; df.shape[0]:
-            plt.subplot(R, C, i + 1)
+            ax = plt.subplot(R, C, i + 1)
             row = df.iloc[i]
-            if plot_x:
-                plt.plot(row.X, color=cr, label=&#39;Clathrin&#39;)
-                plt.plot(row.Y, color=cg, label=&#39;Auxilin&#39;)
+            if &#39;1.5s&#39; in row[&#39;cell_num&#39;]:
+                interval = 1.5
+            else:
+                interval = 1
+                
+            if not three_axes:
+                if plot_x:
+                    plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr)
+                    plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
+                    plt.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)
+                    plt.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
+                if background:
+                    ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_c_extended), 
+                        color=cr, linewidth=.8)                
+                ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                 np.array(row.X_extended) - np.array(row.X_std_extended),
+                                 np.array(row.X_extended) + np.array(row.X_std_extended),
+                                 alpha=.2,
+                                 color=cr
+                                 )                    
                 if hline:
                     plt.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
-            if extra_key is not None:
-                if extra_key_label is None:
-                    if extra_key == &#39;Z&#39;:
-                        extra_key_label = &#39;Dynamin&#39;
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == &#39;Z&#39;:
+                            extra_key_label = &#39;Dynamin&#39;
+                        else:
+                            extra_key_label = extra_key
+                    plt.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
+                    plt.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
                     else:
-                        extra_key_label = extra_key
-                plt.plot(row[extra_key], color=&#39;gray&#39;, label=extra_key_label)
-            if xlim_constant:
-                plt.xlim([-1, lifetime_max + 1])
-            if ylim_constant:
-                plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                        print(xlim)
+                        plt.xlim(xlim)
+                        
+                if ylim_constant:
+                    if ylim is None:
+                        plt.ylim([-10, max(max(df.X_max), max(df.Y_max)) + 1])
+                    else:
+                        plt.ylim(ylim[0] + DIFF, ylim[1] + DIFF)
+                if yticks is not None:
+                        plt.yticks(yticks, labels=yticklabels)
+                    
+            elif three_axes:
+                ax.spines[&#39;right&#39;].set_visible(True)
+                twin1 = ax.twinx()
+                twin2 = ax.twinx()
+                twin2.spines[&#39;right&#39;].set_visible(True)
+                twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
+                
+                if plot_x:
+
+                    if background:
+                        ax.fill_between(interval * np.arange(len(row.X_sigma_extended)), 
+                                        [0] * len(row.X_sigma_extended),
+                                        2 * np.array(row.X_sigma_extended), 
+                                        alpha=.2,
+                                        color=cr) 
+                        
+                        x, y, lt = np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, len(row.X_extended)
+                        p1, = ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
+                        bg = 2 * np.array(row.X_sigma_extended)
+                        for f in range(lt - 1):
+                            lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
+                            plot_above_threshold(x1=interval*x[f], 
+                                                 y1=y[f], 
+                                                 b1=bg[f], 
+                                                 x2=interval*x[f+1], 
+                                                 y2=y[f+1], 
+                                                 b2=bg[f+1], 
+                                                 ax=ax, 
+                                                 color=cr,
+                                                 lsty=lsty)
+                               
+                    else:
+                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, linewidth=2)
+                        p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)  
+                    if i == 0 and legend:
+                        dvu.line_legend()                        
+                    ax.fill_between(interval * np.arange(len(row.X_extended)),
+                                     np.array(row.X_extended) - np.array(row.X_std_extended),
+                                     np.array(row.X_extended) + np.array(row.X_std_extended),
+                                     alpha=.2,
+                                     color=cr
+                                     )  
+
+                    
+                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
+                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    if i == 0 and legend:
+                        dvu.line_legend()                                     
+                    twin1.fill_between(interval * np.arange(len(row.Y_extended)),
+                                     np.array(row.Y_extended) - np.array(row.Y_std_extended),
+                                     np.array(row.Y_extended) + np.array(row.Y_std_extended),
+                                     alpha=.2,
+                                     color=cg
+                                     )                    
+                    #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
+                    #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
+                    if hline:
+                        ax.axhline(642.3754691658837, color=&#39;gray&#39;, alpha=0.5)
+                if extra_key is not None:
+                    if extra_key_label is None:
+                        if extra_key == &#39;Z&#39;:
+                            extra_key_label = &#39;Dynamin&#39;
+                        else:
+                            extra_key_label = extra_key
+                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
+                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)               
+                    twin2.fill_between(interval * np.arange(len(row.Z_extended)),
+                                     np.array(row.Z_extended) - np.array(row.Z_std_extended),
+                                     np.array(row.Z_extended) + np.array(row.Z_std_extended),
+                                     alpha=.2,
+                                     color=&#39;gray&#39;
+                                     ) 
+                    #if i == 0 and legend:
+                    #    dvu.line_legend()                    
+                tkw = dict(size=4, width=1.5)
+                ax.spines[&#39;right&#39;].set_color(cg)
+                ax.tick_params(axis=&#39;y&#39;, colors=cr, labelsize=6, **tkw)
+                twin1.spines[&#39;left&#39;].set_color(cr)
+                twin2.spines[&#39;left&#39;].set_color(cr)
+                ax.spines[&#39;left&#39;].set_color(cr)
+                #twin1.spines[&#39;left&#39;].set_color(cg)  
+                twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                if ylim_constant:
+                    ax.set_ylim(ylim_cla)
+                    twin1.set_ylim(ylim_aux)
+                    twin2.set_ylim(ylim_dyn)
+                else:
+                    p2_ylim = twin1.get_ylim()
+                    twin1.set_ylim((p2_ylim[0], 2*p2_ylim[1]))
+                    p3_ylim = twin2.get_ylim()
+                    twin2.set_ylim((p3_ylim[0], 2*p3_ylim[1]))                    
+                twin1.tick_params(axis=&#39;y&#39;, colors=cg, labelsize=6, **tkw)
+                twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
+                ax.tick_params(axis=&#39;x&#39;, **tkw)
+                if xlim_constant:
+                    if xlim is None:
+                        plt.xlim([-1, lifetime_max + 1])
+                    else:
+                        print(xlim)
+                        plt.xlim(xlim)
+                
+                
+            #plt.yscale(&#39;log&#39;)                  
+            
+
     #     plt.axi(&#39;off&#39;)
-    if legend:
-        plt.legend()
+
+            
+#         plt.legend()
     plt.tight_layout()
     if fig is None:
         plt.show()</code></pre>
@@ -1330,7 +1696,7 @@ rgb_image: 3d np.array
     indices = np.array([np.where(df.pid.values == pid)[0][0] for pid in pids])
     df = df.iloc[indices]
     cells = set(df.cell_num.values)
-    X, Y = get_dynamin_images(cells)
+    raw_videos = get_all_dynamin_videos(cells)
     viridis = cm.get_cmap(&#39;viridis&#39;, 12)
     reds = cm.get_cmap(&#39;Reds&#39;, 12) # red palette for clathrin
     greens = cm.get_cmap(&#39;Greens&#39;, 12) # green palette for auxilin
@@ -1348,17 +1714,19 @@ rgb_image: 3d np.array
         
         for k in range(-add_px, add_px + 1):
             for j in range(lt):
-                cla_traces[i][j, k] = max(X[cell_num][int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                video = raw_videos[cell_num][&#39;cla&#39;]
+                cla_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = X[cell_num][int((t+j)/1.5),:,:].min(), X[cell_num][int((t+j)/1.5),:,:].max()
-                cla_traces[i][j, k] = (cla_traces[i][j, k] - vmin)/(vmax - vmin)
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                cla_traces[i][j, k + add_px] = (cla_traces[i][j, k + add_px] - vmin)/(vmax - vmin)
                 
-                aux_traces[i][j, k] = max(Y[cell_num][int((t+j)/1.5), \
-                                                      range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), \
+                video = raw_videos[cell_num][&#39;aux&#39;]
+                aux_traces[i][j, k + add_px] = max(video[int(t/1.5) + j, \
+                                                      range(int(y_pos[j]) - 0, int(y_pos[j]) + 0 + 1), \
                                                       int(x_pos[j] + k)])
-                vmin, vmax = Y[cell_num][int((t+j)/1.5),:,:].min(), Y[cell_num][int((t+j)/1.5),:,:].max()
-                aux_traces[i][j, k] = (aux_traces[i][j, k] - vmin)/(vmax - vmin)                
+                vmin, vmax = video[int(t/1.5) + j,:,:].min(), video[int(t/1.5) + j,:,:].max()
+                aux_traces[i][j, k + add_px] = (aux_traces[i][j, k + add_px] - vmin)/(vmax - vmin)                
     
     ncol = 3 * width * len(df)
     cla_sparse = np.zeros((lmax, ncol))
@@ -1490,7 +1858,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.viz_biggest_errs"><code class="name flex">
-<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, show_track_pid=False, sort_by_residuals=True, plot_x=True, plot_y=True, plot_z=False, xlim_constant=True, lifetime_max=None, text_labels=False)</span>
+<span>def <span class="ident">viz_biggest_errs</span></span>(<span>df, idxs_cv, idxs, Y_test, preds, preds_proba, num_to_plot=20, aux_thresh=642, show_track_num=True, show_track_pid=False, sort_by_residuals=True, width_mult=3, plot_x=True, plot_y=True, plot_z=False, plot_axhline=True, xlim_constant=True, ylim=None, yticks=None, yticklabels=None, lifetime_max=None, text_labels=False, text_label_size=25)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Visualize X and Y where the top examples are the most wrong / least confident
@@ -1512,12 +1880,18 @@ Params</p>
                      show_track_num=True,
                      show_track_pid=False,
                      sort_by_residuals=True,
+                     width_mult=3,
                      plot_x=True,
                      plot_y=True,
                      plot_z=False,
+                     plot_axhline=True,
                      xlim_constant=True,
+                     ylim: tuple=None,
+                     yticks=None,
+                     yticklabels=None,
                      lifetime_max=None,
-                     text_labels=False):
+                     text_labels=False,
+                     text_label_size=25):
     &#39;&#39;&#39;Visualize X and Y where the top examples are the most wrong / least confident
     Params
     ------
@@ -1527,7 +1901,7 @@ Params</p>
         subset of points to plot
     
     &#39;&#39;&#39;
-
+    DIFF = 0 # use this to ensure values are all positive
     
     # deal with idxs
     if idxs is not None:
@@ -1551,7 +1925,7 @@ Params</p>
         num_to_plot = dft.shape[0]
     R = int(np.sqrt(num_to_plot))
     C = num_to_plot // R  # + 1
-    plt.figure(figsize=(C * 3, R * 2.5), dpi=200)
+    plt.figure(figsize=(C * width_mult, R * 2.5), dpi=200)
 
     i = 0
     for r in range(R):
@@ -1568,25 +1942,46 @@ Params</p>
                     ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
                             horizontalalignment=&#39;right&#39;,
                             transform=ax.transAxes)
-                plt.axis(&#39;off&#39;)
-                
-                if plot_x:
-                    plt.plot(row[&#34;X&#34;], color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
-                if plot_y:
-                    plt.plot(row[&#34;Y&#34;], color=cg, label=&#39;aux&#39;, lw=2)
-                if plot_z:
-                    plt.plot(row[&#34;Z&#34;], color=&#39;gray&#39;, label=&#39;dyn&#39;)
 
+#                 plt.axis(&#39;off&#39;)
+                if &#39;1.5s&#39; in row[&#39;cell_num&#39;]:
+                    interval = 1.5
+                else:
+                    interval = 1
+                if plot_x:
+                    plt.plot(interval * np.arange(len(row[&#34;X&#34;])), np.array(row[&#34;X&#34;]) + DIFF, color=cr, label=&#39;clath&#39;, lw=2) # could do X_extended
+                if plot_y:
+                    plt.plot(interval * np.arange(len(row[&#34;Y&#34;])), np.array(row[&#34;Y&#34;]) + DIFF, color=cg, label=&#39;aux&#39;, lw=2)
+                if plot_z:
+                    plt.plot(interval * np.arange(len(row[&#34;Z&#34;])), np.array(row[&#34;Z&#34;]) + DIFF, color=&#39;gray&#39;, label=&#39;dyn&#39;)               
+                    
                 if xlim_constant:
                     plt.xlim([-1, lifetime_max])
-                plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                
+                if plot_axhline:
+                    plt.axhline(aux_thresh, color=&#39;gray&#39;, alpha=0.5, lw=2)
+                
+                #plt.yscale(&#39;log&#39;)
+                if ylim is not None:
+                    plt.ylim((ylim[0] + DIFF, ylim[1] + DIFF))
+                    
+                if not r == R - 1:
+                    plt.xticks([])
+                if not c == 0:
+                    plt.yticks([])     
+                elif yticks is not None:
+                    plt.yticks(yticks, labels=yticklabels)
+
                 i += 1
                 
     if text_labels:
-        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1], &#39;Clathrin&#39;, color=cr, fontsize=25, fontweight=&#39;bold&#39;)
-        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1], &#39;Auxilin&#39;, color=cg, fontsize=25, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;X&#34;]), row[&#34;X&#34;][-1] + DIFF, &#39;Clathrin&#39;, color=cr, 
+                 fontsize=text_label_size, fontweight=&#39;bold&#39;)
+        plt.text(len(row[&#34;Y&#34;]), row[&#34;Y&#34;][-1] + DIFF, &#39;Auxilin&#39;, color=cg, 
+                 fontsize=text_label_size, fontweight=&#39;bold&#39;)
         if plot_z:
-            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1], &#39;Dynamin&#39;, color=&#39;gray&#39;, fontsize=25, fontweight=&#39;bold&#39;)
+            plt.text(len(row[&#34;Z&#34;]), row[&#34;Z&#34;][-1] + DIFF, &#39;Dynamin&#39;, 
+                     fontsize=text_label_size, color=&#39;gray&#39;, fontweight=&#39;bold&#39;)
     plt.tight_layout()
     return dft</code></pre>
 </details>
@@ -1716,11 +2111,12 @@ Params</p>
 <li><code><a title="src.viz.cumulative_acc_plot_all" href="#src.viz.cumulative_acc_plot_all">cumulative_acc_plot_all</a></code></li>
 <li><code><a title="src.viz.cumulative_acc_plot_hard" href="#src.viz.cumulative_acc_plot_hard">cumulative_acc_plot_hard</a></code></li>
 <li><code><a title="src.viz.fix_feat_name" href="#src.viz.fix_feat_name">fix_feat_name</a></code></li>
-<li><code><a title="src.viz.get_dynamin_data_video" href="#src.viz.get_dynamin_data_video">get_dynamin_data_video</a></code></li>
-<li><code><a title="src.viz.get_dynamin_images" href="#src.viz.get_dynamin_images">get_dynamin_images</a></code></li>
-<li><code><a title="src.viz.get_images" href="#src.viz.get_images">get_images</a></code></li>
+<li><code><a title="src.viz.get_all_dynamin_videos" href="#src.viz.get_all_dynamin_videos">get_all_dynamin_videos</a></code></li>
+<li><code><a title="src.viz.get_dynamin_data_videos" href="#src.viz.get_dynamin_data_videos">get_dynamin_data_videos</a></code></li>
+<li><code><a title="src.viz.get_videos" href="#src.viz.get_videos">get_videos</a></code></li>
 <li><code><a title="src.viz.highlight_max" href="#src.viz.highlight_max">highlight_max</a></code></li>
 <li><code><a title="src.viz.jointplot_grouped" href="#src.viz.jointplot_grouped">jointplot_grouped</a></code></li>
+<li><code><a title="src.viz.plot_above_threshold" href="#src.viz.plot_above_threshold">plot_above_threshold</a></code></li>
 <li><code><a title="src.viz.plot_confusion_matrix" href="#src.viz.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
 <li><code><a title="src.viz.plot_curves" href="#src.viz.plot_curves">plot_curves</a></code></li>
 <li><code><a title="src.viz.plot_decision_boundary" href="#src.viz.plot_decision_boundary">plot_decision_boundary</a></code></li>

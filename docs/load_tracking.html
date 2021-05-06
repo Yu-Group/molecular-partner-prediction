@@ -46,7 +46,7 @@ import config
 from tqdm import tqdm
 
 
-def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
+def get_tracks(data_dir, split=None, pixel_data=False, video_data=False, 
                processed_tracks_file=oj(config.DIR_TRACKS, &#39;tracks.pkl&#39;),
                dset=&#39;orig&#39;):
     &#39;&#39;&#39;Read and save tracks tracks from folders within data_dir into a dataframe
@@ -129,23 +129,58 @@ def get_tracks(data_dir, split=None, pixel_data=False, video_data=True,
             num_channels = len(tracks[&#39;A&#39;][0])
             for idx_channel, prefix in zip(range(num_channels),
                                            [&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;][:num_channels]):
+                # print(tracks.keys())
                 track = np.array([tracks[&#39;A&#39;][i][idx_channel] for i in range(n)])
-                data[prefix + &#39;_pvals&#39;] = np.array([tracks[&#39;pval_Ar&#39;][i][idx_channel] for i in range(n)])
+                cs = np.array([tracks[&#39;c&#39;][i][idx_channel] for i in range(n)])
+#                 print(&#39;track keys&#39;, tracks.keys())
+                pvals = np.array([tracks[&#39;pval_Ar&#39;][i][idx_channel] for i in range(n)])
+                stds = np.array([tracks[&#39;A_pstd&#39;][i][idx_channel] for i in range(n)])
+                sigmas = np.array([tracks[&#39;sigma_r&#39;][i][idx_channel] for i in range(n)])
+                data[prefix + &#39;_pvals&#39;] = pvals
                 starts = []
+                starts_p = []
+                starts_c = []
+                starts_s = []
+                starts_sig = []
                 for d in tracks[&#39;startBuffer&#39;]:
                     if len(d) == 0:
                         starts.append([])
+                        starts_p.append([])
+                        starts_c.append([])
+                        starts_s.append([])
+                        starts_sig.append([])
                     else:
+#                         print(&#39;buffkeys&#39;, d.keys())
                         starts.append(d[&#39;A&#39;][idx_channel])
+                        starts_p.append(d[&#39;pval_Ar&#39;][idx_channel])
+                        starts_c.append(d[&#39;c&#39;][idx_channel])
+                        starts_s.append(d[&#39;A_pstd&#39;][idx_channel])
+                        starts_sig.append(d[&#39;sigma_r&#39;][idx_channel])
                 ends = []
+                ends_p = []
+                ends_c = []
+                ends_s = []
+                ends_sig = []
                 for d in tracks[&#39;endBuffer&#39;]:
                     if len(d) == 0:
                         ends.append([])
+                        ends_p.append([])
+                        ends_c.append([])
+                        ends_s.append([])
+                        ends_sig.append([])
                     else:
                         ends.append(d[&#39;A&#39;][idx_channel])
-                if prefix == &#39;X&#39;:
-                    data[prefix + &#39;_extended&#39;] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                        ends_p.append(d[&#39;pval_Ar&#39;][idx_channel])
+                        ends_c.append(d[&#39;c&#39;][idx_channel])
+                        ends_s.append(d[&#39;A_pstd&#39;][idx_channel])
+                        ends_sig.append(d[&#39;sigma_r&#39;][idx_channel])
+#                 if prefix == &#39;X&#39;:
+                data[prefix + &#39;_extended&#39;] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                data[prefix + &#39;_pvals_extended&#39;] = [starts_p[i] + pvals[i] + ends_p[i] for i in range(n)]
                 data[prefix] = track
+                data[prefix + &#39;_c_extended&#39;] = [starts_c[i] + cs[i] + ends_c[i] for i in range(n)]
+                data[prefix + &#39;_std_extended&#39;] = [starts_s[i] + stds[i] + ends_s[i] for i in range(n)]
+                data[prefix + &#39;_sigma_extended&#39;] = [starts_sig[i] + sigmas[i] + ends_sig[i] for i in range(n)]
                 data[prefix + &#39;_starts&#39;] = starts
                 data[prefix + &#39;_ends&#39;] = ends 
             data[&#39;lifetime_extended&#39;] = [len(x) for x in data[&#39;X_extended&#39;]]
@@ -322,7 +357,7 @@ def get_images(cell_dir: str):
 </details>
 </dd>
 <dt id="src.load_tracking.get_tracks"><code class="name flex">
-<span>def <span class="ident">get_tracks</span></span>(<span>data_dir, split=None, pixel_data=False, video_data=True, processed_tracks_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/tracks/tracks.pkl', dset='orig')</span>
+<span>def <span class="ident">get_tracks</span></span>(<span>data_dir, split=None, pixel_data=False, video_data=False, processed_tracks_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/tracks/tracks.pkl', dset='orig')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Read and save tracks tracks from folders within data_dir into a dataframe
@@ -331,7 +366,7 @@ Assumes (matlab) tracking has been run</p></section>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def get_tracks(data_dir, split=None, pixel_data=False, video_data=True, 
+<pre><code class="python">def get_tracks(data_dir, split=None, pixel_data=False, video_data=False, 
                processed_tracks_file=oj(config.DIR_TRACKS, &#39;tracks.pkl&#39;),
                dset=&#39;orig&#39;):
     &#39;&#39;&#39;Read and save tracks tracks from folders within data_dir into a dataframe
@@ -414,23 +449,58 @@ Assumes (matlab) tracking has been run</p></section>
             num_channels = len(tracks[&#39;A&#39;][0])
             for idx_channel, prefix in zip(range(num_channels),
                                            [&#39;X&#39;, &#39;Y&#39;, &#39;Z&#39;][:num_channels]):
+                # print(tracks.keys())
                 track = np.array([tracks[&#39;A&#39;][i][idx_channel] for i in range(n)])
-                data[prefix + &#39;_pvals&#39;] = np.array([tracks[&#39;pval_Ar&#39;][i][idx_channel] for i in range(n)])
+                cs = np.array([tracks[&#39;c&#39;][i][idx_channel] for i in range(n)])
+#                 print(&#39;track keys&#39;, tracks.keys())
+                pvals = np.array([tracks[&#39;pval_Ar&#39;][i][idx_channel] for i in range(n)])
+                stds = np.array([tracks[&#39;A_pstd&#39;][i][idx_channel] for i in range(n)])
+                sigmas = np.array([tracks[&#39;sigma_r&#39;][i][idx_channel] for i in range(n)])
+                data[prefix + &#39;_pvals&#39;] = pvals
                 starts = []
+                starts_p = []
+                starts_c = []
+                starts_s = []
+                starts_sig = []
                 for d in tracks[&#39;startBuffer&#39;]:
                     if len(d) == 0:
                         starts.append([])
+                        starts_p.append([])
+                        starts_c.append([])
+                        starts_s.append([])
+                        starts_sig.append([])
                     else:
+#                         print(&#39;buffkeys&#39;, d.keys())
                         starts.append(d[&#39;A&#39;][idx_channel])
+                        starts_p.append(d[&#39;pval_Ar&#39;][idx_channel])
+                        starts_c.append(d[&#39;c&#39;][idx_channel])
+                        starts_s.append(d[&#39;A_pstd&#39;][idx_channel])
+                        starts_sig.append(d[&#39;sigma_r&#39;][idx_channel])
                 ends = []
+                ends_p = []
+                ends_c = []
+                ends_s = []
+                ends_sig = []
                 for d in tracks[&#39;endBuffer&#39;]:
                     if len(d) == 0:
                         ends.append([])
+                        ends_p.append([])
+                        ends_c.append([])
+                        ends_s.append([])
+                        ends_sig.append([])
                     else:
                         ends.append(d[&#39;A&#39;][idx_channel])
-                if prefix == &#39;X&#39;:
-                    data[prefix + &#39;_extended&#39;] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                        ends_p.append(d[&#39;pval_Ar&#39;][idx_channel])
+                        ends_c.append(d[&#39;c&#39;][idx_channel])
+                        ends_s.append(d[&#39;A_pstd&#39;][idx_channel])
+                        ends_sig.append(d[&#39;sigma_r&#39;][idx_channel])
+#                 if prefix == &#39;X&#39;:
+                data[prefix + &#39;_extended&#39;] = [starts[i] + track[i] + ends[i] for i in range(n)]
+                data[prefix + &#39;_pvals_extended&#39;] = [starts_p[i] + pvals[i] + ends_p[i] for i in range(n)]
                 data[prefix] = track
+                data[prefix + &#39;_c_extended&#39;] = [starts_c[i] + cs[i] + ends_c[i] for i in range(n)]
+                data[prefix + &#39;_std_extended&#39;] = [starts_s[i] + stds[i] + ends_s[i] for i in range(n)]
+                data[prefix + &#39;_sigma_extended&#39;] = [starts_sig[i] + sigmas[i] + ends_sig[i] for i in range(n)]
                 data[prefix + &#39;_starts&#39;] = starts
                 data[prefix + &#39;_ends&#39;] = ends 
             data[&#39;lifetime_extended&#39;] = [len(x) for x in data[&#39;X_extended&#39;]]

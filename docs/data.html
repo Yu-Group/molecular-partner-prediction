@@ -51,9 +51,10 @@ import train_reg
 
 def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
                       splits=[&#39;test&#39;],
-                      meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      meta=None,
                       length=40,
                       normalize=True,
+                      lifetime_threshold=15,
                       filter_short=True,
                       padding=&#39;end&#39;):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
@@ -62,10 +63,12 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
-            if filter_short:
+            if filter_short and lifetime_threshold == 15:
                 df = df[~(df.short | df.long | df.hotspots)]
         #         df = df[df.valid]
                 df = df[df.lifetime &gt; 15] # only keep hard tracks
+            elif not lifetime_threshold == 15:
+                df = df[df.lifetime &gt; lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
@@ -74,8 +77,11 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
             # downsample tracks
             df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
                                    for i in range(len(df))] # downsampling
+            df[&#39;X_same_length_extended&#39;] = [features.downsample(df.iloc[i][&#39;X_extended&#39;], length, padding=padding)
+                                            for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
+            df = features.normalize_track(df, track=&#39;X_same_length_extended&#39;, by_time_point=False)
 
             # regression response
             df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
@@ -101,7 +107,7 @@ def get_data(dset=&#39;clath_aux+gak_a7d2&#39;, use_processed=True, save_process
              compute_dictionary_learning=False,
              outcome_def=&#39;y_consec_thresh&#39;,
              pixel_data: bool=False,
-             video_data: bool=True,
+             video_data: bool=False,
              acc_thresh=0.95,
              previous_meta_file: str=None):
     &#39;&#39;&#39;
@@ -349,7 +355,7 @@ if __name__ == &#39;__main__&#39;:
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
 <dt id="src.data.get_data"><code class="name flex">
-<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/df.pkl', metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/metadata.pkl', use_processed_dicts=True, compute_dictionary_learning=False, outcome_def='y_consec_thresh', pixel_data=False, video_data=True, acc_thresh=0.95, previous_meta_file=None)</span>
+<span>def <span class="ident">get_data</span></span>(<span>dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True, processed_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/df.pkl', metadata_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/processed/metadata.pkl', use_processed_dicts=True, compute_dictionary_learning=False, outcome_def='y_consec_thresh', pixel_data=False, video_data=False, acc_thresh=0.95, previous_meta_file=None)</span>
 </code></dt>
 <dd>
 <section class="desc"><h2 id="params">Params</h2>
@@ -375,7 +381,7 @@ the thresholds for lifetime are taken from this file</dd>
              compute_dictionary_learning=False,
              outcome_def=&#39;y_consec_thresh&#39;,
              pixel_data: bool=False,
-             video_data: bool=True,
+             video_data: bool=False,
              acc_thresh=0.95,
              previous_meta_file: str=None):
     &#39;&#39;&#39;
@@ -498,7 +504,7 @@ Removes metadata + time-series columns + outcomes</p></section>
 </details>
 </dd>
 <dt id="src.data.load_dfs_for_lstm"><code class="name flex">
-<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'], length=40, normalize=True, filter_short=True, padding='end')</span>
+<span>def <span class="ident">load_dfs_for_lstm</span></span>(<span>dsets=['clath_aux+gak_new'], splits=['test'], meta=None, length=40, normalize=True, lifetime_threshold=15, filter_short=True, padding='end')</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Loads dataframes preprocessed ready for LSTM</p></section>
@@ -508,9 +514,10 @@ Removes metadata + time-series columns + outcomes</p></section>
 </summary>
 <pre><code class="python">def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
                       splits=[&#39;test&#39;],
-                      meta=[&#39;cell_num&#39;, &#39;Y_sig_mean&#39;, &#39;Y_sig_mean_normalized&#39;],
+                      meta=None,
                       length=40,
                       normalize=True,
+                      lifetime_threshold=15,
                       filter_short=True,
                       padding=&#39;end&#39;):
     &#39;&#39;&#39;Loads dataframes preprocessed ready for LSTM
@@ -519,10 +526,12 @@ Removes metadata + time-series columns + outcomes</p></section>
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
-            if filter_short:
+            if filter_short and lifetime_threshold == 15:
                 df = df[~(df.short | df.long | df.hotspots)]
         #         df = df[df.valid]
                 df = df[df.lifetime &gt; 15] # only keep hard tracks
+            elif not lifetime_threshold == 15:
+                df = df[df.lifetime &gt; lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
@@ -531,8 +540,11 @@ Removes metadata + time-series columns + outcomes</p></section>
             # downsample tracks
             df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
                                    for i in range(len(df))] # downsampling
+            df[&#39;X_same_length_extended&#39;] = [features.downsample(df.iloc[i][&#39;X_extended&#39;], length, padding=padding)
+                                            for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track=&#39;X_same_length&#39;, by_time_point=False)
+            df = features.normalize_track(df, track=&#39;X_same_length_extended&#39;, by_time_point=False)
 
             # regression response
             df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     

@@ -25,9 +25,10 @@ import train_reg
 
 def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                       splits=['test'],
-                      meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
+                      meta=None,
                       length=40,
                       normalize=True,
+                      lifetime_threshold=15,
                       filter_short=True,
                       padding='end'):
     '''Loads dataframes preprocessed ready for LSTM
@@ -36,10 +37,12 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
-            if filter_short:
+            if filter_short and lifetime_threshold == 15:
                 df = df[~(df.short | df.long | df.hotspots)]
         #         df = df[df.valid]
                 df = df[df.lifetime > 15] # only keep hard tracks
+            elif not lifetime_threshold == 15:
+                df = df[df.lifetime > lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
@@ -48,8 +51,11 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
             # downsample tracks
             df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length, padding=padding)
                                    for i in range(len(df))] # downsampling
+            df['X_same_length_extended'] = [features.downsample(df.iloc[i]['X_extended'], length, padding=padding)
+                                            for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track='X_same_length', by_time_point=False)
+            df = features.normalize_track(df, track='X_same_length_extended', by_time_point=False)
 
             # regression response
             df = train_reg.add_sig_mean(df, resp_tracks=['Y'])     
