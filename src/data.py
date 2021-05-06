@@ -45,11 +45,11 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                 df = df[df.lifetime > lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
-            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # select train/test etc.
             feat_names = ['X_same_length_normalized'] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df['X_same_length'] = [features.downsample(df.iloc[i]['X'], length, padding=padding)
+            df['X_same_length'] = [features.downsample(df.iloc[i]['X'],length, padding=padding)
                                    for i in range(len(df))] # downsampling
             df['X_same_length_extended'] = [features.downsample(df.iloc[i]['X_extended'], length, padding=padding)
                                             for i in range(len(df))] # downsampling

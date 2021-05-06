@@ -43,6 +43,7 @@ if __name__ == '__main__':
     for lifetime_threshold in [5, 10, 15]:
         dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, 
                                                  splits=splits, 
+                                                 lifetime_threshold=lifetime_threshold,
                                                  length=length,
                                                  padding=padding)
         df_full = pd.concat([dfs[(k, s)]
@@ -54,4 +55,4 @@ if __name__ == '__main__':
         dnn.fit(df_full[[feat_name]],
                 df_full[outcome].values,
                 verbose=True, checkpoint_fname=checkpoint_fname, device='cuda')
-        pkl.dump({'model_state_dict': dnn.model.state_dict()}, open(checkpoint_fname, 'wb'))
+        pkl.dump({'model_state_dict': dnn.model.cpu().state_dict()}, open(checkpoint_fname, 'wb'))
