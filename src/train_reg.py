@@ -72,27 +72,6 @@ def log_transforms(df):
                                        axis=1)
     return df
 
-def add_sig_mean(df, resp_tracks=['Y']):
-    """
-    add response of regression problem: mean auxilin strength among significant observations
-    """
-    for track in resp_tracks:
-        sig_mean = []
-        for i in range(len(df)):
-            r = df.iloc[i]
-            sigs = np.array(r[f'{track}_pvals']) < 0.05
-            if sum(sigs)>0:
-                sig_mean.append(np.mean(np.array(r[track])[sigs]))
-            else:
-                sig_mean.append(0)
-        df[f'{track}_sig_mean'] = sig_mean
-        df[f'{track}_sig_mean_normalized'] = sig_mean
-        for cell in set(df['cell_num']):
-            cell_idx = np.where(df['cell_num'].values == cell)[0]
-            y = df[f'{track}_sig_mean'].values[cell_idx]
-            df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
-    return df
-
 
 def train_reg(df, 
               feat_names, 

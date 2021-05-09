@@ -115,3 +115,54 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
     df = add_rule_based_label(df)
 
     return df
+
+def add_sig_mean(df, resp_tracks=['Y']):
+    """add response of regression problem: mean auxilin strength among significant observations
+    """
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f'{track}_pvals']) < 0.05
+            if sum(sigs)>0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f'{track}_sig_mean'] = sig_mean
+        df[f'{track}_sig_mean_normalized'] = sig_mean
+        for cell in set(df['cell_num']):
+            cell_idx = np.where(df['cell_num'].values == cell)[0]
+            y = df[f'{track}_sig_mean'].values[cell_idx]
+            df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df
+
+def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1100):
+    """add response of regression problem: mean auxilin strength among significant observations
+    """
+    # outcomes based on significant p-values
+    
+    df['clath_conservative_thresh'] = (df['X_max'].values > clath_thresh).astype(np.int)
+    df['successful'] = np.logical_and(df['y_consec_thresh'], df['clath_conservative_thresh'])
+
+    # look for dynamin peak
+#     print(df.keys())
+    if 'Z' in df.keys():
+        num_sigs = [np.array(df['Z_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
+        z_consec_sig = []
+        for i in range(df.shape[0]):
+            idxs_sig = np.where(num_sigs[i] == 1)[0]  # indices of significance
+                
+            # find whether there were consecutive sig. indices
+            if len(idxs_sig) > 1 and np.min(np.diff(idxs_sig)) == 1:
+                z_consec_sig.append(1)
+            else:
+                z_consec_sig.append(0)
+        df['z_consec_sig'] = z_consec_sig
+        df['Z_max'] = [np.max(df.iloc[i]['Z']) for i in range(df.shape[0])]
+        df['z_thresh'] = df['Z_max'] > dyn_thresh
+        df['z_consec_thresh'] = np.logical_or(df['z_consec_sig'], df['z_thresh'])
+        
+        df['successful'] = np.logical_or(df['y_consec_thresh'],
+                                         np.logical_and(df['clath_conservative_thresh'],
+                                                        df['z_consec_thresh']))
+    return df

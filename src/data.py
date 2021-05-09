@@ -59,7 +59,7 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
             df = features.normalize_track(df, track='X_same_length_extended', by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df, resp_tracks=['Y'])     
+            df = outcomes.add_sig_mean(df, resp_tracks=['Y'])     
 
             # remove extraneous feats
             # df = df[feat_names + meta]
