@@ -37,8 +37,9 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
+            df = df[~df.hotspots]
             if filter_short and lifetime_threshold == 15:
-                df = df[~(df.short | df.long | df.hotspots)]
+#                 df = df[~(df.short | df.long)]
         #         df = df[df.valid]
                 df = df[df.lifetime > 15] # only keep hard tracks
             elif not lifetime_threshold == 15:
