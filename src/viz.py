@@ -327,7 +327,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 fig=None, ylim_constant=False, background=False, ylim_cla=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None, three_axes=True):
+                yticks=None, yticklabels=None, three_axes=True, show_track_pid=False):
     '''Plot time-series curves from df
     '''
     DIFF = 0
@@ -392,6 +392,11 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 twin2 = ax.twinx()
                 twin2.spines['right'].set_visible(True)
                 twin2.spines['right'].set_position(("axes", 1.2))
+                
+                if show_track_pid:
+                    ax.text(.5, .9, f'{row.pid}', # row.pid
+                            horizontalalignment='right',
+                            transform=ax.transAxes)
                 
                 if plot_x:
                     p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr, alpha=.1, label='Clathrin')
