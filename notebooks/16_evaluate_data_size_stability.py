@@ -30,13 +30,13 @@ import pickle as pkl
 
 if __name__ == '__main__':
     
-    
+    outcome_def = 'successful_dynamin'
     print("loading data")
     dsets = ['clath_aux_dynamin']
     splits = ['train', 'test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh']
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', outcome_def]
     dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, 
                                              splits=splits, 
                                              meta=meta,
@@ -49,7 +49,7 @@ if __name__ == '__main__':
     X1 = df_test[feat_names[:1]]
     X2 = df_test[feat_names[1:]]
     X2 = X2.fillna(X2.mean())
-    y = df_test['y_consec_thresh'].values
+    y = df_test[outcome_def].values
     accuracy = {}
     for k in [1, 2, 5, 10]:
         for j in tqdm(range(10)):
@@ -66,6 +66,6 @@ if __name__ == '__main__':
             preds = m.predict(X2)
             accuracy[(k, j, 'gb')] = np.mean(y == (preds > 0))   
             
-    pkl.dump(accuracy, open('../reports/data_size_stability_10.pkl', 'wb'))
+    pkl.dump(accuracy, open(f'../reports/data_size_stability_10_{outcome_def}.pkl', 'wb'))
 
             

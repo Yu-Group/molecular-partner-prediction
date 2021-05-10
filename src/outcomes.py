@@ -136,23 +136,32 @@ def add_sig_mean(df, resp_tracks=['Y']):
             df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
-def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1500):
+def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000, dyn_cons_thresh=5):
     """add response of regression problem: mean auxilin strength among significant observations
     """
     # outcomes based on significant p-values
     
     df['clath_conservative_thresh'] = (df['X_max'].values > clath_thresh).astype(np.int)
     df['successful'] = np.logical_and(df['y_consec_thresh'], df['clath_conservative_thresh'])
-
+    df['successful_dynamin'] = df['successful']
+    
     # look for dynamin peak
     if 'Z' in df.keys():
         num_sigs = [np.array(df['Z_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
         z_consec_sig = []
         for i in range(df.shape[0]):
-            idxs_sig = np.where(num_sigs[i] == 1)[0]  # indices of significance
-                
-            # find whether there were consecutive sig. indices
-            if len(idxs_sig) > 1 and np.min(np.diff(idxs_sig)) == 1:
+            sigs = num_sigs[i]
+            cons = 0
+            consec_flag = False
+            for j in range(len(sigs)):
+                if sigs[j] == 1:
+                    cons += 1
+                else:
+                    cons = 0
+                if cons >= dyn_cons_thresh:
+                    consec_flag = True
+                    break
+            if consec_flag:
                 z_consec_sig.append(1)
             else:
                 z_consec_sig.append(0)
@@ -160,8 +169,12 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1500):
         df['Z_max'] = [np.max(df.iloc[i]['Z']) for i in range(df.shape[0])]
         df['z_thresh'] = df['Z_max'] > dyn_thresh
         df['z_consec_thresh'] = np.logical_and(df['z_consec_sig'], df['z_thresh'])
-        
-        df['successful_dynamin'] = np.logical_or(df['y_consec_thresh'],
-                                         np.logical_and(df['clath_conservative_thresh'],
-                                                        df['z_consec_thresh']))
+        df['Y_peak_idx'] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+        df['Z_peak_idx'] = np.nan_to_num(np.array([np.argmax(z) for z in df.Z]))
+        df['z_peaked_first'] = df['Z_peak_idx'] < df['Y_peak_idx']
+        df['z_peak'] = np.logical_and(df['z_consec_thresh'], df['z_peaked_first'])
+        df['successful_dynamin'] = np.logical_or(
+            df['successful'],
+            np.logical_and(df['clath_conservative_thresh'], df['z_peak'])
+        )
     return df
