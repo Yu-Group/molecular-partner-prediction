@@ -64,12 +64,13 @@ if __name__ == '__main__':
     
     print("loading data")
     outcome_def = 'successful'
-    dsets = ['clath_aux+gak_a7d2', 'clath_aux+gak', 'clath_aux+gak_a7d2_new', 'clath_aux+gak_new', 'clath_gak']
+    dsets = ['clath_aux+gak_a7d2', 'clath_aux+gak', 'clath_aux+gak_a7d2_new', 'clath_aux+gak_new', 
+             'clath_gak', 'clath_aux_dynamin']
     splits = ['train', 'test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
     meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh']
-    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta, normalize=False)
+    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta)
 
     df_full = pd.concat([dfs[(k, s)]
                      for (k, s) in dfs
@@ -85,6 +86,7 @@ if __name__ == '__main__':
     np.random.seed(42)
     
     print("computing predictions for gb + rf + svm")
+    
     for model_type in ['gb', 'rf', 'ridge', 'svm']:
         
         if model_type == 'rf':
@@ -112,19 +114,20 @@ if __name__ == '__main__':
             for i, (k, v) in enumerate(ds.keys()):
                 if v == 'test':
                     df = ds[(k, v)]
-                    if k == 'clath_aux+gak_a7d2_new':
-                        df = df.dropna()
+                    #if k == 'clath_aux+gak_a7d2_new':
+                    #    df = df.dropna()
                     X = df[feat_set]
+                    X = X.fillna(X.mean())
                     #y = df['Y_sig_mean_normalized']
                     y_reg = df['Y_sig_mean_normalized'].values
                     y = df[outcome_def].values
                     preds = m.predict(X)
                     get_all_scores(y, preds, y_reg, df)                        
-                    
+                            
     print("computing predictions for lstm")                 
                     
     models.append('lstm')
-    results = pkl.load(open('../models/dnn_full_long_normalized_across_track_1_feat.pkl', 'rb'))
+    results = pkl.load(open('../models/dnn_full_long_normalized_across_track_1_feat_dynamin.pkl', 'rb'))
     dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
     dnn.model.load_state_dict(results['model_state_dict'])
     for i, (k, v) in enumerate(ds.keys()):
@@ -133,7 +136,7 @@ if __name__ == '__main__':
             X = df[feat_names[:1]]
             y_reg = df['Y_sig_mean_normalized'].values
             y = df[outcome_def].values
-            preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)                               
+            preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)   
             get_all_scores(y, preds, y_reg, df)
                     
                     
