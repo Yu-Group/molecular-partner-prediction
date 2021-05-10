@@ -136,7 +136,7 @@ def add_sig_mean(df, resp_tracks=['Y']):
             df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
-def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1100):
+def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1500):
     """add response of regression problem: mean auxilin strength among significant observations
     """
     # outcomes based on significant p-values
@@ -160,7 +160,7 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1100):
         df['z_consec_sig'] = z_consec_sig
         df['Z_max'] = [np.max(df.iloc[i]['Z']) for i in range(df.shape[0])]
         df['z_thresh'] = df['Z_max'] > dyn_thresh
-        df['z_consec_thresh'] = np.logical_or(df['z_consec_sig'], df['z_thresh'])
+        df['z_consec_thresh'] = np.logical_and(df['z_consec_sig'], df['z_thresh'])
         
         df['successful'] = np.logical_or(df['y_consec_thresh'],
                                          np.logical_and(df['clath_conservative_thresh'],

@@ -60,6 +60,7 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
 
             # regression response
             df = outcomes.add_sig_mean(df, resp_tracks=['Y'])     
+            df = outcomes.add_aux_dyn_outcome(df)
 
             # remove extraneous feats
             # df = df[feat_names + meta]

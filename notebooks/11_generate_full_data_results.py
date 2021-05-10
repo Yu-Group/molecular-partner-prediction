@@ -63,6 +63,7 @@ if __name__ == '__main__':
     
     
     print("loading data")
+    outcome_def = 'successful'
     dsets = ['clath_aux+gak_a7d2', 'clath_aux+gak', 'clath_aux+gak_a7d2_new', 'clath_aux+gak_new', 'clath_gak']
     splits = ['train', 'test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
@@ -84,7 +85,6 @@ if __name__ == '__main__':
     np.random.seed(42)
     
     print("computing predictions for gb + rf + svm")
-    
     for model_type in ['gb', 'rf', 'ridge', 'svm']:
         
         if model_type == 'rf':
@@ -117,10 +117,10 @@ if __name__ == '__main__':
                     X = df[feat_set]
                     #y = df['Y_sig_mean_normalized']
                     y_reg = df['Y_sig_mean_normalized'].values
-                    y = df['y_consec_thresh'].values
+                    y = df[outcome_def].values
                     preds = m.predict(X)
                     get_all_scores(y, preds, y_reg, df)                        
-                            
+                    
     print("computing predictions for lstm")                 
                     
     models.append('lstm')
@@ -132,14 +132,14 @@ if __name__ == '__main__':
             df = ds[(k, v)]
             X = df[feat_names[:1]]
             y_reg = df['Y_sig_mean_normalized'].values
-            y = df['y_consec_thresh'].values
-            preds = dnn.predict(X)
+            y = df[outcome_def].values
+            preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)                               
             get_all_scores(y, preds, y_reg, df)
                     
                     
     dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
-    dataset_level_res.to_csv("../reports/dataset_level_res.csv")
+    dataset_level_res.to_csv(f"../reports/dataset_level_res_{outcome_def}.csv")
     
     cell_level_res = pd.DataFrame(cell_level_res, index=models)
-    cell_level_res.to_csv("../reports/cell_level_res.csv")
+    cell_level_res.to_csv(f"../reports/cell_level_res_{outcome_def}.csv")
 
