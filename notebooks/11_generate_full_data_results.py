@@ -34,7 +34,7 @@ def get_all_scores(y, preds, y_reg, df):
     
     for metric in scorers:
         if 'accuracy' in metric:
-            acc = scorers[metric](y, (preds > 0))                   
+            acc = scorers[metric](y, np.logical_and((preds > 0), df['X_max_orig'].values > 1500).astype(int))                   
             dataset_level_res[f'{k}_{metric}'].append(acc)
         elif metric == 'roc_auc':
             dataset_level_res[f'{k}_{metric}'].append(scorers[metric](y, preds))
@@ -50,7 +50,7 @@ def get_all_scores(y, preds, y_reg, df):
         preds_cell = preds[cell_idx]
         for metric in scorers:
             if 'accuracy' in metric:
-                acc = scorers[metric](y_cell, (preds_cell > 0))                   
+                acc = scorers[metric](y_cell, np.logical_and((preds_cell > 0), df['X_max_orig'].values[cell_idx] > 1500).astype(int))              
                 cell_level_res[f'{cell}_{metric}'].append(acc)
             elif metric == 'roc_auc':
                 cell_level_res[f'{cell}_{metric}'].append(scorers[metric](y_cell, preds_cell))
@@ -69,7 +69,7 @@ if __name__ == '__main__':
     splits = ['train', 'test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh']
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh', 'X_max_orig']
     dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta)
 
     df_full = pd.concat([dfs[(k, s)]
@@ -136,7 +136,8 @@ if __name__ == '__main__':
             X = df[feat_names[:1]]
             y_reg = df['Y_sig_mean_normalized'].values
             y = df[outcome_def].values
-            preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)   
+            #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
+            preds = dnn.predict(X)
             get_all_scores(y, preds, y_reg, df)
                     
                     

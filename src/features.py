@@ -435,7 +435,7 @@ def normalize_feature(df, feat):
         cell_idx = np.where(df['cell_num'].values == cell)[0]
         y = df[feat].values[cell_idx]
             #y = np.array(list(y))
-        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+        df[feat].values[cell_idx] = (y - np.nanmean(y))/np.nanstd(y)
     return df
 
 def normalize_video(df, video='X_video'):
