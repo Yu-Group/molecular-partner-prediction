@@ -327,7 +327,8 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 fig=None, ylim_constant=False, background=False, ylim_cla=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None, three_axes=True, show_track_pid=False):
+                yticks=None, yticklabels=None, three_axes=True, show_track_pid=False,
+                axes_invisible=False):
     '''Plot time-series curves from df
     '''
     DIFF = 0
@@ -489,6 +490,16 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     else:
                         print(xlim)
                         plt.xlim(xlim)
+                        
+                if axes_invisible:
+                    ax.yaxis.set_visible(False)
+                    ax.xaxis.set_visible(False)
+                    twin1.yaxis.set_visible(False)
+                    twin1.spines['left'].set_color('w')
+                    twin2.spines['left'].set_color('w')
+                    twin2.yaxis.set_visible(False)
+                    twin1.spines['right'].set_color('w')
+                    twin2.spines['right'].set_color('w')
                 
                 
             #plt.yscale('log')                  
