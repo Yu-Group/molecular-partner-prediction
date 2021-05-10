@@ -161,7 +161,7 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1500):
         df['z_thresh'] = df['Z_max'] > dyn_thresh
         df['z_consec_thresh'] = np.logical_and(df['z_consec_sig'], df['z_thresh'])
         
-        df['successful'] = np.logical_or(df['y_consec_thresh'],
+        df['successful_dynamin'] = np.logical_or(df['y_consec_thresh'],
                                          np.logical_and(df['clath_conservative_thresh'],
                                                         df['z_consec_thresh']))
     return df
