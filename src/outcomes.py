@@ -145,7 +145,6 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=1500):
     df['successful'] = np.logical_and(df['y_consec_thresh'], df['clath_conservative_thresh'])
 
     # look for dynamin peak
-#     print(df.keys())
     if 'Z' in df.keys():
         num_sigs = [np.array(df['Z_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
         z_consec_sig = []

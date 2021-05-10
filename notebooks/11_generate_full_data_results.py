@@ -69,7 +69,7 @@ if __name__ == '__main__':
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
     meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'y_consec_thresh']
-    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta)
+    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, splits=splits, meta=meta, normalize=False)
 
     df_full = pd.concat([dfs[(k, s)]
                      for (k, s) in dfs
