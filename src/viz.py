@@ -718,7 +718,7 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     argsf = np.argsort(df.lifetime.values)
     accsf = (1 - df[outcome_def]).values[argsf]
     n = df.shape[0]
-    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label='No model', color='gray')
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label='Predicting all abortive', color='gray')
     print('accsf', np.sum(accsf))
     
     # short
@@ -733,16 +733,17 @@ def cumulative_acc_plot_all(df, pred_proba_key='preds_proba', pred_key='preds',
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='With model', color=cb)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label='LSTM', color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color='black')
     
-    
+#     dvu.line_legend()
     plt.xlabel('Percentage of tracks included (sorted by uncertainty)')
     plt.ylabel('Accuracy')
     ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
     ax.xaxis.set_ticklabels([str(int(x)) + '%' for x in np.arange(0, 101, 100/5)])
-    plt.legend(fontsize='x-large', frameon=False)
+    plt.legend(fontsize='x-large', frameon=False, labelcolor='linecolor')
+    
     plt.grid(alpha=0.2)
     plt.tight_layout()
 
