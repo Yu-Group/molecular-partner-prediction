@@ -319,15 +319,14 @@ def plot_background(interval, bg, trace, color, ax):
                                                  ax=ax, 
                                                  color=color,
                                                  lsty=lsty)
-
-
+        
 def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
                 xlim=None,
                 fig=None, ylim_constant=False, background=False, ylim_cla=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None, three_axes=True, show_track_pid=False,
+                yticks=None, yticklabels=None, num_axes=3, show_track_pid=False,
                 axes_invisible=False):
     '''Plot time-series curves from df
     '''
@@ -345,7 +344,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
             else:
                 interval = 1
                 
-            if not three_axes:
+            if num_axes == 1:
                 if plot_x:
                     plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr)
                     plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg)
@@ -387,20 +386,28 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 if yticks is not None:
                         plt.yticks(yticks, labels=yticklabels)
                     
-            elif three_axes:
+            else:
                 ax.spines['right'].set_visible(True)
                 twin1 = ax.twinx()
-                twin2 = ax.twinx()
-                twin2.spines['right'].set_visible(True)
-                twin2.spines['right'].set_position(("axes", 1.2))
-                
+                if num_axes == 3:
+                    twin2 = ax.twinx()
+                    twin2.spines['right'].set_visible(True)
+                    twin2.spines['right'].set_position(("axes", 1.2))
+                else:
+                    twin2 = twin1
                 if show_track_pid:
                     ax.text(.5, .9, f'{row.pid}', # row.pid
                             horizontalalignment='right',
-                            transform=ax.transAxes)
-                
+                            transform=ax.transAxes)                    
+
                 if plot_x:
-                    p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr, alpha=.1, label='Clathrin')
+                    p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle='--', color=cr, alpha=.1)
+                    if i == 0:
+                        ax.text(x=interval * len(row.X_extended),
+                            y=np.array(row.X_extended)[-1],
+                            s='CLTA-TagRFP',
+                            color=cr,
+                            size=8)
                     if background:
                         plot_background(interval, row.X_sigma_extended, row.X_extended, color=cr, ax=ax)
                                
@@ -416,21 +423,28 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                                      )  
 
                     
-                    p2, = twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg, alpha=.1, label='Auxilin')
+                    p2, = twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle='--', color=cg, alpha=.1)
                     
                     if background:
-                        plot_background(interval, row.Y_sigma_extended, row.Y_extended, color=cg, ax=twin1)
+                        plot_background(interval, row.Y_sigma_extended, row.Y_extended, color=cg, ax=twin1
+                                       )
                                
                     else:
-                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='Auxilin')                     
+                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='EGFP-Aux1-GAK-F6')                     
                     if i == 0 and legend:
                         dvu.line_legend()                                     
                     twin1.fill_between(interval * np.arange(len(row.Y_extended)),
                                      np.array(row.Y_extended) - np.array(row.Y_std_extended),
                                      np.array(row.Y_extended) + np.array(row.Y_std_extended),
-                                     alpha=.1,
+                                     alpha=.2,
                                      color=cg
-                                     )                    
+                                     )  
+                    if i == 0:
+                        twin1.text(x=interval * len(row.Y_extended),
+                              y=np.array(row.Y_extended)[-1],
+                              s='EGFP-Aux1-GAK-F6',
+                              color=cg,
+                              size=8)                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')
                     #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle='--', color=cg, label='Auxilin') 
                     if hline:
@@ -441,29 +455,37 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                             extra_key_label = 'Dynamin'
                         else:
                             extra_key_label = extra_key
-                    p3, = twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_extended) + DIFF, linestyle='--', color='gray', alpha=.1, label='Dynamin')
+                    p3, = twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_extended) + DIFF, linestyle='--', color='gray', alpha=.1)
                     
                     if background:
                         plot_background(interval, row.Z_sigma_extended, row.Z_extended, color='gray', ax=twin2)
                                
                     else:
-                        twin2.plot(interval * np.arange(5, len(row.Z_extended)-5), np.array(row.Z_extended)[5:(-5)] + DIFF, color='gray', label='Dynamin')
+                        twin2.plot(interval * np.arange(5, len(row.Z_extended)-5), np.array(row.Z_extended)[5:(-5)] + DIFF, color='gray')
                     twin2.fill_between(interval * np.arange(len(row.Z_extended)),
                                      np.array(row.Z_extended) - np.array(row.Z_std_extended),
                                      np.array(row.Z_extended) + np.array(row.Z_std_extended),
                                      alpha=.1,
                                      color='gray'
-                                     )                           
+                                     )
+                    if i == 0:
+                        twin2.text(x=interval * len(row.Z_extended),
+                              y=np.array(row.Z_extended)[-1]-500,
+                              s='Dyn2-Halo-E1-JF646',
+                              color='gray',
+                              size=8)                    
                     #if i == 0 and legend:
                     #    dvu.line_legend()                    
                 tkw = dict(size=4, width=1.5)
                 ax.spines['right'].set_color(cg)
                 ax.tick_params(axis='y', colors=cr, labelsize=6, **tkw)
                 twin1.spines['left'].set_color(cr)
-                twin2.spines['left'].set_color(cr)
                 ax.spines['left'].set_color(cr)
-                #twin1.spines['left'].set_color(cg)  
-                twin2.spines['right'].set_color(p3.get_color())  
+                #twin1.spines['left'].set_color(cg)
+                if num_axes == 3:
+                    twin2.spines['left'].set_color(cr)
+                    twin2.spines['right'].set_color(p3.get_color())  
+                    twin2.tick_params(axis='y', colors=p3.get_color(), labelsize=6, **tkw)
                 if ylim_constant:
                     ax.set_ylim(ylim_cla)
                     twin1.set_ylim(ylim_aux)
@@ -474,23 +496,34 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     p3_ylim = twin2.get_ylim()
                     ylim_min = min(p2_ylim[0], p3_ylim[0])
                     twin1.set_ylim((ylim_min, 2*p2_ylim[1]))
-                    twin2.set_ylim((ylim_min, 2*p3_ylim[1]))                
+                    twin2.set_ylim((ylim_min, 3*p3_ylim[1]))   
+                
+                p1_ylim = ax.get_ylim() 
+                ax.set_ylim((- 2 * p1_ylim[1], p1_ylim[1])) 
+                
+                p2_ylim = twin1.get_ylim() 
+                twin1.set_ylim((- 0.5 * p2_ylim[1], p2_ylim[1])) 
+                
+                #p3_ylim = twin2.get_ylim() 
+                #twin1.set_ylim((- 0.5 * p3_ylim[1], p3_ylim[1]))  
+                
                 twin1.tick_params(axis='y', colors=cg, labelsize=6, **tkw)
-                twin2.tick_params(axis='y', colors=p3.get_color(), labelsize=6, **tkw)
+                
                 ax.tick_params(axis='x', **tkw)
                 yticks = twin1.get_yticks()
                 #if len(yticks) > 5:
                 twin1.set_yticks(yticks[np.arange(1, len(yticks), 2)])
-                yticks = twin2.get_yticks()
-                if len(yticks) > 5:
-                    twin2.set_yticks(yticks[np.arange(1, len(yticks), 2)])                   
+                if num_axes == 3:
+                    yticks = twin2.get_yticks()
+                    if len(yticks) > 5:
+                        twin2.set_yticks(yticks[np.arange(1, len(yticks), 2)])                   
                 if xlim_constant:
                     if xlim is None:
                         plt.xlim([-1, lifetime_max + 16])
                     else:
                         print(xlim)
                         plt.xlim(xlim)
-                        
+                
                 if axes_invisible:
                     ax.yaxis.set_visible(False)
                     ax.xaxis.set_visible(False)
@@ -501,7 +534,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     twin1.spines['right'].set_color('w')
                     twin2.spines['right'].set_color('w')
                 
-                
+                                
             #plt.yscale('log')                  
             
 
@@ -509,10 +542,10 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
 
             
 #         plt.legend()
+
     plt.tight_layout()
     if fig is None:
-        plt.show()
-
+        plt.show()        
 
 
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
@@ -835,6 +868,7 @@ def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
     for i in range(len(df)):
         
         cell_num = df.cell_num.iloc[i]
+        fr, h, w = raw_videos[cell_num]['cla'].shape
         pid = df.pid.iloc[i]
         videos[pid] = {}
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
@@ -846,9 +880,11 @@ def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
             
         for j in range(lt):
             for m in ['cla', 'aux', 'dyn']:
+                crop_y_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1)))
+                crop_x_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)))
                 videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
-                            [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                            [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+                            [crop_y_pos, :] \
+                            [:, crop_x_pos])
             
                 # normalize by the min/max intensities
                 #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
