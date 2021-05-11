@@ -510,6 +510,10 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 twin1.tick_params(axis='y', colors=cg, labelsize=6, **tkw)
                 
                 ax.tick_params(axis='x', **tkw)
+                yticks = ax.get_yticks()
+                #if len(yticks) > 5:
+                ax.set_yticks([yt for yt in yticks if yt >= 0])
+                
                 yticks = twin1.get_yticks()
                 #if len(yticks) > 5:
                 twin1.set_yticks(yticks[np.arange(1, len(yticks), 2)])
