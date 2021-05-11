@@ -136,14 +136,42 @@ def add_sig_mean(df, resp_tracks=['Y']):
             df[f'{track}_sig_mean_normalized'].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df
 
-def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000, dyn_cons_thresh=5):
+def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
+                        dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.25):
     """add response of regression problem: mean auxilin strength among significant observations
     """
-    # outcomes based on significant p-values
     
+    # look for clathrin significance
+    num_sigs = [np.array(df['X_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
+    x_consec_sig = []
+    x_frac_sig = []
+    for i in range(df.shape[0]):
+        l = df.lifetime.iloc[i]
+        sigs = num_sigs[i]
+        x_frac_sig.append(np.mean(sigs) >= clath_sig_frac)
+        cons = 0
+        consec_flag = False
+        for j in range(len(sigs)):
+            if sigs[j] == 1:
+                cons += 1
+            else:
+                cons = 0
+            if cons >= l * clath_consec_thresh_frac:
+                consec_flag = True
+                break
+        if consec_flag:
+            x_consec_sig.append(1)
+        else:
+            x_consec_sig.append(0)
+    
+    
+    # outcomes based on significant p-values
     df['clath_conservative_thresh'] = (df['X_max'].values > clath_thresh).astype(np.int)
+    df['clath_sig'] = np.logical_and(x_consec_sig, x_frac_sig)
     df['successful'] = np.logical_and(df['y_consec_thresh'], df['clath_conservative_thresh'])
     df['successful_dynamin'] = df['successful']
+    df['successful_full'] = np.logical_and(df['clath_sig'], df['successful_dynamin'])
+    
     
     # look for dynamin peak
     if 'Z' in df.keys():
@@ -177,4 +205,5 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000, d
             df['successful'],
             np.logical_and(df['clath_conservative_thresh'], df['z_peak'])
         )
+        df['successful_full'] = np.logical_and(df['clath_sig'], df['successful_dynamin'])
     return df

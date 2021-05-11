@@ -63,7 +63,7 @@ if __name__ == '__main__':
     
     
     print("loading data")
-    outcome_def = 'successful_dynamin'
+    outcome_def = 'successful_full'
     dsets = ['clath_aux+gak_a7d2', 'clath_aux+gak', 'clath_aux+gak_a7d2_new', 'clath_aux+gak_new', 
              'clath_gak', 'clath_aux_dynamin']
     splits = ['train', 'test']
