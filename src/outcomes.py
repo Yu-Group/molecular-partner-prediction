@@ -137,7 +137,7 @@ def add_sig_mean(df, resp_tracks=['Y']):
     return df
 
 def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
-                        dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.25):
+                        dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.15):
     """add response of regression problem: mean auxilin strength among significant observations
     """
     
@@ -145,8 +145,9 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
     num_sigs = [np.array(df['X_pvals'].iloc[i]) < p_thresh for i in range(df.shape[0])]
     x_consec_sig = []
     x_frac_sig = []
+    lifetime_steps = np.array([len(df['X'].iloc[i]) for i in range(df.shape[0])]) # get lifetimes
     for i in range(df.shape[0]):
-        l = df.lifetime.iloc[i]
+        l = lifetime_steps[i]
         sigs = num_sigs[i]
         x_frac_sig.append(np.mean(sigs) >= clath_sig_frac)
         cons = 0
@@ -201,6 +202,11 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
         df['Z_peak_idx'] = np.nan_to_num(np.array([np.argmax(z) for z in df.Z]))
         df['z_peaked_first'] = df['Z_peak_idx'] < df['Y_peak_idx']
         df['z_peak'] = np.logical_and(df['z_consec_thresh'], df['z_peaked_first'])
+        
+        # peaks must happen at end of track
+        df['z_peak'] =  np.logical_and(df['z_peak'], df['Z_peak_idx'] > lifetime_steps / 2)
+        
+        
         df['successful_dynamin'] = np.logical_or(
             df['successful'],
             np.logical_and(df['clath_conservative_thresh'], df['z_peak'])
