@@ -157,7 +157,7 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
                 cons += 1
             else:
                 cons = 0
-            if cons >= l * clath_consec_thresh_frac:
+            if cons >= max(l * clath_consec_thresh_frac, 5):
                 consec_flag = True
                 break
         if consec_flag:
@@ -212,4 +212,5 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
             np.logical_and(df['clath_conservative_thresh'], df['z_peak'])
         )
         df['successful_full'] = np.logical_and(df['clath_sig'], df['successful_dynamin'])
+        
     return df
