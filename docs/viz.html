@@ -314,24 +314,46 @@ def plot_above_threshold(x1, y1, b1, x2, y2, b2, ax, color, lsty):
     if y1 &gt;= b1 and y2 &gt;= b2:
         ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=1)
     elif y1 &lt; b1 and y2 &lt; b2:
-        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.2) 
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.1) 
     elif y1 &gt;= b1 and y2 &lt; b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
         ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=1)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.2)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.1)
     elif y1 &lt; b1 and y2 &gt;= b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
-        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.2)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1)        
-
-
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.1)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1) 
+        
+def plot_background(interval, bg, trace, color, ax):
+    ax.fill_between(interval * np.arange(len(bg)), 
+                                        [0] * len(bg),
+                                        2 * np.array(bg), 
+                                        alpha=.1,
+                                        color=color) 
+                        
+    x, y, lt = np.arange(len(trace)), np.array(trace), len(trace)
+    #ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
+    bg = 2 * np.array(bg)
+    for f in range(lt - 1):
+        lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
+        plot_above_threshold(x1=interval*x[f], 
+                             y1=y[f], 
+                                                 b1=bg[f], 
+                                                 x2=interval*x[f+1], 
+                                                 y2=y[f+1], 
+                                                 b2=bg[f+1], 
+                                                 ax=ax, 
+                                                 color=color,
+                                                 lsty=lsty)
+        
 def plot_curves(df, extra_key=None, extra_key_label=None,
                 hline=True, R=5, C=8,
                 xlim=None,
                 fig=None, ylim_constant=False, background=False, ylim_cla=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None, three_axes=True):
+                yticks=None, yticklabels=None, num_axes=3, show_track_pid=False,
+                axes_invisible=False):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     DIFF = 0
@@ -348,7 +370,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
             else:
                 interval = 1
                 
-            if not three_axes:
+            if num_axes == 1:
                 if plot_x:
                     plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr)
                     plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
@@ -390,40 +412,33 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 if yticks is not None:
                         plt.yticks(yticks, labels=yticklabels)
                     
-            elif three_axes:
+            else:
                 ax.spines[&#39;right&#39;].set_visible(True)
                 twin1 = ax.twinx()
-                twin2 = ax.twinx()
-                twin2.spines[&#39;right&#39;].set_visible(True)
-                twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
-                
-                if plot_x:
+                if num_axes == 3:
+                    twin2 = ax.twinx()
+                    twin2.spines[&#39;right&#39;].set_visible(True)
+                    twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
+                else:
+                    twin2 = twin1
+                if show_track_pid:
+                    ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)                    
 
+                if plot_x:
+                    p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, alpha=.1)
+                    if i == 0:
+                        ax.text(x=interval * len(row.X_extended),
+                            y=np.array(row.X_extended)[-1],
+                            s=&#39;CLTA-TagRFP&#39;,
+                            color=cr,
+                            size=8)
                     if background:
-                        ax.fill_between(interval * np.arange(len(row.X_sigma_extended)), 
-                                        [0] * len(row.X_sigma_extended),
-                                        2 * np.array(row.X_sigma_extended), 
-                                        alpha=.2,
-                                        color=cr) 
-                        
-                        x, y, lt = np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, len(row.X_extended)
-                        p1, = ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
-                        bg = 2 * np.array(row.X_sigma_extended)
-                        for f in range(lt - 1):
-                            lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
-                            plot_above_threshold(x1=interval*x[f], 
-                                                 y1=y[f], 
-                                                 b1=bg[f], 
-                                                 x2=interval*x[f+1], 
-                                                 y2=y[f+1], 
-                                                 b2=bg[f+1], 
-                                                 ax=ax, 
-                                                 color=cr,
-                                                 lsty=lsty)
+                        plot_background(interval, row.X_sigma_extended, row.X_extended, color=cr, ax=ax)
                                
                     else:
-                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, linewidth=2)
-                        p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)  
+                        ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr)  
                     if i == 0 and legend:
                         dvu.line_legend()                        
                     ax.fill_between(interval * np.arange(len(row.X_extended)),
@@ -434,8 +449,14 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                                      )  
 
                     
-                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
-                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    p2, = twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg, alpha=.1)
+                    
+                    if background:
+                        plot_background(interval, row.Y_sigma_extended, row.Y_extended, color=cg, ax=twin1
+                                       )
+                               
+                    else:
+                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;EGFP-Aux1-GAK-F6&#39;)                     
                     if i == 0 and legend:
                         dvu.line_legend()                                     
                     twin1.fill_between(interval * np.arange(len(row.Y_extended)),
@@ -443,7 +464,13 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                                      np.array(row.Y_extended) + np.array(row.Y_std_extended),
                                      alpha=.2,
                                      color=cg
-                                     )                    
+                                     )  
+                    if i == 0:
+                        twin1.text(x=interval * len(row.Y_extended),
+                              y=np.array(row.Y_extended)[-1],
+                              s=&#39;EGFP-Aux1-GAK-F6&#39;,
+                              color=cg,
+                              size=8)                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
                     #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
                     if hline:
@@ -454,44 +481,90 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                             extra_key_label = &#39;Dynamin&#39;
                         else:
                             extra_key_label = extra_key
-                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
-                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)               
+                    p3, = twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_extended) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;, alpha=.1)
+                    
+                    if background:
+                        plot_background(interval, row.Z_sigma_extended, row.Z_extended, color=&#39;gray&#39;, ax=twin2)
+                               
+                    else:
+                        twin2.plot(interval * np.arange(5, len(row.Z_extended)-5), np.array(row.Z_extended)[5:(-5)] + DIFF, color=&#39;gray&#39;)
                     twin2.fill_between(interval * np.arange(len(row.Z_extended)),
                                      np.array(row.Z_extended) - np.array(row.Z_std_extended),
                                      np.array(row.Z_extended) + np.array(row.Z_std_extended),
-                                     alpha=.2,
+                                     alpha=.1,
                                      color=&#39;gray&#39;
-                                     ) 
+                                     )
+                    if i == 0:
+                        twin2.text(x=interval * len(row.Z_extended),
+                              y=np.array(row.Z_extended)[-1]-500,
+                              s=&#39;Dyn2-Halo-E1-JF646&#39;,
+                              color=&#39;gray&#39;,
+                              size=8)                    
                     #if i == 0 and legend:
                     #    dvu.line_legend()                    
                 tkw = dict(size=4, width=1.5)
                 ax.spines[&#39;right&#39;].set_color(cg)
                 ax.tick_params(axis=&#39;y&#39;, colors=cr, labelsize=6, **tkw)
                 twin1.spines[&#39;left&#39;].set_color(cr)
-                twin2.spines[&#39;left&#39;].set_color(cr)
                 ax.spines[&#39;left&#39;].set_color(cr)
-                #twin1.spines[&#39;left&#39;].set_color(cg)  
-                twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                #twin1.spines[&#39;left&#39;].set_color(cg)
+                if num_axes == 3:
+                    twin2.spines[&#39;left&#39;].set_color(cr)
+                    twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                    twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
                 if ylim_constant:
                     ax.set_ylim(ylim_cla)
                     twin1.set_ylim(ylim_aux)
                     twin2.set_ylim(ylim_dyn)
                 else:
-                    p2_ylim = twin1.get_ylim()
-                    twin1.set_ylim((p2_ylim[0], 2*p2_ylim[1]))
+                    #p1_ylim = ax.get_ylim()
+                    p2_ylim = twin1.get_ylim()                    
                     p3_ylim = twin2.get_ylim()
-                    twin2.set_ylim((p3_ylim[0], 2*p3_ylim[1]))                    
+                    ylim_min = min(p2_ylim[0], p3_ylim[0])
+                    twin1.set_ylim((ylim_min, 2*p2_ylim[1]))
+                    twin2.set_ylim((ylim_min, 3*p3_ylim[1]))   
+                
+                p1_ylim = ax.get_ylim() 
+                ax.set_ylim((- 2 * p1_ylim[1], p1_ylim[1])) 
+                
+                p2_ylim = twin1.get_ylim() 
+                twin1.set_ylim((- 0.5 * p2_ylim[1], p2_ylim[1])) 
+                
+                #p3_ylim = twin2.get_ylim() 
+                #twin1.set_ylim((- 0.5 * p3_ylim[1], p3_ylim[1]))  
+                
                 twin1.tick_params(axis=&#39;y&#39;, colors=cg, labelsize=6, **tkw)
-                twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
+                
                 ax.tick_params(axis=&#39;x&#39;, **tkw)
+                yticks = ax.get_yticks()
+                #if len(yticks) &gt; 5:
+                ax.set_yticks([yt for yt in yticks if yt &gt;= 0])
+                
+                yticks = twin1.get_yticks()
+                #if len(yticks) &gt; 5:
+                twin1.set_yticks(yticks[np.arange(1, len(yticks), 2)])
+                if num_axes == 3:
+                    yticks = twin2.get_yticks()
+                    if len(yticks) &gt; 5:
+                        twin2.set_yticks(yticks[np.arange(1, len(yticks), 2)])                   
                 if xlim_constant:
                     if xlim is None:
-                        plt.xlim([-1, lifetime_max + 1])
+                        plt.xlim([-1, lifetime_max + 16])
                     else:
                         print(xlim)
                         plt.xlim(xlim)
                 
+                if axes_invisible:
+                    ax.yaxis.set_visible(False)
+                    ax.xaxis.set_visible(False)
+                    twin1.yaxis.set_visible(False)
+                    twin1.spines[&#39;left&#39;].set_color(&#39;w&#39;)
+                    twin2.spines[&#39;left&#39;].set_color(&#39;w&#39;)
+                    twin2.yaxis.set_visible(False)
+                    twin1.spines[&#39;right&#39;].set_color(&#39;w&#39;)
+                    twin2.spines[&#39;right&#39;].set_color(&#39;w&#39;)
                 
+                                
             #plt.yscale(&#39;log&#39;)                  
             
 
@@ -499,10 +572,10 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
 
             
 #         plt.legend()
+
     plt.tight_layout()
     if fig is None:
-        plt.show()
-
+        plt.show()        
 
 
 def viz_errs_outliers_venn(X_test, preds, Y_test, num_feats_reduced=5):
@@ -719,7 +792,7 @@ def cumulative_acc_plot_all(df, pred_proba_key=&#39;preds_proba&#39;, pred_key=&
     argsf = np.argsort(df.lifetime.values)
     accsf = (1 - df[outcome_def]).values[argsf]
     n = df.shape[0]
-    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;No model&#39;, color=&#39;gray&#39;)
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;Predicting all abortive&#39;, color=&#39;gray&#39;)
     print(&#39;accsf&#39;, np.sum(accsf))
     
     # short
@@ -734,16 +807,17 @@ def cumulative_acc_plot_all(df, pred_proba_key=&#39;preds_proba&#39;, pred_key=&
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;With model&#39;, color=cb)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;LSTM&#39;, color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color=&#39;black&#39;)
     
-    
+#     dvu.line_legend()
     plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
     plt.ylabel(&#39;Accuracy&#39;)
     ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
     ax.xaxis.set_ticklabels([str(int(x)) + &#39;%&#39; for x in np.arange(0, 101, 100/5)])
-    plt.legend(fontsize=&#39;x-large&#39;, frameon=False)
+    plt.legend(fontsize=&#39;x-large&#39;, frameon=False, labelcolor=&#39;linecolor&#39;)
+    
     plt.grid(alpha=0.2)
     plt.tight_layout()
 
@@ -824,6 +898,7 @@ def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
     for i in range(len(df)):
         
         cell_num = df.cell_num.iloc[i]
+        fr, h, w = raw_videos[cell_num][&#39;cla&#39;].shape
         pid = df.pid.iloc[i]
         videos[pid] = {}
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
@@ -835,9 +910,11 @@ def get_dynamin_data_videos(df, pids, add_px=2, apply_norm=True):
             
         for j in range(lt):
             for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                crop_y_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1)))
+                crop_x_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)))
                 videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
-                            [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                            [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+                            [crop_y_pos, :] \
+                            [:, crop_x_pos])
             
                 # normalize by the min/max intensities
                 #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
@@ -974,7 +1051,7 @@ def plot_kymographs(df, pids, add_px=2):
     argsf = np.argsort(df.lifetime.values)
     accsf = (1 - df[outcome_def]).values[argsf]
     n = df.shape[0]
-    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;No model&#39;, color=&#39;gray&#39;)
+    plt.plot(np.cumsum(accsf) / np.arange(1, accsf.size + 1), label=&#39;Predicting all abortive&#39;, color=&#39;gray&#39;)
     print(&#39;accsf&#39;, np.sum(accsf))
     
     # short
@@ -989,16 +1066,17 @@ def plot_kymographs(df, pids, add_px=2):
     # put things together
     accs = np.hstack((accss, accsh))
     print(accsf.shape, accss.shape, accsh.shape, accs.shape)
-    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;With model&#39;, color=cb)
+    plt.plot(np.cumsum(accs) / np.arange(1, accs.size + 1), label=&#39;LSTM&#39;, color=cb)
     print(accs)
     plt.axvline(ns, lw=2.5, color=&#39;black&#39;)
     
-    
+#     dvu.line_legend()
     plt.xlabel(&#39;Percentage of tracks included (sorted by uncertainty)&#39;)
     plt.ylabel(&#39;Accuracy&#39;)
     ax.xaxis.set_ticks([int(x) for x in np.arange(0, n + 1, n//5)])
     ax.xaxis.set_ticklabels([str(int(x)) + &#39;%&#39; for x in np.arange(0, 101, 100/5)])
-    plt.legend(fontsize=&#39;x-large&#39;, frameon=False)
+    plt.legend(fontsize=&#39;x-large&#39;, frameon=False, labelcolor=&#39;linecolor&#39;)
+    
     plt.grid(alpha=0.2)
     plt.tight_layout()</code></pre>
 </details>
@@ -1114,6 +1192,7 @@ add_px=1 means 3<em>3 pixels around the center, add_px=2 means 5</em>5, etc.</p>
     for i in range(len(df)):
         
         cell_num = df.cell_num.iloc[i]
+        fr, h, w = raw_videos[cell_num][&#39;cla&#39;].shape
         pid = df.pid.iloc[i]
         videos[pid] = {}
         x_pos, y_pos = df.x_pos_seq.iloc[i], df.y_pos_seq.iloc[i]
@@ -1125,9 +1204,11 @@ add_px=1 means 3<em>3 pixels around the center, add_px=2 means 5</em>5, etc.</p>
             
         for j in range(lt):
             for m in [&#39;cla&#39;, &#39;aux&#39;, &#39;dyn&#39;]:
+                crop_y_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1)))
+                crop_x_pos = np.maximum(0, np.minimum(h - 1, np.arange(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)))
                 videos[pid][m].append(raw_videos[cell_num][m][int(t/1.5) + j,:,:] \
-                            [range(int(y_pos[j]) - add_px, int(y_pos[j]) + add_px + 1), :] \
-                            [:, range(int(x_pos[j]) - add_px, int(x_pos[j]) + add_px + 1)])
+                            [crop_y_pos, :] \
+                            [:, crop_x_pos])
             
                 # normalize by the min/max intensities
                 #vmin, vmax = raw_videos[cell_num][m][int(t/1.5) + j,:,:].mean(), raw_videos[cell_num][m][int(t/1.5) + j,:,:].max()
@@ -1321,15 +1402,47 @@ Params</p>
     if y1 &gt;= b1 and y2 &gt;= b2:
         ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=1)
     elif y1 &lt; b1 and y2 &lt; b2:
-        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.2) 
+        ax.plot([x1, x2], [y1, y2], linestyle=lsty, color=color, alpha=.1) 
     elif y1 &gt;= b1 and y2 &lt; b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
         ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=1)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.2)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=.1)
     elif y1 &lt; b1 and y2 &gt;= b2:
         crosspoint_x, crosspoint_y = x1 + (y1 - b1)/(sl2 - sl1), y1 + sl1 * (y1 - b1)/(sl2 - sl1)        
-        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.2)
-        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1)        </code></pre>
+        ax.plot([x1, crosspoint_x], [y1, crosspoint_y], linestyle=lsty, color=color, alpha=.1)
+        ax.plot([crosspoint_x, x2], [crosspoint_y, y2], linestyle=lsty, color=color, alpha=1) </code></pre>
+</details>
+</dd>
+<dt id="src.viz.plot_background"><code class="name flex">
+<span>def <span class="ident">plot_background</span></span>(<span>interval, bg, trace, color, ax)</span>
+</code></dt>
+<dd>
+<section class="desc"></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def plot_background(interval, bg, trace, color, ax):
+    ax.fill_between(interval * np.arange(len(bg)), 
+                                        [0] * len(bg),
+                                        2 * np.array(bg), 
+                                        alpha=.1,
+                                        color=color) 
+                        
+    x, y, lt = np.arange(len(trace)), np.array(trace), len(trace)
+    #ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
+    bg = 2 * np.array(bg)
+    for f in range(lt - 1):
+        lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
+        plot_above_threshold(x1=interval*x[f], 
+                             y1=y[f], 
+                                                 b1=bg[f], 
+                                                 x2=interval*x[f+1], 
+                                                 y2=y[f+1], 
+                                                 b2=bg[f+1], 
+                                                 ax=ax, 
+                                                 color=color,
+                                                 lsty=lsty)</code></pre>
 </details>
 </dd>
 <dt id="src.viz.plot_confusion_matrix"><code class="name flex">
@@ -1403,7 +1516,7 @@ Params</p>
 </details>
 </dd>
 <dt id="src.viz.plot_curves"><code class="name flex">
-<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, extra_key_label=None, hline=True, R=5, C=8, xlim=None, fig=None, ylim_constant=False, background=False, ylim_cla=None, ylim_aux=None, ylim_dyn=None, xlim_constant=True, legend=True, plot_x=True, yticks=None, yticklabels=None, three_axes=True)</span>
+<span>def <span class="ident">plot_curves</span></span>(<span>df, extra_key=None, extra_key_label=None, hline=True, R=5, C=8, xlim=None, fig=None, ylim_constant=False, background=False, ylim_cla=None, ylim_aux=None, ylim_dyn=None, xlim_constant=True, legend=True, plot_x=True, yticks=None, yticklabels=None, num_axes=3, show_track_pid=False, axes_invisible=False)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Plot time-series curves from df</p></section>
@@ -1417,7 +1530,8 @@ Params</p>
                 fig=None, ylim_constant=False, background=False, ylim_cla=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
-                yticks=None, yticklabels=None, three_axes=True):
+                yticks=None, yticklabels=None, num_axes=3, show_track_pid=False,
+                axes_invisible=False):
     &#39;&#39;&#39;Plot time-series curves from df
     &#39;&#39;&#39;
     DIFF = 0
@@ -1434,7 +1548,7 @@ Params</p>
             else:
                 interval = 1
                 
-            if not three_axes:
+            if num_axes == 1:
                 if plot_x:
                     plt.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr)
                     plt.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
@@ -1476,40 +1590,33 @@ Params</p>
                 if yticks is not None:
                         plt.yticks(yticks, labels=yticklabels)
                     
-            elif three_axes:
+            else:
                 ax.spines[&#39;right&#39;].set_visible(True)
                 twin1 = ax.twinx()
-                twin2 = ax.twinx()
-                twin2.spines[&#39;right&#39;].set_visible(True)
-                twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
-                
-                if plot_x:
+                if num_axes == 3:
+                    twin2 = ax.twinx()
+                    twin2.spines[&#39;right&#39;].set_visible(True)
+                    twin2.spines[&#39;right&#39;].set_position((&#34;axes&#34;, 1.2))
+                else:
+                    twin2 = twin1
+                if show_track_pid:
+                    ax.text(.5, .9, f&#39;{row.pid}&#39;, # row.pid
+                            horizontalalignment=&#39;right&#39;,
+                            transform=ax.transAxes)                    
 
+                if plot_x:
+                    p1, = ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, alpha=.1)
+                    if i == 0:
+                        ax.text(x=interval * len(row.X_extended),
+                            y=np.array(row.X_extended)[-1],
+                            s=&#39;CLTA-TagRFP&#39;,
+                            color=cr,
+                            size=8)
                     if background:
-                        ax.fill_between(interval * np.arange(len(row.X_sigma_extended)), 
-                                        [0] * len(row.X_sigma_extended),
-                                        2 * np.array(row.X_sigma_extended), 
-                                        alpha=.2,
-                                        color=cr) 
-                        
-                        x, y, lt = np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, len(row.X_extended)
-                        p1, = ax.plot(interval * x, y, linestyle=&#39;--&#39;, color=cr, alpha=.2)
-                        bg = 2 * np.array(row.X_sigma_extended)
-                        for f in range(lt - 1):
-                            lsty = &#39;--&#39; if f &lt; 5 or f &gt;= lt - 5 else &#39;-&#39;
-                            plot_above_threshold(x1=interval*x[f], 
-                                                 y1=y[f], 
-                                                 b1=bg[f], 
-                                                 x2=interval*x[f+1], 
-                                                 y2=y[f+1], 
-                                                 b2=bg[f+1], 
-                                                 ax=ax, 
-                                                 color=cr,
-                                                 lsty=lsty)
+                        plot_background(interval, row.X_sigma_extended, row.X_extended, color=cr, ax=ax)
                                
                     else:
-                        ax.plot(interval * np.arange(len(row.X_extended)), np.array(row.X_extended) + DIFF, linestyle=&#39;--&#39;, color=cr, linewidth=2)
-                        p1, = ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr, label=&#39;Clathrin&#39;)  
+                        ax.plot(interval * np.arange(5, len(row.X_extended)-5), np.array(row.X_extended)[5:(-5)] + DIFF, color=cr)  
                     if i == 0 and legend:
                         dvu.line_legend()                        
                     ax.fill_between(interval * np.arange(len(row.X_extended)),
@@ -1520,8 +1627,14 @@ Params</p>
                                      )  
 
                     
-                    twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg)
-                    p2, = twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;Auxilin&#39;)
+                    p2, = twin1.plot(interval * np.arange(len(row.Y_extended)), np.array(row.Y_extended) + DIFF, linestyle=&#39;--&#39;, color=cg, alpha=.1)
+                    
+                    if background:
+                        plot_background(interval, row.Y_sigma_extended, row.Y_extended, color=cg, ax=twin1
+                                       )
+                               
+                    else:
+                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=&#39;EGFP-Aux1-GAK-F6&#39;)                     
                     if i == 0 and legend:
                         dvu.line_legend()                                     
                     twin1.fill_between(interval * np.arange(len(row.Y_extended)),
@@ -1529,7 +1642,13 @@ Params</p>
                                      np.array(row.Y_extended) + np.array(row.Y_std_extended),
                                      alpha=.2,
                                      color=cg
-                                     )                    
+                                     )  
+                    if i == 0:
+                        twin1.text(x=interval * len(row.Y_extended),
+                              y=np.array(row.Y_extended)[-1],
+                              s=&#39;EGFP-Aux1-GAK-F6&#39;,
+                              color=cg,
+                              size=8)                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cr, label=&#39;Clathrin&#39;)
                     #plt.plot(interval * np.arange(5), np.array(row.Y_extended)[-5:] + DIFF, linestyle=&#39;--&#39;, color=cg, label=&#39;Auxilin&#39;) 
                     if hline:
@@ -1540,44 +1659,90 @@ Params</p>
                             extra_key_label = &#39;Dynamin&#39;
                         else:
                             extra_key_label = extra_key
-                    twin2.plot(interval * np.arange(len(row[extra_key])), np.array(row[extra_key]) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;)
-                    p3, = twin2.plot(interval * np.arange(5, len(row[extra_key])-5), np.array(row[extra_key])[5:(-5)] + DIFF, color=&#39;gray&#39;, label=extra_key_label)               
+                    p3, = twin2.plot(interval * np.arange(len(row.Z_extended)), np.array(row.Z_extended) + DIFF, linestyle=&#39;--&#39;, color=&#39;gray&#39;, alpha=.1)
+                    
+                    if background:
+                        plot_background(interval, row.Z_sigma_extended, row.Z_extended, color=&#39;gray&#39;, ax=twin2)
+                               
+                    else:
+                        twin2.plot(interval * np.arange(5, len(row.Z_extended)-5), np.array(row.Z_extended)[5:(-5)] + DIFF, color=&#39;gray&#39;)
                     twin2.fill_between(interval * np.arange(len(row.Z_extended)),
                                      np.array(row.Z_extended) - np.array(row.Z_std_extended),
                                      np.array(row.Z_extended) + np.array(row.Z_std_extended),
-                                     alpha=.2,
+                                     alpha=.1,
                                      color=&#39;gray&#39;
-                                     ) 
+                                     )
+                    if i == 0:
+                        twin2.text(x=interval * len(row.Z_extended),
+                              y=np.array(row.Z_extended)[-1]-500,
+                              s=&#39;Dyn2-Halo-E1-JF646&#39;,
+                              color=&#39;gray&#39;,
+                              size=8)                    
                     #if i == 0 and legend:
                     #    dvu.line_legend()                    
                 tkw = dict(size=4, width=1.5)
                 ax.spines[&#39;right&#39;].set_color(cg)
                 ax.tick_params(axis=&#39;y&#39;, colors=cr, labelsize=6, **tkw)
                 twin1.spines[&#39;left&#39;].set_color(cr)
-                twin2.spines[&#39;left&#39;].set_color(cr)
                 ax.spines[&#39;left&#39;].set_color(cr)
-                #twin1.spines[&#39;left&#39;].set_color(cg)  
-                twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                #twin1.spines[&#39;left&#39;].set_color(cg)
+                if num_axes == 3:
+                    twin2.spines[&#39;left&#39;].set_color(cr)
+                    twin2.spines[&#39;right&#39;].set_color(p3.get_color())  
+                    twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
                 if ylim_constant:
                     ax.set_ylim(ylim_cla)
                     twin1.set_ylim(ylim_aux)
                     twin2.set_ylim(ylim_dyn)
                 else:
-                    p2_ylim = twin1.get_ylim()
-                    twin1.set_ylim((p2_ylim[0], 2*p2_ylim[1]))
+                    #p1_ylim = ax.get_ylim()
+                    p2_ylim = twin1.get_ylim()                    
                     p3_ylim = twin2.get_ylim()
-                    twin2.set_ylim((p3_ylim[0], 2*p3_ylim[1]))                    
+                    ylim_min = min(p2_ylim[0], p3_ylim[0])
+                    twin1.set_ylim((ylim_min, 2*p2_ylim[1]))
+                    twin2.set_ylim((ylim_min, 3*p3_ylim[1]))   
+                
+                p1_ylim = ax.get_ylim() 
+                ax.set_ylim((- 2 * p1_ylim[1], p1_ylim[1])) 
+                
+                p2_ylim = twin1.get_ylim() 
+                twin1.set_ylim((- 0.5 * p2_ylim[1], p2_ylim[1])) 
+                
+                #p3_ylim = twin2.get_ylim() 
+                #twin1.set_ylim((- 0.5 * p3_ylim[1], p3_ylim[1]))  
+                
                 twin1.tick_params(axis=&#39;y&#39;, colors=cg, labelsize=6, **tkw)
-                twin2.tick_params(axis=&#39;y&#39;, colors=p3.get_color(), labelsize=6, **tkw)
+                
                 ax.tick_params(axis=&#39;x&#39;, **tkw)
+                yticks = ax.get_yticks()
+                #if len(yticks) &gt; 5:
+                ax.set_yticks([yt for yt in yticks if yt &gt;= 0])
+                
+                yticks = twin1.get_yticks()
+                #if len(yticks) &gt; 5:
+                twin1.set_yticks(yticks[np.arange(1, len(yticks), 2)])
+                if num_axes == 3:
+                    yticks = twin2.get_yticks()
+                    if len(yticks) &gt; 5:
+                        twin2.set_yticks(yticks[np.arange(1, len(yticks), 2)])                   
                 if xlim_constant:
                     if xlim is None:
-                        plt.xlim([-1, lifetime_max + 1])
+                        plt.xlim([-1, lifetime_max + 16])
                     else:
                         print(xlim)
                         plt.xlim(xlim)
                 
+                if axes_invisible:
+                    ax.yaxis.set_visible(False)
+                    ax.xaxis.set_visible(False)
+                    twin1.yaxis.set_visible(False)
+                    twin1.spines[&#39;left&#39;].set_color(&#39;w&#39;)
+                    twin2.spines[&#39;left&#39;].set_color(&#39;w&#39;)
+                    twin2.yaxis.set_visible(False)
+                    twin1.spines[&#39;right&#39;].set_color(&#39;w&#39;)
+                    twin2.spines[&#39;right&#39;].set_color(&#39;w&#39;)
                 
+                                
             #plt.yscale(&#39;log&#39;)                  
             
 
@@ -1585,9 +1750,10 @@ Params</p>
 
             
 #         plt.legend()
+
     plt.tight_layout()
     if fig is None:
-        plt.show()</code></pre>
+        plt.show()        </code></pre>
 </details>
 </dd>
 <dt id="src.viz.plot_decision_boundary"><code class="name flex">
@@ -2117,6 +2283,7 @@ Params</p>
 <li><code><a title="src.viz.highlight_max" href="#src.viz.highlight_max">highlight_max</a></code></li>
 <li><code><a title="src.viz.jointplot_grouped" href="#src.viz.jointplot_grouped">jointplot_grouped</a></code></li>
 <li><code><a title="src.viz.plot_above_threshold" href="#src.viz.plot_above_threshold">plot_above_threshold</a></code></li>
+<li><code><a title="src.viz.plot_background" href="#src.viz.plot_background">plot_background</a></code></li>
 <li><code><a title="src.viz.plot_confusion_matrix" href="#src.viz.plot_confusion_matrix">plot_confusion_matrix</a></code></li>
 <li><code><a title="src.viz.plot_curves" href="#src.viz.plot_curves">plot_curves</a></code></li>
 <li><code><a title="src.viz.plot_decision_boundary" href="#src.viz.plot_decision_boundary">plot_decision_boundary</a></code></li>

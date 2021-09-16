@@ -63,19 +63,20 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
+            df = df[~df.hotspots]
             if filter_short and lifetime_threshold == 15:
-                df = df[~(df.short | df.long | df.hotspots)]
+#                 df = df[~(df.short | df.long)]
         #         df = df[df.valid]
                 df = df[df.lifetime &gt; 15] # only keep hard tracks
             elif not lifetime_threshold == 15:
                 df = df[df.lifetime &gt; lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
-            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # select train/test etc.
             feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;],length, padding=padding)
                                    for i in range(len(df))] # downsampling
             df[&#39;X_same_length_extended&#39;] = [features.downsample(df.iloc[i][&#39;X_extended&#39;], length, padding=padding)
                                             for i in range(len(df))] # downsampling
@@ -84,7 +85,9 @@ def load_dfs_for_lstm(dsets=[&#39;clath_aux+gak_new&#39;],
             df = features.normalize_track(df, track=&#39;X_same_length_extended&#39;, by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
+            df = outcomes.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
+            df = outcomes.add_aux_dyn_outcome(df)
+            df[&#39;X_max_orig&#39;] = deepcopy(df[&#39;X_max&#39;].values)
 
             # remove extraneous feats
             # df = df[feat_names + meta]
@@ -526,19 +529,20 @@ Removes metadata + time-series columns + outcomes</p></section>
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
+            df = df[~df.hotspots]
             if filter_short and lifetime_threshold == 15:
-                df = df[~(df.short | df.long | df.hotspots)]
+#                 df = df[~(df.short | df.long)]
         #         df = df[df.valid]
                 df = df[df.lifetime &gt; 15] # only keep hard tracks
             elif not lifetime_threshold == 15:
                 df = df[df.lifetime &gt; lifetime_threshold] # only keep hard tracks
             else:
                 df = df[~df.hotspots]
-            df = df[df.cell_num.isin(config.DSETS[dset][split])] # exclude held-out test data
+            df = df[df.cell_num.isin(config.DSETS[dset][split])] # select train/test etc.
             feat_names = [&#39;X_same_length_normalized&#39;] + select_final_feats(get_feature_names(df))
 
             # downsample tracks
-            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;], length, padding=padding)
+            df[&#39;X_same_length&#39;] = [features.downsample(df.iloc[i][&#39;X&#39;],length, padding=padding)
                                    for i in range(len(df))] # downsampling
             df[&#39;X_same_length_extended&#39;] = [features.downsample(df.iloc[i][&#39;X_extended&#39;], length, padding=padding)
                                             for i in range(len(df))] # downsampling
@@ -547,7 +551,9 @@ Removes metadata + time-series columns + outcomes</p></section>
             df = features.normalize_track(df, track=&#39;X_same_length_extended&#39;, by_time_point=False)
 
             # regression response
-            df = train_reg.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
+            df = outcomes.add_sig_mean(df, resp_tracks=[&#39;Y&#39;])     
+            df = outcomes.add_aux_dyn_outcome(df)
+            df[&#39;X_max_orig&#39;] = deepcopy(df[&#39;X_max&#39;].values)
 
             # remove extraneous feats
             # df = df[feat_names + meta]

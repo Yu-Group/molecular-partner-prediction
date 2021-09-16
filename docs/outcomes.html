@@ -140,6 +140,105 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
 
     df = add_rule_based_label(df)
 
+    return df
+
+def add_sig_mean(df, resp_tracks=[&#39;Y&#39;]):
+    &#34;&#34;&#34;add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
+            if sum(sigs)&gt;0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f&#39;{track}_sig_mean&#39;] = sig_mean
+        df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
+        for cell in set(df[&#39;cell_num&#39;]):
+            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
+            df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df
+
+def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
+                        dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.15):
+    &#34;&#34;&#34;add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    
+    # look for clathrin significance
+    num_sigs = [np.array(df[&#39;X_pvals&#39;].iloc[i]) &lt; p_thresh for i in range(df.shape[0])]
+    x_consec_sig = []
+    x_frac_sig = []
+    lifetime_steps = np.array([len(df[&#39;X&#39;].iloc[i]) for i in range(df.shape[0])]) # get lifetimes
+    for i in range(df.shape[0]):
+        l = lifetime_steps[i]
+        sigs = num_sigs[i]
+        x_frac_sig.append(np.mean(sigs) &gt;= clath_sig_frac)
+        cons = 0
+        consec_flag = False
+        for j in range(len(sigs)):
+            if sigs[j] == 1:
+                cons += 1
+            else:
+                cons = 0
+            if cons &gt;= max(l * clath_consec_thresh_frac, 5):
+                consec_flag = True
+                break
+        if consec_flag:
+            x_consec_sig.append(1)
+        else:
+            x_consec_sig.append(0)
+    
+    
+    # outcomes based on significant p-values
+    df[&#39;clath_conservative_thresh&#39;] = (df[&#39;X_max&#39;].values &gt; clath_thresh).astype(np.int)
+    df[&#39;clath_sig&#39;] = np.logical_and(x_consec_sig, x_frac_sig)
+    df[&#39;successful&#39;] = np.logical_and(df[&#39;y_consec_thresh&#39;], df[&#39;clath_conservative_thresh&#39;])
+    df[&#39;successful_dynamin&#39;] = df[&#39;successful&#39;]
+    df[&#39;successful_full&#39;] = np.logical_and(df[&#39;clath_sig&#39;], df[&#39;successful_dynamin&#39;])
+    
+    
+    # look for dynamin peak
+    if &#39;Z&#39; in df.keys():
+        num_sigs = [np.array(df[&#39;Z_pvals&#39;].iloc[i]) &lt; p_thresh for i in range(df.shape[0])]
+        z_consec_sig = []
+        for i in range(df.shape[0]):
+            sigs = num_sigs[i]
+            cons = 0
+            consec_flag = False
+            for j in range(len(sigs)):
+                if sigs[j] == 1:
+                    cons += 1
+                else:
+                    cons = 0
+                if cons &gt;= dyn_cons_thresh:
+                    consec_flag = True
+                    break
+            if consec_flag:
+                z_consec_sig.append(1)
+            else:
+                z_consec_sig.append(0)
+        df[&#39;z_consec_sig&#39;] = z_consec_sig
+        df[&#39;Z_max&#39;] = [np.max(df.iloc[i][&#39;Z&#39;]) for i in range(df.shape[0])]
+        df[&#39;z_thresh&#39;] = df[&#39;Z_max&#39;] &gt; dyn_thresh
+        df[&#39;z_consec_thresh&#39;] = np.logical_and(df[&#39;z_consec_sig&#39;], df[&#39;z_thresh&#39;])
+        df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+        df[&#39;Z_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(z) for z in df.Z]))
+        df[&#39;z_peaked_first&#39;] = df[&#39;Z_peak_idx&#39;] &lt; df[&#39;Y_peak_idx&#39;]
+        df[&#39;z_peak&#39;] = np.logical_and(df[&#39;z_consec_thresh&#39;], df[&#39;z_peaked_first&#39;])
+        
+        # peaks must happen at end of track
+        df[&#39;z_peak&#39;] =  np.logical_and(df[&#39;z_peak&#39;], df[&#39;Z_peak_idx&#39;] &gt; lifetime_steps / 2)
+        
+        
+        df[&#39;successful_dynamin&#39;] = np.logical_or(
+            df[&#39;successful&#39;],
+            np.logical_and(df[&#39;clath_conservative_thresh&#39;], df[&#39;z_peak&#39;])
+        )
+        df[&#39;successful_full&#39;] = np.logical_and(df[&#39;clath_sig&#39;], df[&#39;successful_dynamin&#39;])
+        
     return df</code></pre>
 </details>
 </section>
@@ -150,6 +249,95 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
 <section>
 <h2 class="section-title" id="header-functions">Functions</h2>
 <dl>
+<dt id="src.outcomes.add_aux_dyn_outcome"><code class="name flex">
+<span>def <span class="ident">add_aux_dyn_outcome</span></span>(<span>df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000, dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.15)</span>
+</code></dt>
+<dd>
+<section class="desc"><p>add response of regression problem: mean auxilin strength among significant observations</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
+                        dyn_cons_thresh=5, clath_sig_frac=0.5, clath_consec_thresh_frac=0.15):
+    &#34;&#34;&#34;add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    
+    # look for clathrin significance
+    num_sigs = [np.array(df[&#39;X_pvals&#39;].iloc[i]) &lt; p_thresh for i in range(df.shape[0])]
+    x_consec_sig = []
+    x_frac_sig = []
+    lifetime_steps = np.array([len(df[&#39;X&#39;].iloc[i]) for i in range(df.shape[0])]) # get lifetimes
+    for i in range(df.shape[0]):
+        l = lifetime_steps[i]
+        sigs = num_sigs[i]
+        x_frac_sig.append(np.mean(sigs) &gt;= clath_sig_frac)
+        cons = 0
+        consec_flag = False
+        for j in range(len(sigs)):
+            if sigs[j] == 1:
+                cons += 1
+            else:
+                cons = 0
+            if cons &gt;= max(l * clath_consec_thresh_frac, 5):
+                consec_flag = True
+                break
+        if consec_flag:
+            x_consec_sig.append(1)
+        else:
+            x_consec_sig.append(0)
+    
+    
+    # outcomes based on significant p-values
+    df[&#39;clath_conservative_thresh&#39;] = (df[&#39;X_max&#39;].values &gt; clath_thresh).astype(np.int)
+    df[&#39;clath_sig&#39;] = np.logical_and(x_consec_sig, x_frac_sig)
+    df[&#39;successful&#39;] = np.logical_and(df[&#39;y_consec_thresh&#39;], df[&#39;clath_conservative_thresh&#39;])
+    df[&#39;successful_dynamin&#39;] = df[&#39;successful&#39;]
+    df[&#39;successful_full&#39;] = np.logical_and(df[&#39;clath_sig&#39;], df[&#39;successful_dynamin&#39;])
+    
+    
+    # look for dynamin peak
+    if &#39;Z&#39; in df.keys():
+        num_sigs = [np.array(df[&#39;Z_pvals&#39;].iloc[i]) &lt; p_thresh for i in range(df.shape[0])]
+        z_consec_sig = []
+        for i in range(df.shape[0]):
+            sigs = num_sigs[i]
+            cons = 0
+            consec_flag = False
+            for j in range(len(sigs)):
+                if sigs[j] == 1:
+                    cons += 1
+                else:
+                    cons = 0
+                if cons &gt;= dyn_cons_thresh:
+                    consec_flag = True
+                    break
+            if consec_flag:
+                z_consec_sig.append(1)
+            else:
+                z_consec_sig.append(0)
+        df[&#39;z_consec_sig&#39;] = z_consec_sig
+        df[&#39;Z_max&#39;] = [np.max(df.iloc[i][&#39;Z&#39;]) for i in range(df.shape[0])]
+        df[&#39;z_thresh&#39;] = df[&#39;Z_max&#39;] &gt; dyn_thresh
+        df[&#39;z_consec_thresh&#39;] = np.logical_and(df[&#39;z_consec_sig&#39;], df[&#39;z_thresh&#39;])
+        df[&#39;Y_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(y) for y in df.Y]))
+        df[&#39;Z_peak_idx&#39;] = np.nan_to_num(np.array([np.argmax(z) for z in df.Z]))
+        df[&#39;z_peaked_first&#39;] = df[&#39;Z_peak_idx&#39;] &lt; df[&#39;Y_peak_idx&#39;]
+        df[&#39;z_peak&#39;] = np.logical_and(df[&#39;z_consec_thresh&#39;], df[&#39;z_peaked_first&#39;])
+        
+        # peaks must happen at end of track
+        df[&#39;z_peak&#39;] =  np.logical_and(df[&#39;z_peak&#39;], df[&#39;Z_peak_idx&#39;] &gt; lifetime_steps / 2)
+        
+        
+        df[&#39;successful_dynamin&#39;] = np.logical_or(
+            df[&#39;successful&#39;],
+            np.logical_and(df[&#39;clath_conservative_thresh&#39;], df[&#39;z_peak&#39;])
+        )
+        df[&#39;successful_full&#39;] = np.logical_and(df[&#39;clath_sig&#39;], df[&#39;successful_dynamin&#39;])
+        
+    return df</code></pre>
+</details>
+</dd>
 <dt id="src.outcomes.add_outcomes"><code class="name flex">
 <span>def <span class="ident">add_outcomes</span></span>(<span>df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=973)</span>
 </code></dt>
@@ -280,6 +468,36 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
     return df</code></pre>
 </details>
 </dd>
+<dt id="src.outcomes.add_sig_mean"><code class="name flex">
+<span>def <span class="ident">add_sig_mean</span></span>(<span>df, resp_tracks=['Y'])</span>
+</code></dt>
+<dd>
+<section class="desc"><p>add response of regression problem: mean auxilin strength among significant observations</p></section>
+<details class="source">
+<summary>
+<span>Expand source code</span>
+</summary>
+<pre><code class="python">def add_sig_mean(df, resp_tracks=[&#39;Y&#39;]):
+    &#34;&#34;&#34;add response of regression problem: mean auxilin strength among significant observations
+    &#34;&#34;&#34;
+    for track in resp_tracks:
+        sig_mean = []
+        for i in range(len(df)):
+            r = df.iloc[i]
+            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
+            if sum(sigs)&gt;0:
+                sig_mean.append(np.mean(np.array(r[track])[sigs]))
+            else:
+                sig_mean.append(0)
+        df[f&#39;{track}_sig_mean&#39;] = sig_mean
+        df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
+        for cell in set(df[&#39;cell_num&#39;]):
+            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
+            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
+            df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
+    return df</code></pre>
+</details>
+</dd>
 </dl>
 </section>
 <section>
@@ -298,8 +516,10 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
 </li>
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="">
+<li><code><a title="src.outcomes.add_aux_dyn_outcome" href="#src.outcomes.add_aux_dyn_outcome">add_aux_dyn_outcome</a></code></li>
 <li><code><a title="src.outcomes.add_outcomes" href="#src.outcomes.add_outcomes">add_outcomes</a></code></li>
 <li><code><a title="src.outcomes.add_rule_based_label" href="#src.outcomes.add_rule_based_label">add_rule_based_label</a></code></li>
+<li><code><a title="src.outcomes.add_sig_mean" href="#src.outcomes.add_sig_mean">add_sig_mean</a></code></li>
 </ul>
 </li>
 </ul>

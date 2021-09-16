@@ -1,6 +1,6 @@
 This is an overview of the markdown contents of all the notebooks / scripts in this directory.
 
-# 00_intro_figs
+# 00_intro_fig1_fig2
 
 
 **plot curves (for intro fig)**
@@ -17,80 +17,48 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 ## dset sizes
 
-# 01_match_tracks_dtw
+## compare outcome defns
 
-
-## look at closest pairs
-
-## single example
-
-# 02_calc_dists
-
-
-# 03_eda_dynamin
-
-
-## load dynamin tracks directly
-
-**look at lifetimes**
-
-**look at clath curves**
-
-**compare aux + dynamin**
-
-# 04_fit_dnn_tracks
+# 00_tab1_data_summary
 
 
 ## prepare data
 
-#### train neural net with cv
+## look at different dsets
 
-**analyze cv results**
+**summarize dsets**
 
-#### train neural net on all training data
-
-## transfer to classification
-
-## plot tracks where lstm does better than gb
-
-# 05_fit_dnn_video
+# 01_fit_dnn_best
 
 
-## prepare data
-
-## show an example
-
-## fit the data
-
-## transfer to classification
-
-# 06_interpret_preds
+# 01_fit_dnn_vary_hyperparams
 
 
-## prepare data
+# 01_fit_vary_train_size
 
-## calibration plot
 
-## scatter plots
+# 01_process_train_size_results
 
-## colored scatter plot (deprecated)
 
-## lower res data (downsample)
+# 02_fig3_all_models_cell_acc
 
-# 07_interpret_errs
+
+## compare all different models across dsets
+
+# 02_fig3_vary_train_size
+
+
+## compare all different models across dsets
+
+#### plot accs of models trained on subsamples data
+
+# 02_fit_all_models_and_eval_dnn
+
+
+# 03_fig3_cum_acc_lifetime_acc
 
 
 ## prepare data
-
-## viz errs
-
-**analysis version (not figure)**
-
-**figure version**
-
-#### kymographs
-
-## cohort plots
 
 ## errs in different regions
 
@@ -98,20 +66,36 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 
 #### cumulative acc across everything
 
-## correcting labels
-
-# 08_interpret_scalars
+# 03_fig3_data_downsampling_accs
 
 
 ## prepare data
 
-## prepare for interp
+## lower res data (downsample)
 
-## important features
+**look at the downsample acc for the original data**
 
-## global feat imp
+# 04_fig4_pred_scatter_plots
 
-# 09_interpret_interactions
+
+## prepare data
+
+## scatter plots
+
+## colored scatter plot (deprecated)
+
+# 05_fig5_interpret_errs
+
+
+## prepare data
+
+## viz errs
+
+**figure version**
+
+#### kymographs
+
+# 06_fig6_interpret_interactions
 
 
 ## prepare data
@@ -123,36 +107,4 @@ This is an overview of the markdown contents of all the notebooks / scripts in t
 **recalculate with normalized scores (there is some err here)**
 
 ## interpret one pred at multiple scales
-
-# 10_pred_summaries
-
-
-## prepare data
-
-## prediction plots
-
-## look at different dsets
-
-**summarize dsets**
-
-**look at preds**
-
-**calculate predictions on diff datasets**
-
-**show metrics on different dsets**
-
-# 11_generate_full_data_results
-
-
-# 12_full_data_results
-
-
-# 13_train_with_different_data_size
-
-
-# 14_train_with_different_hyperparameters
-
-
-# 15_train_best
-
 

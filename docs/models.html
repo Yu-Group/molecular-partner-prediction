@@ -445,6 +445,9 @@ class Model(nn.Module):
 </code></pre>
 <p>Submodules assigned in this way will be registered, and will have their
 parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
 <h1 id="parameters">Parameters:</h1>
 <pre><code>D_in: int
     dimension of input track (ignored, can be variable)
@@ -655,6 +658,9 @@ class Model(nn.Module):
 </code></pre>
 <p>Submodules assigned in this way will be registered, and will have their
 parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
 <h1 id="parameters">Parameters:</h1>
 <pre><code>D_in: int
     dimension of input track (ignored, can be variable)
@@ -1012,6 +1018,9 @@ class Model(nn.Module):
 </code></pre>
 <p>Submodules assigned in this way will be registered, and will have their
 parameters converted too when you call :meth:<code>to</code>, etc.</p>
+<p>:ivar training: Boolean represents whether this module is in training or
+evaluation mode.
+:vartype training: bool</p>
 <p>Initializes internal Module state, shared by both nn.Module and ScriptModule.</p></section>
 <details class="source">
 <summary>

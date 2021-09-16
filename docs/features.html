@@ -35,6 +35,7 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 pd.options.mode.chained_assignment = None  # default=&#39;warn&#39; - caution: this turns off setting with copy warning
 import pickle as pkl
 #from viz import *
+import config
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
@@ -58,19 +59,20 @@ def add_pcs(df):
     return df
 
 
-def add_dict_features(df, sc_comps_file=&#39;processed/dictionaries/sc_12_alpha=1.pkl&#39;,
-                      nmf_comps_file=&#39;processed/dictionaries/nmf_12.pkl&#39;,
+def add_dict_features(df,
+                      sc_comps_file=oj(config.DIR_INTERIM, &#39;dictionaries/sc_12_alpha=1.pkl&#39;),
+                      nmf_comps_file=oj(config.DIR_INTERIM, &#39;dictionaries/nmf_12.pkl&#39;),
                       use_processed=True):
     &#39;&#39;&#39;Add features from saved dictionary to df
     &#39;&#39;&#39;
 
-    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=&#39;processed/dictionaries&#39;):
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=oj(config.DIR_INTERIM, &#39;dictionaries&#39;)):
         print(&#39;sparse coding...&#39;)
         d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
         d.fit(X_mat)
         pkl.dump(d, open(oj(out_dir, f&#39;sc_{n_comps}_alpha={alpha}.pkl&#39;), &#39;wb&#39;))
 
-    def nmf(X_mat, n_comps=12, out_dir=&#39;processed/dictionaries&#39;):
+    def nmf(X_mat, n_comps=12, out_dir=oj(config.DIR_INTERIM, &#39;dictionaries&#39;)):
         print(&#39;running nmf...&#39;)
         d = NMF(n_components=n_comps, random_state=42)
         d.fit(X_mat)
@@ -81,7 +83,7 @@ def add_dict_features(df, sc_comps_file=&#39;processed/dictionaries/sc_12_alpha=
 
     # if feats don&#39;t exist, compute them
     if not use_processed or not os.path.exists(sc_comps_file):
-        os.makedirs(&#39;processed/dictionaries&#39;, exist_ok=True)
+        os.makedirs(oj(config.DIR_INTERIM, &#39;dictionaries&#39;), exist_ok=True)
         sparse_code(X_mat)
         nmf(X_mat)
 
@@ -461,7 +463,7 @@ def normalize_feature(df, feat):
         cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
         y = df[feat].values[cell_idx]
             #y = np.array(list(y))
-        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+        df[feat].values[cell_idx] = (y - np.nanmean(y))/np.nanstd(y)
     return df
 
 def normalize_video(df, video=&#39;X_video&#39;):
@@ -745,7 +747,7 @@ whether to do binning within each cell</dd>
 </details>
 </dd>
 <dt id="src.features.add_dict_features"><code class="name flex">
-<span>def <span class="ident">add_dict_features</span></span>(<span>df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl', nmf_comps_file='processed/dictionaries/nmf_12.pkl', use_processed=True)</span>
+<span>def <span class="ident">add_dict_features</span></span>(<span>df, sc_comps_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/interim/dictionaries/sc_12_alpha=1.pkl', nmf_comps_file='/accounts/projects/vision/chandan/auxilin-prediction/src/../data/interim/dictionaries/nmf_12.pkl', use_processed=True)</span>
 </code></dt>
 <dd>
 <section class="desc"><p>Add features from saved dictionary to df</p></section>
@@ -753,19 +755,20 @@ whether to do binning within each cell</dd>
 <summary>
 <span>Expand source code</span>
 </summary>
-<pre><code class="python">def add_dict_features(df, sc_comps_file=&#39;processed/dictionaries/sc_12_alpha=1.pkl&#39;,
-                      nmf_comps_file=&#39;processed/dictionaries/nmf_12.pkl&#39;,
+<pre><code class="python">def add_dict_features(df,
+                      sc_comps_file=oj(config.DIR_INTERIM, &#39;dictionaries/sc_12_alpha=1.pkl&#39;),
+                      nmf_comps_file=oj(config.DIR_INTERIM, &#39;dictionaries/nmf_12.pkl&#39;),
                       use_processed=True):
     &#39;&#39;&#39;Add features from saved dictionary to df
     &#39;&#39;&#39;
 
-    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=&#39;processed/dictionaries&#39;):
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=oj(config.DIR_INTERIM, &#39;dictionaries&#39;)):
         print(&#39;sparse coding...&#39;)
         d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
         d.fit(X_mat)
         pkl.dump(d, open(oj(out_dir, f&#39;sc_{n_comps}_alpha={alpha}.pkl&#39;), &#39;wb&#39;))
 
-    def nmf(X_mat, n_comps=12, out_dir=&#39;processed/dictionaries&#39;):
+    def nmf(X_mat, n_comps=12, out_dir=oj(config.DIR_INTERIM, &#39;dictionaries&#39;)):
         print(&#39;running nmf...&#39;)
         d = NMF(n_components=n_comps, random_state=42)
         d.fit(X_mat)
@@ -776,7 +779,7 @@ whether to do binning within each cell</dd>
 
     # if feats don&#39;t exist, compute them
     if not use_processed or not os.path.exists(sc_comps_file):
-        os.makedirs(&#39;processed/dictionaries&#39;, exist_ok=True)
+        os.makedirs(oj(config.DIR_INTERIM, &#39;dictionaries&#39;), exist_ok=True)
         sparse_code(X_mat)
         nmf(X_mat)
 
@@ -1026,7 +1029,7 @@ Width of matrix is length of longest lifetime</p></section>
         cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
         y = df[feat].values[cell_idx]
             #y = np.array(list(y))
-        df[feat].values[cell_idx] = (y - np.mean(y))/np.std(y)
+        df[feat].values[cell_idx] = (y - np.nanmean(y))/np.nanstd(y)
     return df</code></pre>
 </details>
 </dd>

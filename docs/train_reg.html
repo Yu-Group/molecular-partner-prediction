@@ -98,27 +98,6 @@ def log_transforms(df):
                                        axis=1)
     return df
 
-def add_sig_mean(df, resp_tracks=[&#39;Y&#39;]):
-    &#34;&#34;&#34;
-    add response of regression problem: mean auxilin strength among significant observations
-    &#34;&#34;&#34;
-    for track in resp_tracks:
-        sig_mean = []
-        for i in range(len(df)):
-            r = df.iloc[i]
-            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
-            if sum(sigs)&gt;0:
-                sig_mean.append(np.mean(np.array(r[track])[sigs]))
-            else:
-                sig_mean.append(0)
-        df[f&#39;{track}_sig_mean&#39;] = sig_mean
-        df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
-        for cell in set(df[&#39;cell_num&#39;]):
-            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
-            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
-            df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
-    return df
-
 
 def train_reg(df, 
               feat_names, 
@@ -357,37 +336,6 @@ def test_reg(df,
 <pre><code class="python">def add_robust_features(df):
     df[&#39;X_95_quantile&#39;] = np.array([np.quantile(df.iloc[i].X, 0.95) for i in range(len(df))])
     df[&#39;X_mad&#39;] = np.array([robust.mad(df.iloc[i].X) for i in range(len(df))])
-    return df</code></pre>
-</details>
-</dd>
-<dt id="src.train_reg.add_sig_mean"><code class="name flex">
-<span>def <span class="ident">add_sig_mean</span></span>(<span>df, resp_tracks=['Y'])</span>
-</code></dt>
-<dd>
-<section class="desc"><p>add response of regression problem: mean auxilin strength among significant observations</p></section>
-<details class="source">
-<summary>
-<span>Expand source code</span>
-</summary>
-<pre><code class="python">def add_sig_mean(df, resp_tracks=[&#39;Y&#39;]):
-    &#34;&#34;&#34;
-    add response of regression problem: mean auxilin strength among significant observations
-    &#34;&#34;&#34;
-    for track in resp_tracks:
-        sig_mean = []
-        for i in range(len(df)):
-            r = df.iloc[i]
-            sigs = np.array(r[f&#39;{track}_pvals&#39;]) &lt; 0.05
-            if sum(sigs)&gt;0:
-                sig_mean.append(np.mean(np.array(r[track])[sigs]))
-            else:
-                sig_mean.append(0)
-        df[f&#39;{track}_sig_mean&#39;] = sig_mean
-        df[f&#39;{track}_sig_mean_normalized&#39;] = sig_mean
-        for cell in set(df[&#39;cell_num&#39;]):
-            cell_idx = np.where(df[&#39;cell_num&#39;].values == cell)[0]
-            y = df[f&#39;{track}_sig_mean&#39;].values[cell_idx]
-            df[f&#39;{track}_sig_mean_normalized&#39;].values[cell_idx] = (y - np.mean(y))/np.std(y)
     return df</code></pre>
 </details>
 </dd>
@@ -720,7 +668,6 @@ def test_reg(df,
 <li><h3><a href="#header-functions">Functions</a></h3>
 <ul class="two-column">
 <li><code><a title="src.train_reg.add_robust_features" href="#src.train_reg.add_robust_features">add_robust_features</a></code></li>
-<li><code><a title="src.train_reg.add_sig_mean" href="#src.train_reg.add_sig_mean">add_sig_mean</a></code></li>
 <li><code><a title="src.train_reg.load_and_train" href="#src.train_reg.load_and_train">load_and_train</a></code></li>
 <li><code><a title="src.train_reg.load_results" href="#src.train_reg.load_results">load_results</a></code></li>
 <li><code><a title="src.train_reg.log_transforms" href="#src.train_reg.log_transforms">log_transforms</a></code></li>
