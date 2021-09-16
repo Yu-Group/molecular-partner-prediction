@@ -1,3 +1,7 @@
+'''This script re-fits all non-LSTM models and evaluates them for each cell / dataset.
+It also takes a pre-trained LSTM and evaluates it on each cell / dataset.
+'''
+
 import os
 from os.path import join as oj
 import sys
@@ -27,13 +31,19 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.svm import SVR
 from collections import defaultdict
 
-scorers = {'balanced_accuracy': metrics.balanced_accuracy_score, 'accuracy': metrics.accuracy_score, 'roc_auc': metrics.roc_auc_score, 'r2': metrics.r2_score,
-          'corr': scipy.stats.pearsonr}
+scorers = {
+    'balanced_accuracy': metrics.balanced_accuracy_score,
+    'accuracy': metrics.accuracy_score,
+    'roc_auc': metrics.roc_auc_score,
+    'r2': metrics.r2_score,
+    'corr': scipy.stats.pearsonr,
+    'recall': metrics.recall_score,
+}
 
 def get_all_scores(y, preds, y_reg, df):
     
     for metric in scorers:
-        if 'accuracy' in metric:
+        if 'accuracy' in metric or 'recall' in metric:
             acc = scorers[metric](y, np.logical_and((preds > 0), df['X_max_orig'].values > 1500).astype(int))                   
             dataset_level_res[f'{k}_{metric}'].append(acc)
         elif metric == 'roc_auc':
@@ -49,7 +59,7 @@ def get_all_scores(y, preds, y_reg, df):
         y_reg_cell = y_reg[cell_idx]
         preds_cell = preds[cell_idx]
         for metric in scorers:
-            if 'accuracy' in metric:
+            if 'accuracy' in metric or 'recall' in metric:
                 acc = scorers[metric](y_cell, np.logical_and((preds_cell > 0), df['X_max_orig'].values[cell_idx] > 1500).astype(int))              
                 cell_level_res[f'{cell}_{metric}'].append(acc)
             elif metric == 'roc_auc':
@@ -85,8 +95,9 @@ if __name__ == '__main__':
     models = []
     np.random.seed(42)
     
-    print("computing predictions for gb + rf + svm")
     
+    
+    print("computing predictions for gb + rf + svm")
     for model_type in ['gb', 'rf', 'ridge', 'svm']:
         
         if model_type == 'rf':
@@ -123,9 +134,11 @@ if __name__ == '__main__':
                     y = df[outcome_def].values
                     preds = m.predict(X)
                     get_all_scores(y, preds, y_reg, df)                        
-                            
-    print("computing predictions for lstm")                 
+
                     
+                    
+                    
+    print("computing predictions for lstm")                 
     models.append('lstm')
     results = pkl.load(open('../models/dnn_full_long_normalized_across_track_1_feat_dynamin.pkl', 'rb'))
     dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
@@ -141,6 +154,8 @@ if __name__ == '__main__':
             get_all_scores(y, preds, y_reg, df)
                     
                     
+                    
+    print('saving')
     dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
     dataset_level_res.to_csv(f"../reports/dataset_level_res_{outcome_def}.csv")
     

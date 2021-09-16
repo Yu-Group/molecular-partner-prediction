@@ -9,6 +9,7 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
 #from viz import *
+import config
 from scipy.interpolate import UnivariateSpline
 from sklearn.decomposition import DictionaryLearning, NMF
 from sklearn import decomposition
@@ -32,19 +33,20 @@ def add_pcs(df):
     return df
 
 
-def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pkl',
-                      nmf_comps_file='processed/dictionaries/nmf_12.pkl',
+def add_dict_features(df,
+                      sc_comps_file=oj(config.DIR_INTERIM, 'dictionaries/sc_12_alpha=1.pkl'),
+                      nmf_comps_file=oj(config.DIR_INTERIM, 'dictionaries/nmf_12.pkl'),
                       use_processed=True):
     '''Add features from saved dictionary to df
     '''
 
-    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir='processed/dictionaries'):
+    def sparse_code(X_mat, n_comps=12, alpha=1, out_dir=oj(config.DIR_INTERIM, 'dictionaries')):
         print('sparse coding...')
         d = DictionaryLearning(n_components=n_comps, alpha=alpha, random_state=42)
         d.fit(X_mat)
         pkl.dump(d, open(oj(out_dir, f'sc_{n_comps}_alpha={alpha}.pkl'), 'wb'))
 
-    def nmf(X_mat, n_comps=12, out_dir='processed/dictionaries'):
+    def nmf(X_mat, n_comps=12, out_dir=oj(config.DIR_INTERIM, 'dictionaries')):
         print('running nmf...')
         d = NMF(n_components=n_comps, random_state=42)
         d.fit(X_mat)
@@ -55,7 +57,7 @@ def add_dict_features(df, sc_comps_file='processed/dictionaries/sc_12_alpha=1.pk
 
     # if feats don't exist, compute them
     if not use_processed or not os.path.exists(sc_comps_file):
-        os.makedirs('processed/dictionaries', exist_ok=True)
+        os.makedirs(oj(config.DIR_INTERIM, 'dictionaries'), exist_ok=True)
         sparse_code(X_mat)
         nmf(X_mat)
 
