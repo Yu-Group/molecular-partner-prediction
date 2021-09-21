@@ -3,6 +3,7 @@ import pandas as pd
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 from viz import *
+import config
 
 
 def add_rule_based_label(df):
@@ -212,5 +213,12 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
             np.logical_and(df['clath_conservative_thresh'], df['z_peak'])
         )
         df['successful_full'] = np.logical_and(df['clath_sig'], df['successful_dynamin'])
+        
+        # add more manual labels
+        df['successful_full_final'] = df['successful_full']
+        df['successful_full_final'][df.pid.isin(config.LABELS_DYNAMIN_NEW['pos'])] = 1
+        df['successful_full_final'][df.pid.isin(config.LABELS_DYNAMIN_NEW['neg'])] = 0
+        df['hotspots'][df.pid.isin(config.LABELS_DYNAMIN_NEW['hotspots'])] = True    
+        
         
     return df

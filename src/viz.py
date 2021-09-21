@@ -334,7 +334,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
     if fig is None:
         plt.figure(figsize=(16, 10), dpi=200, facecolor='white')
     lifetime_max = np.max(df.lifetime.values[:R * C])
-    df = df.iloc[range(R * C)]
+    df = df.iloc[:R * C]
     for i in range(R * C):
         if i < df.shape[0]:
             ax = plt.subplot(R, C, i + 1)
