@@ -42,21 +42,48 @@ DSETS = {
         'train': np.array([0]),
         'test': np.array([-1]),
     },
+    'vps4_snf7': {
+        'data_dir': oj(vps_folder, 
+                       '2016-07-10_mergedTracks_vps4_snf7.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
+    'vps4_snf7vps2': {
+        'data_dir': oj(vps_folder, 
+                       '2016-10-26_mergedTracks_vps4_snf7vps2.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
+    'AnchorAway_vps4_snf7': {
+        'data_dir': oj(vps_folder, 
+                       '2016-09-01_mergedTracks_AnchorAway_vps4_snf7_RapExposure-004.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
     
-    """
-    
-    '2016-07-10_mergedTracks_vps4_snf7.mat'
-    '2016-10-26_mergedTracks_vps4_snf7vps2.mat'
-    '2016-09-01_mergedTracks_AnchorAway_vps4_snf7_RapExposure-004.mat'
-    
-    # mutant
-    # '2016-09-06_mergedTracks_vps24_VPS4EQ.mat'
-    # '2016-09-06_mergedTracks_vps4EQ_snf7-eGFP.mat'
-    
+    ## mutant
+    'vps24_VPS4EQ': {
+        'data_dir': oj(vps_folder, 
+                       '2016-09-06_mergedTracks_vps24_VPS4EQ.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
+    'vps4EQ_snf7-eGFP': {
+        'data_dir': oj(vps_folder, 
+                       '2016-09-06_mergedTracks_vps4EQ_snf7-eGFP.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
+
     # ignore for now
-    # '2017-05-22_newExp_tracks_vps4_snf7_dpep-002.mat'
-    """
-    ############################################################################clath/aux
+    # '2017-05-22_newExp_tracks_vps4_snf7_dpep-002.mat' 
+
+    # clath/aux############################################################################
     'clath_aux+gak_a7d2': {  # this was the original data
         'data_dir': data_dir_orig,
         'feature_selection': np.array([f'{s_orig}/1']),

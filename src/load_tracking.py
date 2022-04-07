@@ -51,9 +51,12 @@ def get_tracks(data_dir,
     
     # new (vps_snf) data
     if data_dir.endswith('.mat'):
-        mat = mat4py.loadmat(data_dir)
-        track_key = sorted(mat.keys()) #allTracks_...
+        mat = mat4py.loadmat(data_dir)['t']
+        print('keys', mat.keys())
+        track_key = sorted([k for k in mat.keys()])[0] #allTracks_...
+        print(f'\ttrack key: {track_key}')
         tracks = mat[track_key]
+        print(f'\ttracks.keys() {tracks.keys()}')
         data = get_data_from_tracks(tracks, None, False, False)
         df = pd.DataFrame.from_dict(data)
         df['cell_num'] = -1 # test
@@ -115,7 +118,7 @@ def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=Fal
     n = len(tracks['t'])
             
     # basic features
-    t = np.array([tracks['t'][i] for i in range(n)])
+    t = np.array([tracks['t'][i] for i in range(n)], dtype=object)
     data = {
         'lifetime': tracks['lifetime_s'],                
         'cell_num': [cell_num] * n,                
@@ -141,16 +144,16 @@ def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=Fal
 
     # position features
     x_pos_seq = np.array(
-        [tracks['x'][i][0] for i in range(n)])  # x-position for clathrin (auxilin is very similar)
+        [tracks['x'][i][0] for i in range(n)], dtype=object)  # x-position for clathrin (auxilin is very similar)
     y_pos_seq = np.array(
-        [tracks['y'][i][0] for i in range(n)])  # y-position for clathrin (auxilin is very similar)
+        [tracks['y'][i][0] for i in range(n)], dtype=object)  # y-position for clathrin (auxilin is very similar)
     data['x_pos_seq'] = x_pos_seq
     data['y_pos_seq'] = y_pos_seq
     data['x_pos'] = [sum(x) / len(x) for x in x_pos_seq]  # mean position in the image
     data['y_pos'] = [sum(y) / len(y) for y in y_pos_seq]
     if 'z' in tracks.keys():
         z_pos_seq = np.array(
-            [tracks['z'][i][0] for i in range(n)])  # z-position for clathrin (auxilin is very similar)
+            [tracks['z'][i][0] for i in range(n)], dtype=object)  # z-position for clathrin (auxilin is very similar)
         data['z_pos_seq'] = z_pos_seq
         data['z_pos'] = [sum(z) / len(z) for z in z_pos_seq]
 
@@ -159,12 +162,12 @@ def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=Fal
     for idx_channel, prefix in zip(range(num_channels),
                                    ['X', 'Y', 'Z'][:num_channels]):
         # print(tracks.keys())
-        track = np.array([tracks['A'][i][idx_channel] for i in range(n)])
-        cs = np.array([tracks['c'][i][idx_channel] for i in range(n)])
+        track = np.array([tracks['A'][i][idx_channel] for i in range(n)], dtype=object)
+        cs = np.array([tracks['c'][i][idx_channel] for i in range(n)], dtype=object)
 #                 print('track keys', tracks.keys())
-        pvals = np.array([tracks['pval_Ar'][i][idx_channel] for i in range(n)])
-        stds = np.array([tracks['A_pstd'][i][idx_channel] for i in range(n)])
-        sigmas = np.array([tracks['sigma_r'][i][idx_channel] for i in range(n)])
+        pvals = np.array([tracks['pval_Ar'][i][idx_channel] for i in range(n)], dtype=object)
+        stds = np.array([tracks['A_pstd'][i][idx_channel] for i in range(n)], dtype=object)
+        sigmas = np.array([tracks['sigma_r'][i][idx_channel] for i in range(n)], dtype=object)
         data[prefix + '_pvals'] = pvals
         starts = []
         starts_p = []
