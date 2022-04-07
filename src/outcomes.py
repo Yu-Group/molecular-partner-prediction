@@ -215,9 +215,9 @@ def add_aux_dyn_outcome(df, p_thresh=0.05, clath_thresh=1500, dyn_thresh=2000,
         df['successful_full'] = np.logical_and(df['clath_sig'], df['successful_dynamin'])
         
         # add more manual labels
-        df['successful_full_final'] = df['successful_full']
-        df['successful_full_final'][df.pid.isin(config.LABELS_DYNAMIN_NEW['pos'])] = 1
-        df['successful_full_final'][df.pid.isin(config.LABELS_DYNAMIN_NEW['neg'])] = 0
+        df['successful_full'] = df['successful_full']
+        df['successful_full'][df.pid.isin(config.LABELS_DYNAMIN_NEW['pos'])] = 1
+        df['successful_full'][df.pid.isin(config.LABELS_DYNAMIN_NEW['neg'])] = 0
         df['hotspots'][df.pid.isin(config.LABELS_DYNAMIN_NEW['hotspots'])] = True    
         
         

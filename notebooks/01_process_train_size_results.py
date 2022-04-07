@@ -30,7 +30,7 @@ import pickle as pkl
 
 if __name__ == '__main__':
     
-    outcome_def = 'successful_dynamin'
+    outcome_def = 'successful_full'
     print("loading data")
     dsets = ['clath_aux_dynamin']
     splits = ['test']
@@ -52,7 +52,7 @@ if __name__ == '__main__':
     y = df_test[outcome_def].values
     
     accuracy = {}
-    '''
+    
     for k in [1, 2, 5, 10]:
         for j in tqdm(range(10)):
             
@@ -68,7 +68,7 @@ if __name__ == '__main__':
             preds = m.predict(X2)
             accuracy[(k, j, 'gb')] = np.mean(y == (preds > 0))   
     pkl.dump(accuracy, open(f'../reports/data_size_stability_10_{outcome_def}.pkl', 'wb'))
-    '''
+    
     
     # calculate dasc accuracy
     dasc_pred = (df_test['X_d1'].values > 0).astype(int)
