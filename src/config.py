@@ -20,6 +20,7 @@ data_dir_orig = '/scratch/users/vision/data/abc_data/auxilin_data_tracked'
 d_new = '/scratch/users/vision/data/abc_data/auxilin_new_data/AI_Clathrin_molecularPrediction'
 clath_aux_folder = 'CLTA-TagRFP+-+ EGFP-Aux1-A7D2+-+ EGFP-GAK-F6+-+  TIRF data'
 dynamin_folder = 'CLTA-TagRFP EGFP-Aux1-GAK-F6 Dyn2-Halo-E1-JF646'
+vps_folder = '/scratch/users/vision/data/abc_data/vps_snf'
 
 
 # data splitting
@@ -33,6 +34,29 @@ s_clath_pi4p = 'cme'
 s_ap2_pi4p = 'cme'
 
 DSETS = {
+    ############################################################################vps/snf
+    'vps24': {
+        'data_dir': oj(vps_folder, 
+                       '2016-07-10_mergedTracks_vps24.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },
+    
+    """
+    
+    '2016-07-10_mergedTracks_vps4_snf7.mat'
+    '2016-10-26_mergedTracks_vps4_snf7vps2.mat'
+    '2016-09-01_mergedTracks_AnchorAway_vps4_snf7_RapExposure-004.mat'
+    
+    # mutant
+    # '2016-09-06_mergedTracks_vps24_VPS4EQ.mat'
+    # '2016-09-06_mergedTracks_vps4EQ_snf7-eGFP.mat'
+    
+    # ignore for now
+    # '2017-05-22_newExp_tracks_vps4_snf7_dpep-002.mat'
+    """
+    ############################################################################clath/aux
     'clath_aux+gak_a7d2': {  # this was the original data
         'data_dir': data_dir_orig,
         'feature_selection': np.array([f'{s_orig}/1']),

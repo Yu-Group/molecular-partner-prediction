@@ -131,8 +131,6 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
             df['valid'][df.cell_num.isin(DSET['test'])] = False
         metadata['num_tracks'] = df.valid.sum()
         # print('training', df.valid.sum())
-
-        
         
         # preprocess data
         print('\tpreprocessing data...')
@@ -173,7 +171,7 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
 
 def remove_invalid_tracks(df, keep=[1, 2]):
     '''Remove certain types of tracks based on cat_idx.
-    Only keep cat_idx  = 1 and 2
+    Only keep cat_idx = 1 and 2
     1-4 (non-complex trajectory - no merges and splits)
         1 - valid
         2 - signal occasionally drops out
@@ -309,14 +307,14 @@ def select_final_feats(feat_names, binarize=False):
 if __name__ == '__main__':
     
     # process original data (and save out lifetime thresholds)
-    dset_orig = 'clath_aux+gak_a7d2'
-    df = get_data(dset=dset_orig)  # save out orig
+#     dset_orig = 'clath_aux+gak_a7d2'
+#     df = get_data(dset=dset_orig)  # save out orig
     
     # process new data (using lifetime thresholds from original data)
     outcome_def = 'y_consec_sig'
-#     for dset in ['clath_aux_dynamin']:
-    for dset in config.DSETS.keys():
-        df = get_data(dset=dset, previous_meta_file=None)
+    for dset in ['vps24']:
+#     for dset in config.DSETS.keys():
+        df = get_data(dset=dset, previous_meta_file=None, save_processed=False)
         # df = get_data(dset=dset, previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+',
               df[outcome_def].sum(), 'aux+ fraction', (df[outcome_def].sum() / df.shape[0]).round(3),
