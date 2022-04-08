@@ -57,10 +57,11 @@ def get_tracks(data_dir,
         print(f'\ttrack key: {track_key}')
         tracks = mat[track_key]
         print(f'\ttracks.keys() {tracks.keys()}')
-        data = get_data_from_tracks(tracks, None, False, False)
+        data = get_data_from_tracks(tracks, cell_num=None, use_vps_data_scheme=True,
+                                    pixel_data=False, video_data=False)
         df = pd.DataFrame.from_dict(data)
-        df['cell_num'] = -1 # test
-        df.loc[:int(df.shape[0] * frac_cell_train_vps), 'cell_num'] = 0 # train
+        df['cell_num'] = 'test' # test
+        df.loc[:int(df.shape[0] * frac_cell_train_vps), 'cell_num'] = 'train' # train
         os.makedirs(os.path.dirname(processed_tracks_file), exist_ok=True)
         df.to_pickle(processed_tracks_file)        
         return df
@@ -95,7 +96,8 @@ def get_tracks(data_dir,
             # fname_image = oj(data_dir, upper_dir, cell_dir)
             mat = mat4py.loadmat(fname)
             tracks = mat['tracks']
-            data = get_data_from_tracks(tracks, cell_num, pixel_data, video_data)
+            data = get_data_from_tracks(tracks, cell_num, use_vps_data_scheme=False,
+                                    pixel_data=pixel_data, video_data=video_data)
             
             df = pd.DataFrame.from_dict(data)
             dfs.append(deepcopy(df))
@@ -107,7 +109,8 @@ def get_tracks(data_dir,
     return df
 
 
-def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=False):
+def get_data_from_tracks(tracks, cell_num=None, use_vps_data_scheme=False,
+                         pixel_data=False, video_data=False):
     """Unpack data from single tracking .mat file
     
     Params
@@ -140,9 +143,12 @@ def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=Fal
         except:
             msd.append(0)
     data['mean_total_displacement'] = [totalDisplacement[i] / tracks['lifetime_s'][i] for i in range(n)]
-    data['mean_square_displacement'] =  msd
+    data['mean_square_displacement'] = msd
 
     # position features
+    assert isinstance(tracks['A'][0][0], list), 'If this is not a list, then probably only recorded 1 channel'
+    assert isinstance(tracks['x'][0][0], list), 'If this is not a list, then probably only recorded 1 channel'
+    print('len', tracks['x'][0])
     x_pos_seq = np.array(
         [tracks['x'][i][0] for i in range(n)], dtype=object)  # x-position for clathrin (auxilin is very similar)
     y_pos_seq = np.array(
@@ -153,7 +159,7 @@ def get_data_from_tracks(tracks, cell_num=None, pixel_data=False, video_data=Fal
     data['y_pos'] = [sum(y) / len(y) for y in y_pos_seq]
     if 'z' in tracks.keys():
         z_pos_seq = np.array(
-            [tracks['z'][i][0] for i in range(n)], dtype=object)  # z-position for clathrin (auxilin is very similar)
+            [tracks['z'][i][0] for i in range(n)], dtype=object)  # z-position for clathrin
         data['z_pos_seq'] = z_pos_seq
         data['z_pos'] = [sum(z) / len(z) for z in z_pos_seq]
 

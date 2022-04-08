@@ -13,7 +13,7 @@ def add_rule_based_label(df):
     X_max_after_Y_peak = []
     for i in range(len(df)):
         pt = df['Y_peak_idx'].values[i]
-        lt = df['lifetime'].values[i]
+        lt = int(df['lifetime'].values[i])
         left_bf = np.int(0.2 * lt) + 1  # look at a window with length = 30%*lifetime
         right_bf = np.int(0.1 * lt) + 1
         arr_around = df['X'].iloc[i][max(0, pt - left_bf): min(pt + right_bf, lt)]

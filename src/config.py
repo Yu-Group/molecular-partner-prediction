@@ -35,13 +35,6 @@ s_ap2_pi4p = 'cme'
 
 DSETS = {
     ############################################################################vps/snf
-    'vps24': {
-        'data_dir': oj(vps_folder, 
-                       '2016-07-10_mergedTracks_vps24.mat'),        
-        'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
-    },
     'vps4_snf7': {
         'data_dir': oj(vps_folder, 
                        '2016-07-10_mergedTracks_vps4_snf7.mat'),        
@@ -63,6 +56,15 @@ DSETS = {
         'train': np.array([0]),
         'test': np.array([-1]),
     },
+    
+    # only has 1 channel
+    'vps24': {
+        'data_dir': oj(vps_folder, 
+                       '2016-07-10_mergedTracks_vps24.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },    
     
     ## mutant
     'vps24_VPS4EQ': {

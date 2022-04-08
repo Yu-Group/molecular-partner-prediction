@@ -327,7 +327,9 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                 ylim_aux=None, ylim_dyn=None,
                 xlim_constant=True, legend=True, plot_x=True,
                 yticks=None, yticklabels=None, num_axes=3, show_track_pid=False,
-                axes_invisible=False):
+                axes_invisible=False,
+                clath_lab='CLTA-TagRFP',
+                aux_lab='EGFP-Aux1-GAK-F6'):
     '''Plot time-series curves from df
     '''
     DIFF = 0
@@ -405,7 +407,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     if i == 0:
                         ax.text(x=interval * len(row.X_extended),
                             y=np.array(row.X_extended)[-1],
-                            s='CLTA-TagRFP',
+                            s=clath_lab,
                             color=cr,
                             size=8)
                     if background:
@@ -430,7 +432,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                                        )
                                
                     else:
-                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label='EGFP-Aux1-GAK-F6')                     
+                        twin1.plot(interval * np.arange(5, len(row.Y_extended)-5), np.array(row.Y_extended)[5:(-5)] + DIFF, color=cg, label=aux_lab)                     
                     if i == 0 and legend:
                         dvu.line_legend()                                     
                     twin1.fill_between(interval * np.arange(len(row.Y_extended)),
@@ -442,7 +444,7 @@ def plot_curves(df, extra_key=None, extra_key_label=None,
                     if i == 0:
                         twin1.text(x=interval * len(row.Y_extended),
                               y=np.array(row.Y_extended)[-1],
-                              s='EGFP-Aux1-GAK-F6',
+                              s=aux_lab,
                               color=cg,
                               size=8)                    
                     #plt.plot(interval * np.arange(5), np.array(row.X_extended)[-5:] + DIFF, linestyle='--', color=cr, label='Clathrin')

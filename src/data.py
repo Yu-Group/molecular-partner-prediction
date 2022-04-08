@@ -312,9 +312,9 @@ if __name__ == '__main__':
     
     # process new data (using lifetime thresholds from original data)
     outcome_def = 'y_consec_sig'
-    for dset in ['vps24']:
+    for dset in ['vps4_snf7', 'vps4_snf7vps2']: #, 'vps4_snf7vps2']:
 #     for dset in config.DSETS.keys():
-        df = get_data(dset=dset, previous_meta_file=None, save_processed=False)
+        df = get_data(dset=dset, previous_meta_file=None, save_processed=True)
         # df = get_data(dset=dset, previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
         print(dset, 'num cells', len(df['cell_num'].unique()), 'num tracks', df.shape[0], 'num aux+',
               df[outcome_def].sum(), 'aux+ fraction', (df[outcome_def].sum() / df.shape[0]).round(3),
