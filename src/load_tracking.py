@@ -53,7 +53,11 @@ def get_tracks(data_dir,
     if data_dir.endswith('.mat'):
         mat = mat4py.loadmat(data_dir)['t']
         print('keys', mat.keys())
-        track_key = sorted([k for k in mat.keys()])[0] #allTracks_...
+        if 'key=mt' in dset:
+            track_key = 'allTracks_snf7_vps4mt' # for vps4_snf7
+        else:
+            track_key = 'allTracks_snf7_vps4wt' # for vps4_snf7
+
         print(f'\ttrack key: {track_key}')
         tracks = mat[track_key]
         print(f'\ttracks.keys() {tracks.keys()}')
@@ -127,6 +131,7 @@ def get_data_from_tracks(tracks, cell_num=None, use_vps_data_scheme=False,
         'cell_num': [cell_num] * n,                
         'catIdx': tracks['catIdx'],
         't': [t[i][0] for i in range(n)],
+        'lifetime_s': tracks['lifetime_s'],
     }
 
 

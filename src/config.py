@@ -35,6 +35,8 @@ s_ap2_pi4p = 'cme'
 
 DSETS = {
     ############################################################################vps/snf
+    
+    # the most-relevant best dataset to use (make sure to use the key with wt - wild type and not mt - mutant)
     'vps4_snf7': {
         'data_dir': oj(vps_folder, 
                        '2016-07-10_mergedTracks_vps4_snf7.mat'),        
@@ -42,13 +44,17 @@ DSETS = {
         'train': np.array([0]),
         'test': np.array([-1]),
     },
-    'vps4_snf7vps2': {
+    
+    # the second part of this key says to save the mutant key from this same file (in load_tracking.py)
+    'vps4_snf7___key=mt': {
         'data_dir': oj(vps_folder, 
-                       '2016-10-26_mergedTracks_vps4_snf7vps2.mat'),        
+                       '2016-07-10_mergedTracks_vps4_snf7.mat'),        
         'feature_selection': None,
         'train': np.array([0]),
         'test': np.array([-1]),
-    },
+    },    
+    
+    # more complicated...
     'AnchorAway_vps4_snf7': {
         'data_dir': oj(vps_folder, 
                        '2016-09-01_mergedTracks_AnchorAway_vps4_snf7_RapExposure-004.mat'),        
@@ -66,7 +72,16 @@ DSETS = {
         'test': np.array([-1]),
     },    
     
-    ## mutant
+    # only has mutant key
+    'vps4_snf7vps2': {
+        'data_dir': oj(vps_folder, 
+                       '2016-10-26_mergedTracks_vps4_snf7vps2.mat'),        
+        'feature_selection': None,
+        'train': np.array([0]),
+        'test': np.array([-1]),
+    },    
+    
+    ## mutant (EQ)
     'vps24_VPS4EQ': {
         'data_dir': oj(vps_folder, 
                        '2016-09-06_mergedTracks_vps24_VPS4EQ.mat'),        
@@ -74,6 +89,8 @@ DSETS = {
         'train': np.array([0]),
         'test': np.array([-1]),
     },
+    
+    ## mutant (EQ)
     'vps4EQ_snf7-eGFP': {
         'data_dir': oj(vps_folder, 
                        '2016-09-06_mergedTracks_vps4EQ_snf7-eGFP.mat'),        

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+from math import floor
 
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 from viz import *
@@ -13,7 +14,7 @@ def add_rule_based_label(df):
     X_max_after_Y_peak = []
     for i in range(len(df)):
         pt = df['Y_peak_idx'].values[i]
-        lt = int(df['lifetime'].values[i])
+        lt = floor(df['lifetime'].values[i])
         left_bf = np.int(0.2 * lt) + 1  # look at a window with length = 30%*lifetime
         right_bf = np.int(0.1 * lt) + 1
         arr_around = df['X'].iloc[i][max(0, pt - left_bf): min(pt + right_bf, lt)]
@@ -50,7 +51,8 @@ def add_rule_based_label(df):
     return df
 
 
-def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, aux_thresh=973):
+def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05,
+                 aux_peak=642.375, aux_thresh=973, vps_data=False):
     '''Add binary outcome of whether spike happened and info on whether events were questionable
     '''
     df['y_score'] = df['Y_max'].values - (df['Y_mean'].values + thresh * df['Y_std'].values)
@@ -113,7 +115,8 @@ def add_outcomes(df, LABELS=None, thresh=3.25, p_thresh=0.05, aux_peak=642.375, 
         df['y_consec_thresh'][df.pid.isin(LABELS['neg'])] = 0  # add manual neg labels
         df['hotspots'][df.pid.isin(LABELS['hotspots'])] = True  # add manual hotspot labels
 
-    df = add_rule_based_label(df)
+    if not vps_data:
+        df = add_rule_based_label(df)
 
     return df
 

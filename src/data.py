@@ -137,7 +137,9 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
         df = remove_invalid_tracks(df)  # use catIdx
         # print('valid', df.valid.sum())
         df = features.add_basic_features(df)
-        df = outcomes.add_outcomes(df, LABELS=LABELS)
+        df = outcomes.add_outcomes(df,
+                                   LABELS=LABELS,
+                                   vps_data='vps' in dset)
 
         metadata['num_tracks_valid'] = df.valid.sum()
         metadata['num_aux_pos_valid'] = df[df.valid][outcome_def].sum()
@@ -312,7 +314,7 @@ if __name__ == '__main__':
     
     # process new data (using lifetime thresholds from original data)
     outcome_def = 'y_consec_sig'
-    for dset in ['vps4_snf7', 'vps4_snf7vps2']: #, 'vps4_snf7vps2']:
+    for dset in ['vps4_snf7___key=mt', 'vps4_snf7']: # two keys from the same file
 #     for dset in config.DSETS.keys():
         df = get_data(dset=dset, previous_meta_file=None, save_processed=True)
         # df = get_data(dset=dset, previous_meta_file=f'{config.DIR_PROCESSED}/metadata_{dset_orig}.pkl')
