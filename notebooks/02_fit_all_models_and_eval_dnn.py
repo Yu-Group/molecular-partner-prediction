@@ -38,12 +38,13 @@ scorers = {
     'r2': metrics.r2_score,
     'corr': scipy.stats.pearsonr,
     'recall': metrics.recall_score,
+    'f1': metrics.f1_score
 }
 
 def get_all_scores(y, preds, y_reg, df):
     
     for metric in scorers:
-        if 'accuracy' in metric or 'recall' in metric:
+        if 'accuracy' in metric or 'recall' in metric or 'f1' in metric:
             acc = scorers[metric](y, np.logical_and((preds > 0), df['X_max_orig'].values > 1500).astype(int))                   
             dataset_level_res[f'{k}_{metric}'].append(acc)
         elif metric == 'roc_auc':
@@ -59,7 +60,7 @@ def get_all_scores(y, preds, y_reg, df):
         y_reg_cell = y_reg[cell_idx]
         preds_cell = preds[cell_idx]
         for metric in scorers:
-            if 'accuracy' in metric or 'recall' in metric:
+            if 'accuracy' in metric or 'recall' in metric or 'f1' in metric:
                 acc = scorers[metric](y_cell, np.logical_and((preds_cell > 0), df['X_max_orig'].values[cell_idx] > 1500).astype(int))              
                 cell_level_res[f'{cell}_{metric}'].append(acc)
             elif metric == 'roc_auc':
