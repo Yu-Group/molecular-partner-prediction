@@ -61,12 +61,17 @@ if __name__ == '__main__':
             dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm', epochs=200)
             dnn.model.load_state_dict(results['model_state_dict'])
             preds = dnn.predict(X1)
-            accuracy[(k, j, 'lstm')] = np.mean(y == (preds > 0))  
+            accuracy[(k, j, 'lstm', 'acc')] = np.mean(y == (preds > 0))
+            accuracy[(k, j, 'lstm', 'f1')] = metrics.f1_score(y, (preds > 0))
+            accuracy[(k, j, 'lstm', 'roc.auc')] = metrics.roc_auc_score(y, preds)
 
             checkpoint_fname = f'../models/models_different_size_10/downsample_{k}_batch_{j}_gb.pkl'
             m = pkl.load(open(checkpoint_fname, 'rb'))
             preds = m.predict(X2)
-            accuracy[(k, j, 'gb')] = np.mean(y == (preds > 0))   
+            accuracy[(k, j, 'gb')] = np.mean(y == (preds > 0))
+            accuracy[(k, j, 'gb', 'f1')] = metrics.f1_score(y, (preds > 0))
+            accuracy[(k, j, 'gb', 'roc.auc')] = metrics.roc_auc_score(y, preds)
+            
     pkl.dump(accuracy, open(f'../reports/data_size_stability_10_{outcome_def}.pkl', 'wb'))
     
     
