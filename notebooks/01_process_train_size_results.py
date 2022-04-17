@@ -36,7 +36,7 @@ if __name__ == '__main__':
     splits = ['test']
     #feat_names = ['X_same_length_normalized'] + data.select_final_feats(data.get_feature_names(df))
                   #['mean_total_displacement', 'mean_square_displacement', 'lifetime']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', outcome_def]
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', 'X_max_orig', outcome_def]
     dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets, 
                                              splits=splits, 
                                              meta=meta,
@@ -61,15 +61,17 @@ if __name__ == '__main__':
             dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm', epochs=200)
             dnn.model.load_state_dict(results['model_state_dict'])
             preds = dnn.predict(X1)
-            accuracy[(k, j, 'lstm', 'acc')] = np.mean(y == (preds > 0))
-            accuracy[(k, j, 'lstm', 'f1')] = metrics.f1_score(y, (preds > 0))
+            preds_binary = np.logical_and((preds > 0), df_test['X_max_orig'].values > 1500).astype(int)
+            accuracy[(k, j, 'lstm', 'accuracy')] = np.mean(y == preds_binary)
+            accuracy[(k, j, 'lstm', 'f1')] = metrics.f1_score(y, preds_binary)
             accuracy[(k, j, 'lstm', 'roc.auc')] = metrics.roc_auc_score(y, preds)
 
             checkpoint_fname = f'../models/models_different_size_10/downsample_{k}_batch_{j}_gb.pkl'
             m = pkl.load(open(checkpoint_fname, 'rb'))
             preds = m.predict(X2)
-            accuracy[(k, j, 'gb')] = np.mean(y == (preds > 0))
-            accuracy[(k, j, 'gb', 'f1')] = metrics.f1_score(y, (preds > 0))
+            preds_binary = np.logical_and((preds > 0), df_test['X_max_orig'].values > 1500).astype(int)
+            accuracy[(k, j, 'gb', 'accuracy')] = np.mean(y == preds_binary)
+            accuracy[(k, j, 'gb', 'f1')] = metrics.f1_score(y, preds_binary)
             accuracy[(k, j, 'gb', 'roc.auc')] = metrics.roc_auc_score(y, preds)
             
     pkl.dump(accuracy, open(f'../reports/data_size_stability_10_{outcome_def}.pkl', 'wb'))
