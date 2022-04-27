@@ -41,8 +41,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-07-10_mergedTracks_vps4_snf7.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },
     
     # the second part of this key says to save the mutant key from this same file (in load_tracking.py)
@@ -50,8 +50,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-07-10_mergedTracks_vps4_snf7.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },    
     
     # more complicated...
@@ -59,8 +59,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-09-01_mergedTracks_AnchorAway_vps4_snf7_RapExposure-004.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },
     
     # only has 1 channel
@@ -68,8 +68,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-07-10_mergedTracks_vps24.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },    
     
     # only has mutant key
@@ -77,8 +77,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-10-26_mergedTracks_vps4_snf7vps2.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },    
     
     ## mutant (EQ)
@@ -86,8 +86,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-09-06_mergedTracks_vps24_VPS4EQ.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },
     
     ## mutant (EQ)
@@ -95,8 +95,8 @@ DSETS = {
         'data_dir': oj(vps_folder, 
                        '2016-09-06_mergedTracks_vps4EQ_snf7-eGFP.mat'),        
         'feature_selection': None,
-        'train': np.array([0]),
-        'test': np.array([-1]),
+        'train': ['train'],
+        'test': ['test'],
     },
 
     # ignore for now

@@ -29,6 +29,8 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
                       length=40,
                       normalize=True,
                       lifetime_threshold=15,
+                      hotspots_threshold=25,
+                      filter_hotspots=True,
                       filter_short=True,
                       padding='end'):
     '''Loads dataframes preprocessed ready for LSTM
@@ -37,22 +39,26 @@ def load_dfs_for_lstm(dsets=['clath_aux+gak_new'],
     for dset in tqdm(dsets):
         for split in splits:
             df = get_data(dset=dset)
-            df = df[~df.hotspots]
-            if filter_short and lifetime_threshold == 15:
-#                 df = df[~(df.short | df.long)]
-        #         df = df[df.valid]
-                df = df[df.lifetime > 15] # only keep hard tracks
-            elif not lifetime_threshold == 15:
-                df = df[df.lifetime > lifetime_threshold] # only keep hard tracks
-            else:
-                df = df[~df.hotspots]
+
+            if filter_short:
+                df = df[df.lifetime > lifetime_threshold] # only keep hard tracks      
+            
+            if filter_hotspots:
+                if hotspots_threshold is None:
+                    df = df[~df.hotspots]
+                else:
+                    df = df[df.lifetime <= hotspots_threshold]    
+
             df = df[df.cell_num.isin(config.DSETS[dset][split])] # select train/test etc.
             feat_names = ['X_same_length_normalized'] + select_final_feats(get_feature_names(df))
+            # print('mid shape', df.shape)
 
             # downsample tracks
-            df['X_same_length'] = [features.downsample(df.iloc[i]['X'],length, padding=padding)
+            df['X_same_length'] = [features.downsample(df.iloc[i]['X'],
+                                                       length, padding=padding)
                                    for i in range(len(df))] # downsampling
-            df['X_same_length_extended'] = [features.downsample(df.iloc[i]['X_extended'], length, padding=padding)
+            df['X_same_length_extended'] = [features.downsample(df.iloc[i]['X_extended'],
+                                                                length, padding=padding)
                                             for i in range(len(df))] # downsampling
             # normalize tracks
             df = features.normalize_track(df, track='X_same_length', by_time_point=False)
