@@ -274,11 +274,12 @@ def get_feature_names(df):
            and not k.startswith('pixel')
            #         and not k.startswith('pc_')
            and not k in ['catIdx', 'cell_num', 'pid', 'valid',  # metadata
-                         'X', 'X_pvals', 'x_pos', 'X_starts', 'X_ends', 'X_extended',  # curves
+                         'X', 'X_pvals', 'X_starts', 'X_ends', 'X_extended', # curves
                          'short', 'long', 'hotspots', 'sig_idxs',  # should be weeded out
                          'X_max_around_Y_peak', 'X_max_after_Y_peak',  # redudant with X_max / fall
                          'X_max_diff', 'X_peak_idx',  # unlikely to be useful
-                         't', 'x_pos_seq', 'y_pos_seq',  # curves
+                         'x_pos', 'z_pos', # curves                         
+                         't', 'x_pos_seq', 'y_pos_seq',  'z_pos_seq', # curves
                          'X_smooth_spl', 'X_smooth_spl_dx', 'X_smooth_spl_d2x',  # curves
                          'X_quantiles',
                          ]

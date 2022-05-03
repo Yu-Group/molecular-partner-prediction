@@ -74,11 +74,12 @@ if __name__ == '__main__':
     
     dsets = ['vps4_snf7']
     splits = ['train', 'test']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
     length = 40
 #     padding = 'end'
     feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
-    outcome = 'Y_sig_mean_normalized'
+    outcome_def = 'Y_sig_mean_normalized'
+    outcome_binary = 'y_consec_sig'
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', outcome_binary]
     lifetime_threshold = 3
     
     
@@ -132,7 +133,11 @@ if __name__ == '__main__':
             elif feat_set == 'dasc':
                 feat_set = ['X_d1', 'X_d2', 'X_d3']
             
-            m.fit(df_full[feat_set], df_full['Y_sig_mean_normalized'].values)
+            
+            print('feat_set', feat_set)
+            X_fit = df_full[feat_set]
+            print('X_fit shape', X_fit.shape)
+            m.fit(X_fit, df_full['Y_sig_mean_normalized'].values)
         
             for i, (k, v) in enumerate(ds.keys()):
                 if v == 'test':
@@ -142,8 +147,8 @@ if __name__ == '__main__':
                     X = df[feat_set]
                     X = X.fillna(X.mean())
                     #y = df['Y_sig_mean_normalized']
-                    y_reg = df['Y_sig_mean_normalized'].values
-                    y = df[outcome_def].values
+                    y_reg = df[outcome_def].values
+                    y = df[outcome_binary].values
                     preds = m.predict(X)
                     get_all_scores(y, preds, y_reg, df)                        
 
@@ -160,7 +165,7 @@ if __name__ == '__main__':
             df = ds[(k, v)]
             X = df[feat_names[:1]]
             y_reg = df['Y_sig_mean_normalized'].values
-            y = df[outcome_def].values
+            y = df[outcome_binary].values
             #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
             preds = dnn.predict(X)
             get_all_scores(y, preds, y_reg, df)
@@ -169,8 +174,8 @@ if __name__ == '__main__':
                     
     print('saving')
     dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
-    dataset_level_res.to_csv(f"../reports/dataset_vps_level_res_{outcome_def}.csv")
+    dataset_level_res.to_csv(f"../reports/dataset_vps_level_res_{outcome_binary}.csv")
     
     cell_level_res = pd.DataFrame(cell_level_res, index=models)
-    cell_level_res.to_csv(f"../reports/cell_vps_level_res_{outcome_def}.csv")
+    cell_level_res.to_csv(f"../reports/cell_vps_level_res_{outcome_binary}.csv")
 
