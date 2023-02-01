@@ -7,3 +7,9 @@ mat4py
 skorch
 matplotlib-venn
 dvu
+scikit-image
+cvxpy
+statsmodels
+scikit-learn
+torch
+matplotlib_venn
