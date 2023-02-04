@@ -70,7 +70,7 @@ if __name__ == '__main__':
         checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
         dnn = neural_networks.neural_net_sklearn(
             D_in=length, H=20, p=0, arch='lstm',
-            epochs=200, track_name=feat_name
+            epochs=epoch, track_name=feat_name
         )
         dnn.fit(df_full[[feat_name]],
                 df_full[outcome].values,
