@@ -83,6 +83,7 @@ if __name__ == '__main__':
     outcome = 'Y_sig_mean_normalized'
 
     df_fulls = []
+    dfs_dict = {}
     for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
 
         dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
@@ -100,18 +101,46 @@ if __name__ == '__main__':
         ])
         df_full['mt'] = i
         df_fulls.append(df_full)
+        
+        # going to use this for evaluation
+        for ktup in dfs.keys():
+            dfs[ktup]['mt'] = i
+            dfs_dict[ktup] = dfs[ktup]
 
+    # df_full is used for fitting (was for the DNN before, now is for the baselines)
     df_full = pd.concat(df_fulls).dropna()
+
+    print('CHECK dfs_dict')
+    print(dfs_dict.keys())
+    for k in dfs_dict:
+        print(k, dfs_dict[k]['mt'].value_counts())
+
+    dfs = {
+        ('comb', 'train'): pd.concat([
+            dfs_dict[('vps4_snf7', 'train')],
+            dfs_dict[('vps4_snf7___key=mt', 'train')],
+        ]),
+        ('comb', 'test'): pd.concat([
+            dfs_dict[('vps4_snf7', 'test')],
+            dfs_dict[('vps4_snf7___key=mt', 'test')],
+        ]),
+    }
+    
     outcome = 'mt'
     outcome_def = 'mt'
     outcome_binary = 'mt'
+    # print('dfs.keys())
     ############ finish getting data data ######################
 
 
-    ds = {(k, v): dfs[(k, v)]
+    ds = {
+        (k, v): dfs[(k, v)]
           for (k, v) in sorted(dfs.keys(), key=lambda x: x[1] + x[0])
           #if not k == 'clath_aux+gak_a7d2_new'
          }
+    print('CHECK')
+    for k in ds:
+        print(k, ds[k]['mt'].value_counts())
     dataset_level_res = defaultdict(list)
     cell_level_res = defaultdict(list)
     models = []
@@ -146,7 +175,7 @@ if __name__ == '__main__':
             print('feat_set', feat_set)
             X_fit = df_full[feat_set]
             print('X_fit shape', X_fit.shape)
-            m.fit(X_fit, df_full['Y_sig_mean_normalized'].values)
+            m.fit(X_fit, df_full[outcome_def].values)
         
             for i, (k, v) in enumerate(ds.keys()):
                 if v == 'test':
@@ -166,7 +195,7 @@ if __name__ == '__main__':
                     
     print("computing predictions for lstm")                 
     models.append('lstm')
-    for epoch in [5, 20, 50, 100, 150, 200]:
+    for epoch in [5, 20, 50, 100, 150, 200, 1000]:
 
         checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
         results = pkl.load(open(checkpoint_fname, 'rb'))

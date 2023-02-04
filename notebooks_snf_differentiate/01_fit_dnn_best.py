@@ -30,7 +30,7 @@ import pickle as pkl
 
 if __name__ == '__main__':
     print("loading data")
-    for epoch in [5, 20, 50, 100, 150, 200]:
+    for epoch in [5, 20, 50, 100, 150, 200, 1000]:
 
 
 
