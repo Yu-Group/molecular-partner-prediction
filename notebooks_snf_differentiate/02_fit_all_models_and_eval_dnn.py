@@ -218,7 +218,7 @@ if __name__ == '__main__':
             preds = dnn.predict(X)
             print('shape', y.shape)
             print('means', (preds > 0.5).mean(), y.mean())
-            print('acc', np.mean((preds > 0.5) == y))
+            print('acc', np.mean((preds > 0.5).astype(int) == y))
             get_all_scores(y, preds, y_reg, df)
                     
                     
