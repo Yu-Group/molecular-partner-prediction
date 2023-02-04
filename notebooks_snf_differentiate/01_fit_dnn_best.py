@@ -31,6 +31,10 @@ import pickle as pkl
 if __name__ == '__main__':
     print("loading data")
     for epoch in [5, 20, 50, 100, 150, 200]:
+
+
+
+        ############ get data ######################
         splits = ['train', 'test']
         meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
         length = 40
@@ -57,8 +61,9 @@ if __name__ == '__main__':
             df_full['mt'] = i
             df_fulls.append(df_full)
 
-        df_full = pd.concat(df_fulls)
+        df_full = pd.concat(df_fulls).dropna()
         outcome = 'mt'
+        ############ finish getting data data ######################
 
         np.random.seed(42)
         # checkpoint_fname = f'../models/dnn_vps_fit_extended_lifetimes>{lifetime_threshold}.pkl'
@@ -70,5 +75,5 @@ if __name__ == '__main__':
         dnn.fit(df_full[[feat_name]],
                 df_full[outcome].values,
                 verbose=True,
-                checkpoint_fname=checkpoint_fname, device='cuda')
+                checkpoint_fname=checkpoint_fname, device='cpu')
         pkl.dump({'model_state_dict': dnn.model.cpu().state_dict()}, open(checkpoint_fname, 'wb'))

@@ -5,6 +5,8 @@ It also takes a pre-trained LSTM and evaluates it on each cell / dataset.
 import os
 from os.path import join as oj
 import sys
+
+from sklearn.tree import DecisionTreeRegressor
 sys.path.append('../src')
 import numpy as np
 import torch
@@ -72,33 +74,40 @@ def get_all_scores(y, preds, y_reg, df):
 
 if __name__ == '__main__':
     
-    dsets = ['vps4_snf7']
+    ############ get data ######################
     splits = ['train', 'test']
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
     length = 40
-#     padding = 'end'
+    #     padding = 'end'
     feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
-    outcome_def = 'Y_sig_mean_normalized'
-    outcome_binary = 'y_consec_sig'
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized', outcome_binary]
-    lifetime_threshold = 3
-    
-    
-    dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
-                                                 splits=splits,
-                                                 filter_hotspots=True,
-                                                 filter_short=True,
-                                                 lifetime_threshold=lifetime_threshold,
-                                                 hotspots_threshold=25,
-                                                 meta=meta,
-                                                 normalize=False)
-    
-    
-    
-    
-    df_full = pd.concat([dfs[(k, s)]
-                     for (k, s) in dfs
-                     if s == 'train'])[feat_names + meta]
-    df_full = df_full.dropna()
+    outcome = 'Y_sig_mean_normalized'
+
+    df_fulls = []
+    for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
+
+        dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
+                                                    splits=splits,
+                                                    filter_hotspots=True,
+                                                    filter_short=False,
+                                                    lifetime_threshold=None,
+                                                    hotspots_threshold=25,
+                                                    meta=meta,
+                                                    normalize=False)
+        df_full = pd.concat([
+            dfs[(k, s)]
+            for (k, s) in dfs
+            if s == 'train'
+        ])
+        df_full['mt'] = i
+        df_fulls.append(df_full)
+
+    df_full = pd.concat(df_fulls).dropna()
+    outcome = 'mt'
+    outcome_def = 'mt'
+    outcome_binary = 'mt'
+    ############ finish getting data data ######################
+
+
     ds = {(k, v): dfs[(k, v)]
           for (k, v) in sorted(dfs.keys(), key=lambda x: x[1] + x[0])
           #if not k == 'clath_aux+gak_a7d2_new'
@@ -157,25 +166,28 @@ if __name__ == '__main__':
                     
     print("computing predictions for lstm")                 
     models.append('lstm')
-    results = pkl.load(open('../models/dnn_vps_fit_extended_lifetimes>3.pkl', 'rb'))
-    dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
-    dnn.model.load_state_dict(results['model_state_dict'])
-    for i, (k, v) in enumerate(ds.keys()):
-        if v == 'test':
-            df = ds[(k, v)]
-            X = df[feat_names[:1]]
-            y_reg = df['Y_sig_mean_normalized'].values
-            y = df[outcome_binary].values
-            #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
-            preds = dnn.predict(X)
-            get_all_scores(y, preds, y_reg, df)
-                    
-                    
-                    
-    print('saving')
-    dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
-    dataset_level_res.to_csv(f"../reports/dataset_vps_level_res_{outcome_binary}.csv")
-    
-    cell_level_res = pd.DataFrame(cell_level_res, index=models)
-    cell_level_res.to_csv(f"../reports/cell_vps_level_res_{outcome_binary}.csv")
+    for epoch in [5, 20, 50, 100, 150, 200]:
+
+        checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
+        results = pkl.load(open(checkpoint_fname, 'rb'))
+        dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
+        dnn.model.load_state_dict(results['model_state_dict'])
+        for i, (k, v) in enumerate(ds.keys()):
+            if v == 'test':
+                df = ds[(k, v)]
+                X = df[feat_names[:1]]
+                y_reg = df[outcome_def] # df['Y_sig_mean_normalized'].values
+                y = df[outcome_binary].values
+                #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
+                preds = dnn.predict(X)
+                get_all_scores(y, preds, y_reg, df)
+                        
+                        
+                        
+        print('saving')
+        dataset_level_res = pd.DataFrame(dataset_level_res, index=models)
+        dataset_level_res.to_csv(f"../reports/dataset_vpsmt_level_res_{outcome_binary}_epoch={epoch}.csv")
+        
+        cell_level_res = pd.DataFrame(cell_level_res, index=models)
+        cell_level_res.to_csv(f"../reports/cell_vpsmt_level_res_{outcome_binary}_epoch={epoch}.csv")
 
