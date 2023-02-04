@@ -38,7 +38,7 @@ if __name__ == '__main__':
     #     padding = 'end'
     feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
     outcome = 'Y_sig_mean_normalized'
-    epoch = 15
+    epoch = 12
 
     df_fulls = []
     for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
@@ -75,6 +75,7 @@ if __name__ == '__main__':
         D_in=length, H=20, p=0, arch='lstm',
         epochs=epoch, track_name=feat_name
     )
+    print('track_name', vars(dnn))
     dnn.fit(df_full[[feat_name]],
             df_full[outcome].values,
             verbose=True,

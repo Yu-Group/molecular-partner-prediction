@@ -145,7 +145,7 @@ if __name__ == '__main__':
     for k in ds:
         print(k, ds[k]['mt'].value_counts())
 
-    epoch = 15
+    epoch = 12
     dataset_level_res = defaultdict(list)
     cell_level_res = defaultdict(list)
     models = []
@@ -200,14 +200,18 @@ if __name__ == '__main__':
     # print("computing predictions for lstm")                 
     models.append('lstm')
 
+
+    # feat_name = 'X_same_length_normalized'
+    feat_name = 'X_same_length_extended_normalized'
     checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
     results = pkl.load(open(checkpoint_fname, 'rb'))
-    dnn = neural_networks.neural_net_sklearn(D_in=40, H=20, p=0, arch='lstm')
+    dnn = neural_networks.neural_net_sklearn(
+        D_in=40, H=20, p=0, arch='lstm', track_name=feat_name)
     dnn.model.load_state_dict(results['model_state_dict'])
     for i, (k, v) in enumerate(ds.keys()):
         if v == 'test':
             df = ds[(k, v)]
-            X = df[feat_names[:1]]
+            X = df[[feat_name]]
             y_reg = df[outcome_def] # df['Y_sig_mean_normalized'].values
             y = df[outcome_binary].values
             #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  

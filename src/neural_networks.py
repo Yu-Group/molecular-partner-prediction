@@ -14,7 +14,8 @@ class neural_net_sklearn():
     sklearn wrapper for training a neural net
     """
     
-    def __init__(self, D_in=40, H=40, p=17, epochs=1000, batch_size=100, track_name='X_same_length_normalized', arch='fcnn', torch_seed=2):
+    def __init__(self, D_in=40, H=40, p=17, epochs=1000, batch_size=100,
+    track_name='X_same_length_normalized', arch='fcnn', torch_seed=2):
         
         """
         Parameters:
@@ -68,7 +69,7 @@ class neural_net_sklearn():
             y: np.array
                 input response
         """        
-        
+        print('fit', X.shape, X.columns)
         torch.manual_seed(self.torch_seed)
         if self.arch == 'fcnn':
             self.model = models.FCNN(self.D_in, self.H, self.p)
@@ -144,6 +145,7 @@ class neural_net_sklearn():
             X_new: pd.DataFrame
                 input new data, should contain tracks and additional covariates
         """ 
+        print('predict', X_new.columns, X_new.shape, self.track_name)
         self.model.eval()
         with torch.no_grad():        
 
