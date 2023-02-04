@@ -30,50 +30,53 @@ import pickle as pkl
 
 if __name__ == '__main__':
     print("loading data")
-    for epoch in [5, 20, 50, 100, 150, 200, 1000]:
 
+    ############ get data ######################
+    # splits = ['train', 'test']
+    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
+    length = 40
+    #     padding = 'end'
+    feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
+    outcome = 'Y_sig_mean_normalized'
+    epoch = 15
 
+    df_fulls = []
+    for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
 
-        ############ get data ######################
-        splits = ['train', 'test']
-        meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
-        length = 40
-        #     padding = 'end'
-        feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
-        outcome = 'Y_sig_mean_normalized'
+        dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
+                                                    splits=['train'],
+                                                    filter_hotspots=True,
+                                                    filter_short=False,
+                                                    lifetime_threshold=None,
+                                                    hotspots_threshold=25,
+                                                    meta=meta,
+                                                    normalize=False)
+        df_full = pd.concat([
+            dfs[(k, s)]
+            for (k, s) in dfs
+            if s == 'train'
+        ])
+        df_full['mt'] = i
+        df_fulls.append(df_full)
 
-        df_fulls = []
-        for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
+    
+    df_full = pd.concat(df_fulls)
+    print('before dropping', df_full.shape)
+    df_full = df_full.dropna()
+    print('after dropping', df_full.shape)
+    print('vals', df_full['mt'].value_counts()) # 1791 class 0, 653 class 1
+    outcome = 'mt'
+    ############ finish getting data data ######################
 
-            dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
-                                                        splits=splits,
-                                                        filter_hotspots=True,
-                                                        filter_short=False,
-                                                        lifetime_threshold=None,
-                                                        hotspots_threshold=25,
-                                                        meta=meta,
-                                                        normalize=False)
-            df_full = pd.concat([
-                dfs[(k, s)]
-                for (k, s) in dfs
-                if s == 'train'
-            ])
-            df_full['mt'] = i
-            df_fulls.append(df_full)
-
-        df_full = pd.concat(df_fulls).dropna()
-        outcome = 'mt'
-        ############ finish getting data data ######################
-
-        np.random.seed(42)
-        # checkpoint_fname = f'../models/dnn_vps_fit_extended_lifetimes>{lifetime_threshold}.pkl'
-        checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
-        dnn = neural_networks.neural_net_sklearn(
-            D_in=length, H=20, p=0, arch='lstm',
-            epochs=epoch, track_name=feat_name
-        )
-        dnn.fit(df_full[[feat_name]],
-                df_full[outcome].values,
-                verbose=True,
-                checkpoint_fname=checkpoint_fname, device='cpu')
-        pkl.dump({'model_state_dict': dnn.model.cpu().state_dict()}, open(checkpoint_fname, 'wb'))
+    np.random.seed(42)
+    # checkpoint_fname = f'../models/dnn_vps_fit_extended_lifetimes>{lifetime_threshold}.pkl'
+    checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
+    dnn = neural_networks.neural_net_sklearn(
+        D_in=length, H=20, p=0, arch='lstm',
+        epochs=epoch, track_name=feat_name
+    )
+    dnn.fit(df_full[[feat_name]],
+            df_full[outcome].values,
+            verbose=True,
+            checkpoint_fname=checkpoint_fname, device='cpu')
+    pkl.dump({'model_state_dict': dnn.model.cpu().state_dict()}, open(checkpoint_fname, 'wb'))
