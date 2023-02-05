@@ -36,9 +36,11 @@ if __name__ == '__main__':
     meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
     length = 40
     #     padding = 'end'
-    feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
-    outcome = 'Y_sig_mean_normalized'
-    epoch = 12
+    feat_name = 'X_same_length_extended' # include buffer X_same_length_normalized
+    # feat_name = 'X_same_length_normalized' # include buffer X_same_length_normalized
+    # outcome = 'Y_sig_mean_normalized'
+    outcome = 'mt'
+    epoch = 10
 
     df_fulls = []
     for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
@@ -62,17 +64,17 @@ if __name__ == '__main__':
     
     df_full = pd.concat(df_fulls)
     print('before dropping', df_full.shape)
-    df_full = df_full.dropna()
+    df_full = df_full[[feat_name, outcome]].dropna()
     print('after dropping', df_full.shape)
     print('vals', df_full['mt'].value_counts()) # 1791 class 0, 653 class 1
-    outcome = 'mt'
+    
     ############ finish getting data data ######################
 
     np.random.seed(42)
     # checkpoint_fname = f'../models/dnn_vps_fit_extended_lifetimes>{lifetime_threshold}.pkl'
     checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
     dnn = neural_networks.neural_net_sklearn(
-        D_in=length, H=20, p=0, arch='lstm',
+        D_in=length, H=20, p=0, arch='lstm', lr=0.0001,
         epochs=epoch, track_name=feat_name
     )
     print('track_name', vars(dnn))

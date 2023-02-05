@@ -15,6 +15,7 @@ class neural_net_sklearn():
     """
     
     def __init__(self, D_in=40, H=40, p=17, epochs=1000, batch_size=100,
+    lr=0.001,
     track_name='X_same_length_normalized', arch='fcnn', torch_seed=2):
         
         """
@@ -41,6 +42,7 @@ class neural_net_sklearn():
         self.batch_size = batch_size
         self.track_name = track_name
         self.torch_seed = torch_seed
+        self.lr = lr
         self.arch = arch
         
         torch.manual_seed(self.torch_seed)
@@ -96,7 +98,7 @@ class neural_net_sklearn():
         y = torch.tensor(y.reshape(-1, 1), dtype=torch.float)
         
         # initialize optimizer
-        optimizer = optim.Adam(self.model.parameters(), lr=0.001)
+        optimizer = optim.Adam(self.model.parameters(), lr=self.lr)
         
         # initialize dataloader
         if X_covariates is not None:
