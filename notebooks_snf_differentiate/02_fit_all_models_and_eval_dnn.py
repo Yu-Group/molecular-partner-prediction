@@ -76,74 +76,25 @@ def get_all_scores(y, preds, y_reg, df):
     #             cell_level_res[f'{cell}_{metric}'].append(scorers[metric](y_reg_cell, preds_cell)[0])                       
 
 if __name__ == '__main__':
-    
-    ############ get data ######################
-    splits = ['train', 'test']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
-    length = 40
-    #     padding = 'end'
-    feat_name = 'X_same_length_extended_normalized' # include buffer X_same_length_normalized
-    outcome = 'Y_sig_mean_normalized'
-
-    df_fulls = []
-    dfs_dict = {}
-    for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
-
-        dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
-                                                    splits=splits,
-                                                    filter_hotspots=True,
-                                                    filter_short=False,
-                                                    lifetime_threshold=None,
-                                                    hotspots_threshold=25,
-                                                    meta=meta,
-                                                    normalize=False)
-        df_full = pd.concat([
-            dfs[(k, s)]
-            for (k, s) in dfs
-            if s == 'train'
-        ])
-        df_full['mt'] = i
-        df_fulls.append(df_full)
-        
-        # going to use this for evaluation
-        for ktup in dfs.keys():
-            dfs[ktup]['mt'] = i
-            dfs_dict[ktup] = dfs[ktup]
-
+    k = 'test' 
+    df_train, df_test, feat_names = data.get_snf_mt_vs_wt()
+    epoch = 100
+    # feat_name = feat_names[0]
+    feat_name = 'X_same_length'
+    # feat_names = ['X_same_length_normalized'] # include buffer X_same_length_normalized
+    # feat_names = ['X_same_length_normalized', 'lifetime', 'lifetime_s', 'mean_total_displacement', 'mean_square_displacement', 'X_max', 'X_min', 'X_mean', 'X_std', 'X_peak_time_frac', 'rise', 'fall', 'rise_slope', 'fall_slope', 'max_diff', 'min_diff', 'X_d1', 'X_d2', 'X_d3']
     # df_full is used for fitting (was for the DNN before, now is for the baselines)
-    df_full = pd.concat(df_fulls).dropna()
+    df_train = df_train.dropna()
 
-    # print('CHECK dfs_dict')
-    # print(dfs_dict.keys())
-    # for k in dfs_dict:
-    #     print(k, dfs_dict[k]['mt'].value_counts())
+    for df in [df_train, df_test]:
+        print(df['mt'].value_counts())
 
-    dfs = {
-        ('comb', 'train'): pd.concat([
-            dfs_dict[('vps4_snf7', 'train')],
-            dfs_dict[('vps4_snf7___key=mt', 'train')],
-        ]),
-        ('comb', 'test'): pd.concat([
-            dfs_dict[('vps4_snf7', 'test')],
-            dfs_dict[('vps4_snf7___key=mt', 'test')],
-        ]),
-    }
     
     outcome = 'mt'
     outcome_def = 'mt'
     outcome_binary = 'mt'
     # print('dfs.keys())
     ############ finish getting data data ######################
-
-
-    ds = {
-        (k, v): dfs[(k, v)]
-          for (k, v) in sorted(dfs.keys(), key=lambda x: x[1] + x[0])
-          #if not k == 'clath_aux+gak_a7d2_new'
-         }
-    print('CHECK ds')
-    for k in ds:
-        print(k, ds[k]['mt'].value_counts())
 
     dataset_level_res = defaultdict(list)
     cell_level_res = defaultdict(list)
@@ -176,52 +127,42 @@ if __name__ == '__main__':
             
             
             # print('feat_set', feat_set)
-            X_fit = df_full[feat_set]
+            X_fit = df_train[feat_set]
             # print('X_fit shape', X_fit.shape)
-            m.fit(X_fit, df_full[outcome_def].values)
+            m.fit(X_fit, df_train[outcome_def].values)
         
-            for i, (k, v) in enumerate(ds.keys()):
-                if v == 'test':
-                    df = ds[(k, v)]
-                    #if k == 'clath_aux+gak_a7d2_new':
-                    #    df = df.dropna()
-                    X = df[feat_set]
-                    X = X.fillna(X.mean())
-                    #y = df['Y_sig_mean_normalized']
-                    y_reg = df[outcome_def].values
-                    y = df[outcome_binary].values
-                    preds = m.predict(X)
-                    get_all_scores(y, preds, y_reg, df)                        
+            # df = ds[(k, v)]
+            #if k == 'clath_aux+gak_a7d2_new':
+            #    df = df.dropna()
+            X = df_test[feat_set]
+            X = X.fillna(X.mean())
+            #y = df['Y_sig_mean_normalized']
+            y_reg = df_test[outcome_def].values
+            y = df_test[outcome_binary].values
+            preds = m.predict(X)
+            get_all_scores(y, preds, y_reg, df_test)                        
 
                     
                     
                     
     # print("computing predictions for lstm")                 
     models.append('lstm')
-
-
-    # feat_name = 'X_same_length_normalized'
-    # feat_name = 'X_same_length_extended_normalized'
-    feat_name = 'X_same_length'
-    epoch = 10
-
     checkpoint_fname = f'../models/vps_distingish_mt_vs_wt_epoch={epoch}.pkl'
     results = pkl.load(open(checkpoint_fname, 'rb'))
     dnn = neural_networks.neural_net_sklearn(
         D_in=40, H=20, p=0, arch='lstm', track_name=feat_name)
     dnn.model.load_state_dict(results['model_state_dict'])
-    for i, (k, v) in enumerate(ds.keys()):
-        if v == 'test':
-            df = ds[(k, v)]
-            X = df[[feat_name]]
-            y_reg = df[outcome_def] # df['Y_sig_mean_normalized'].values
-            y = df[outcome_binary].values
-            #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
-            preds = dnn.predict(X)
-            print('shape', y.shape)
-            print('means', (preds > 0.5).mean(), y.mean())
-            print('acc', np.mean((preds > 0.5).astype(int) == y))
-            get_all_scores(y, preds, y_reg, df)
+
+    df = df_test
+    X = df[[feat_name]]
+    y_reg = df[outcome_def] # df['Y_sig_mean_normalized'].values
+    y = df[outcome_binary].values
+    #preds = np.logical_and(dnn.predict(X), df['X_max'] > 1500).values.astype(int)  
+    preds = dnn.predict(X)
+    print('shape', y.shape)
+    print('means', (preds > 0.5).mean(), y.mean())
+    print('acc', np.mean((preds > 0.5).astype(int) == y))
+    get_all_scores(y, preds, y_reg, df)
                     
                     
     # print('saving')

@@ -11,7 +11,7 @@ try:
     from skimage.external.tifffile import imread
 except:
     from skimage.io import imread
-
+from sklearn.model_selection import train_test_split
 pd.options.mode.chained_assignment = None  # default='warn' - caution: this turns off setting with copy warning
 import pickle as pkl
 from viz import *
@@ -176,6 +176,31 @@ def get_data(dset='clath_aux+gak_a7d2', use_processed=True, save_processed=True,
             df.to_pickle(processed_file)
     return df
 
+def get_snf_mt_vs_wt():
+    """Need to merge the train and test data and split
+    This is because they were split discretely in a way that using X_normalized gives an unfair hint to the algorithm
+    Set outcome mt to whether or not the 
+    """
+    df_fulls = []
+    for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
+
+        dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
+                                                    splits=['train', 'test'],
+                                                    filter_hotspots=True,
+                                                    filter_short=False,
+                                                    lifetime_threshold=None,
+                                                    hotspots_threshold=25,
+                                                    meta=['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized'],
+                                                    normalize=False)
+        print('feat_names', feat_names)
+        df_full = pd.concat(list(dfs.values()))
+        df_full['mt'] = i
+        df_fulls.append(df_full)
+    df_full = pd.concat(df_fulls)
+
+    df_train, df_test = train_test_split(df_full, random_state=13, test_size=0.33)
+
+    return df_train, df_test, feat_names
 
 def remove_invalid_tracks(df, keep=[1, 2]):
     '''Remove certain types of tracks based on cat_idx.

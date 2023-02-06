@@ -27,42 +27,26 @@ from sklearn.linear_model import LinearRegression, RidgeCV
 from sklearn.svm import SVR
 from collections import defaultdict
 import pickle as pkl
+from sklearn.model_selection import train_test_split
 
 if __name__ == '__main__':
     print("loading data")
 
+    
+
+
     ############ get data ######################
+    df_train, df_test, _ = data.get_snf_mt_vs_wt()
     # splits = ['train', 'test']
-    meta = ['cell_num', 'Y_sig_mean', 'Y_sig_mean_normalized']
     length = 40
     #     padding = 'end'
-    feat_name = 'X_same_length_extended' # include buffer X_same_length_normalized
-    # feat_name = 'X_same_length_normalized' # include buffer X_same_length_normalized
+    # feat_name = 'X_same_length_extended' # include buffer X_same_length_normalized
+    feat_name = 'X_same_length' # include buffer X_same_length_normalized
     # outcome = 'Y_sig_mean_normalized'
     outcome = 'mt'
-    epoch = 10
+    epoch = 100
 
-    df_fulls = []
-    for i, dsets in enumerate([['vps4_snf7'], ['vps4_snf7___key=mt']]):
-
-        dfs, feat_names = data.load_dfs_for_lstm(dsets=dsets,
-                                                    splits=['train'],
-                                                    filter_hotspots=True,
-                                                    filter_short=False,
-                                                    lifetime_threshold=None,
-                                                    hotspots_threshold=25,
-                                                    meta=meta,
-                                                    normalize=False)
-        df_full = pd.concat([
-            dfs[(k, s)]
-            for (k, s) in dfs
-            if s == 'train'
-        ])
-        df_full['mt'] = i
-        df_fulls.append(df_full)
-
-    
-    df_full = pd.concat(df_fulls)
+    df_full = df_train
     print('before dropping', df_full.shape)
     df_full = df_full[[feat_name, outcome]].dropna()
     print('after dropping', df_full.shape)
